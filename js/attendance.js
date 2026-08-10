@@ -13,11 +13,12 @@ function logAttendance(){
   const subjectId = document.getElementById('attSubject').value;
   const date = document.getElementById('attDate').value;
   const status = document.getElementById('attStatus').value;
+  const online = document.getElementById('attOnline').checked;
   if(!subjectId || !date){ Toast.show('Select subject and date','high','bi-exclamation-triangle'); return; }
   const records = DB.getAttendance();
   const existing = records.find(r=>r.subjectId===subjectId && r.date===date);
-  if(existing){ existing.status = status; }
-  else records.push({ id:DB.uid(), subjectId, date, status });
+  if(existing){ existing.status = status; existing.online = online; }
+  else records.push({ id:DB.uid(), subjectId, date, status, online });
   DB.saveAttendance(records);
   Toast.show('Attendance logged');
   renderAttendanceAll();
@@ -49,6 +50,7 @@ function renderStatistics(){
     Excused: records.filter(r => r.status === 'Excused').length,
     Absent: records.filter(r => r.status === 'Absent').length,
     'No Classes': records.filter(r => r.status === 'No Classes').length,
+    Online: records.filter(r => r.online).length,
   };
   
   const relevantRecords = records.filter(r => r.status !== 'No Classes');
@@ -85,6 +87,11 @@ function renderStatistics(){
       <div class="stat-label">No Class</div>
       <div class="stat-value">${stats['No Classes']}</div>
       <div class="stat-percent">—</div>
+    </div>
+    <div class="att-stat-card online">
+      <div class="stat-label">Online</div>
+      <div class="stat-value">${stats.Online}</div>
+      ${total > 0 ? `<div class="stat-percent">${Math.round(stats.Online / total * 100)}%</div>` : ''}
     </div>
   `;
 }
@@ -140,6 +147,7 @@ function renderLog(){
     const dotColor = s ? s.color : '#888';
     const statusClass = r.status === 'No Classes' ? 'noclasses' : r.status.toLowerCase().replace(' ', '');
     const statusDisplay = r.status === 'No Classes' ? 'No Class' : r.status;
+    const onlineBadge = r.online ? `<span class="att-status-badge online" style="margin-left: 4px;">Online</span>` : '';
     
     return `
       <div class="att-log-row">
@@ -147,7 +155,7 @@ function renderLog(){
         <div class="att-log-date">${r.date}</div>
         <div class="att-log-subject" title="${s?s.code:'Unknown'}">${s?s.code:'Unknown'}</div>
         <div class="att-log-status">
-          <span class="att-status-badge ${statusClass}">${statusDisplay}</span>
+          <span class="att-status-badge ${statusClass}">${statusDisplay}</span>${onlineBadge}
         </div>
         <button class="att-log-delete" onclick="deleteAttendance('${r.id}')" title="Delete record">
           <i class="bi bi-trash"></i>

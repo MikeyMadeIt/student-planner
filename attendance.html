@@ -60,6 +60,7 @@
   .att-stat-card.excused .stat-value { color: #60a5fa; }
   .att-stat-card.absent .stat-value { color: #fb7185; }
   .att-stat-card.noclasses .stat-value { color: #8b5cf6; }
+  .att-stat-card.online .stat-value { color: #06b6d4; }
   
   /* Compact Ranking */
   .att-ranking-row {
@@ -132,7 +133,7 @@
   /* Compact Log */
   .att-log-header {
     display: grid;
-    grid-template-columns: 8px 60px 1fr 60px 28px;
+    grid-template-columns: 8px 60px 1fr 55px 28px;
     gap: 8px;
     align-items: center;
     padding: 6px 10px;
@@ -145,11 +146,16 @@
     margin-bottom: 6px;
     margin-left: 0;
     margin-right: 0;
+    text-align: center;
+  }
+  
+  .att-log-header > span {
+    text-align: center;
   }
   
   .att-log-row {
     display: grid;
-    grid-template-columns: 8px 60px 1fr 60px 28px;
+    grid-template-columns: 8px 60px 1fr 55px 28px;
     gap: 8px;
     align-items: center;
     padding: 7px 10px;
@@ -178,6 +184,7 @@
     font-weight: 700;
     font-size: 0.72rem;
     white-space: nowrap;
+    text-align: center;
   }
   
   .att-log-subject {
@@ -185,6 +192,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: center;
   }
   
   .att-log-status {
@@ -229,6 +237,12 @@
     background: rgba(139, 92, 246, 0.15);
     color: #a78bfa;
     border: 1px solid rgba(139, 92, 246, 0.3);
+  }
+  
+  .att-status-badge.online {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+    border: 1px solid rgba(6, 182, 212, 0.3);
   }
   
   .att-log-delete {
@@ -287,11 +301,18 @@
   
   @media (max-width: 576px) {
     .att-log-header {
-      display: none;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: 8px 65px 1fr 90px 24px;
+      text-align: center;
+    }
+    
+    .att-log-header > span {
+      text-align: center;
     }
     
     .att-log-row {
-      grid-template-columns: 8px 50px 1fr 50px 24px;
+      grid-template-columns: 8px 65px 1fr 90px 24px;
       gap: 6px;
       font-size: 0.7rem;
     }
@@ -329,6 +350,10 @@
               <select class="form-select" id="attStatus">
                 <option>Present</option><option>Absent</option><option>Late</option><option>Excused</option><option>No Classes</option>
               </select>
+            </div>
+            <div class="col-md-2" style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="attOnline" class="form-check-input" style="cursor: pointer;">
+              <label for="attOnline" style="cursor: pointer; margin: 0; font-size: 0.9rem;">Online</label>
             </div>
             <div class="col-md-2"><button class="btn btn-accent w-100" onclick="logAttendance()">Log</button></div>
           </div>
