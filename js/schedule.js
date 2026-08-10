@@ -1,5 +1,5 @@
 /* ============================================================
-   SCHEDULE.JS
+   SCHEDULE.JS — Multi-Semester Edition
    ============================================================ */
 
 let currentView = 'card';
@@ -7,31 +7,18 @@ let showArchived = false;
 let ttHourHeight = 52;
 
 function initSchedule(){
-  populateSemesterSelect();
   renderAllViews();
   document.getElementById('searchInput').addEventListener('input', debounce(renderAllViews, 200));
   document.getElementById('filterDay').addEventListener('change', renderAllViews);
   document.getElementById('sortBy').addEventListener('change', renderAllViews);
-  document.getElementById('semesterSelect').addEventListener('change', renderAllViews);
 
   const params = new URLSearchParams(location.search);
   if(params.get('new')==='1') openSubjectModal();
 }
 
-function populateSemesterSelect(){
-  const subs = DB.getSubjects();
-  const combos = [...new Set(subs.map(s=>`${s.semester} | ${s.schoolYear}`))];
-  const sel = document.getElementById('semesterSelect');
-  const sem = DB.getSemester();
-  const currentCombo = `${sem.name} | ${sem.schoolYear}`;
-  if(!combos.includes(currentCombo)) combos.unshift(currentCombo);
-  sel.innerHTML = `<option value="">All Semesters</option>` + combos.map(c=>`<option value="${c}">${c}</option>`).join('');
-  sel.value = currentCombo;
-}
-
 function toggleArchivedView(){
   showArchived = !showArchived;
-  document.getElementById('archiveToggleBtn').classList.toggle('btn-accent', showArchived);
+  document.getElementById('archiveToggleBtn').classList.toggle('active', showArchived);
   renderAllViews();
 }
 
@@ -39,10 +26,14 @@ function getFilteredSubjects(){
   const q = document.getElementById('searchInput').value.toLowerCase().trim();
   const day = document.getElementById('filterDay').value;
   const sortBy = document.getElementById('sortBy').value;
-  const semCombo = document.getElementById('semesterSelect').value;
+  const semId = DB.getActiveSemesterId();
 
-  let list = DB.getSubjects().filter(s => showArchived ? true : !s.archived);
-  if(semCombo) list = list.filter(s=>`${s.semester} | ${s.schoolYear}` === semCombo);
+  let list = DB.getSubjects().filter(s => {
+    if(s.semesterId !== semId) return false;
+    if(!showArchived && s.archived) return false;
+    return true;
+  });
+
   if(day) list = list.filter(s=>s.days.includes(day));
   if(q) list = list.filter(s=>
     s.code.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q) ||
@@ -56,7 +47,7 @@ function getFilteredSubjects(){
 
 function switchView(v){
   currentView = v;
-  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  document.querySelectorAll('.sched-toggle-btn[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
   document.getElementById('cardView').classList.toggle('d-none', v!=='card');
   document.getElementById('timetableView').classList.toggle('d-none', v!=='timetable');
   document.getElementById('timelineView').classList.toggle('d-none', v!=='timeline');
@@ -73,7 +64,9 @@ function renderAllViews(){
 function renderCardView(){
   const wrap = document.getElementById('cardView');
   const list = getFilteredSubjects();
-  if(!list.length){ wrap.innerHTML = `<div class="col-12"><div class="glass card-pad text-center py-4"><i class="bi bi-journal-x" style="font-size:1.6rem;color:var(--text-faint)"></i><p class="text-soft mt-2 mb-0" style="font-size:.85rem">No subjects found.</p></div></div>`; return; }
+  const sem = DB.getActiveSemester();
+  const emptyMsg = sem ? `No subjects yet for ${sem.schoolYear} • ${sem.name}.` : 'No subjects found.';
+  if(!list.length){ wrap.innerHTML = `<div class="col-12"><div class="glass card-pad text-center py-4"><i class="bi bi-journal-x" style="font-size:1.6rem;color:var(--text-faint)"></i><p class="text-soft mt-2 mb-0" style="font-size:.85rem">${emptyMsg}</p></div></div>`; return; }
   wrap.innerHTML = list.map(s=>{
     const remain = nextOccurrenceMinutes(s);
     return `<div class="col-md-6 col-xl-4">
@@ -123,7 +116,6 @@ function renderTimetable(){
   const wrap = document.getElementById('ttGrid');
   const list = getFilteredSubjects();
   const startHour = 6, endHour = 21;
-  const totalHours = endHour-startHour;
 
   let html = `<div class="timetable">`;
   html += `<div class="tt-head"></div>`;
@@ -137,11 +129,10 @@ function renderTimetable(){
   }
   html += `</div>`;
 
-  const order = DAY_NAMES.slice(1).concat(DAY_NAMES[0]); // Mon..Sun
+  const order = DAY_NAMES.slice(1).concat(DAY_NAMES[0]);
   order.forEach(dayName=>{
     html += `<div class="tt-col" style="position:relative">`;
     for(let h=startHour; h<=endHour; h++){ html += `<div class="tt-cell" style="height:${ttHourHeight}px"></div>`; }
-    // blocks
     const dayClasses = list.filter(s=>s.days.includes(dayName));
     const overlapMap = computeOverlaps(dayClasses);
     dayClasses.forEach(s=>{
@@ -154,7 +145,6 @@ function renderTimetable(){
       html += `<div class="tt-block" style="top:${top}px;height:${height}px;left:calc(${col*widthPct}% + 2px);width:calc(${widthPct}% - 4px);background:${s.color}"
         onclick="showSubjectDetail('${s.id}')">${s.code}<br><span style="font-weight:400;opacity:.9">${fmtTime(s.start)}</span></div>`;
     });
-    // now line
     if(dayName === DAY_NAMES[new Date().getDay()]){
       const now = new Date();
       const nowMin = now.getHours()+now.getMinutes()/60;
@@ -173,16 +163,13 @@ function computeOverlaps(classes){
   const sorted = [...classes].sort((a,b)=>a.start.localeCompare(b.start));
   const active = [];
   sorted.forEach(s=>{
-    // remove finished
     for(let i=active.length-1;i>=0;i--){ if(active[i].end <= s.start) active.splice(i,1); }
     let col = 0;
     const usedCols = active.map(a=>map.get(a.id).col);
     while(usedCols.includes(col)) col++;
     active.push(s);
-    const cols = Math.max(active.length, 1);
     map.set(s.id, {col});
   });
-  // second pass to set consistent cols count per overlapping cluster
   sorted.forEach(s=>{
     const overlapping = sorted.filter(o=> o.start < s.end && o.end > s.start);
     const cols = Math.max(...overlapping.map(o=>map.get(o.id).col))+1;
@@ -239,7 +226,7 @@ function renderTimelineView(){
 function openSubjectModal(id){
   const s = id ? DB.getSubject(id) : null;
   document.getElementById('subjectModalTitle').textContent = s ? 'Edit Subject' : 'Add Subject';
-  const sem = DB.getSemester();
+  const sem = DB.getActiveSemester();
   const body = document.getElementById('subjectModalBody');
   const days = s ? s.days : [];
   body.innerHTML = `
@@ -272,9 +259,6 @@ function openSubjectModal(id){
       <div class="col-md-6"><label>Professor</label><input class="form-control" id="subProf" value="${s?s.professor:''}"></div>
       <div class="col-md-6"><label>Email</label><input type="email" class="form-control" id="subEmail" value="${s?s.email:''}"></div>
 
-      <div class="col-md-6"><label>Semester</label><input class="form-control" id="subSemester" value="${s?s.semester:sem.name}"></div>
-      <div class="col-md-6"><label>School Year</label><input class="form-control" id="subYear" value="${s?s.schoolYear:sem.schoolYear}"></div>
-
       <div class="col-12"><label>Color Label</label>
         <div class="d-flex gap-2 flex-wrap" id="colorPicker">
           ${DB.colors.map(c=>`<div onclick="selectColor('${c}')" data-color="${c}" style="width:28px;height:28px;border-radius:8px;background:${c};cursor:pointer;box-shadow:${(s?s.color:DB.colors[0])===c?'0 0 0 3px rgba(255,255,255,.5)':'none'}"></div>`).join('')}
@@ -296,6 +280,7 @@ function saveSubject(){
   const code = document.getElementById('subCode').value.trim();
   if(!code){ Toast.show('Subject code is required','high','bi-exclamation-triangle'); return; }
   const days = [...document.querySelectorAll('.day-check:checked')].map(c=>c.value);
+  const sem = DB.getActiveSemester();
   const data = {
     code, desc: document.getElementById('subDesc').value.trim(),
     type: document.getElementById('subType').value,
@@ -305,20 +290,21 @@ function saveSubject(){
     room: document.getElementById('subRoom').value.trim(), building: document.getElementById('subBuilding').value.trim(),
     professor: document.getElementById('subProf').value.trim(), email: document.getElementById('subEmail').value.trim(),
     color: document.getElementById('subColor').value, notes: document.getElementById('subNotes').value.trim(),
-    semester: document.getElementById('subSemester').value.trim(), schoolYear: document.getElementById('subYear').value.trim(),
+    semester: sem ? sem.name : '1st Semester',
+    schoolYear: sem ? sem.schoolYear : '2026-2027',
+    semesterId: sem ? sem.id : DB.getActiveSemesterId(),
     archived:false,
   };
   const subjects = DB.getSubjects();
   if(id){
     const idx = subjects.findIndex(s=>s.id===id);
-    subjects[idx] = { ...subjects[idx], ...data };
+    if(idx !== -1) subjects[idx] = { ...subjects[idx], ...data };
   } else {
     subjects.push({ id: DB.uid(), ...data });
   }
   DB.saveSubjects(subjects);
   bootstrap.Modal.getInstance(document.getElementById('subjectModal')).hide();
   Toast.show(id?'Subject updated':'Subject added');
-  populateSemesterSelect();
   renderAllViews();
 }
 function deleteSubject(id){

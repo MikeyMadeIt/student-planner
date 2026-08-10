@@ -41,10 +41,12 @@ function renderShell(activeKey){
         sidebarHtml += `<a class="nav-link ${n.key===activeKey?'active':''}" href="${n.href}"><i class="bi ${n.icon}"></i>${n.label}</a>`;
       });
     });
+    const _sem = DB.getActiveSemester();
+    const _semLabel = _sem ? `${_sem.schoolYear} &bull; ${_sem.name}` : '';
     sidebarHtml += `</nav><div class="pt-2" style="border-top:1px solid var(--border);margin-top:8px">
       <a class="nav-link" href="#" onclick="openQuickAdd('task');return false;"><i class="bi bi-plus-circle"></i>Add Task</a>
       <a class="nav-link" href="#" onclick="Toast.confirmExport();return false;"><i class="bi bi-download"></i>Export</a>
-    </div>`;
+    </div>${_semLabel ? `<div style="padding:8px 14px 4px;font-size:.68rem;color:var(--text-faint);line-height:1.4"><i class="bi bi-calendar3" style="margin-right:4px"></i>${_semLabel}</div>` : ''}`;
     sidebar.innerHTML = sidebarHtml;
   }
   // mobile bottom nav: 4 primary + "More" sheet covering every page (grades, attendance, notes, wallpaper, settings, etc.)
@@ -59,6 +61,16 @@ function renderShell(activeKey){
     </div>`;
   }
   ensureMoreMenu(activeKey);
+  // Inject semester banner — fixed strip just below the topbar/mobile-topbar
+  setTimeout(()=>{
+    if(document.getElementById('semBanner')) return;
+    const activeSem = DB.getActiveSemester();
+    if(!activeSem) return;
+    const banner = document.createElement('div');
+    banner.id = 'semBanner';
+    banner.innerHTML = `<i class="bi bi-calendar3"></i><span>${activeSem.schoolYear} &bull; ${activeSem.name}</span>`;
+    document.body.appendChild(banner);
+  }, 0);
 }
 
 /* ---------- MOBILE "MORE" MENU (full site map) ---------- */

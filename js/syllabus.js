@@ -31,7 +31,10 @@ function initSyllabusList(){
 function renderSyllabusGrid(){
   const grid = document.getElementById('syllabusGrid');
   if(!grid) return;
-  const courses = DB.getSyllabusCourses();
+  const semId = DB.getActiveSemesterId();
+  const sem = DB.getActiveSemester();
+  const allCourses = DB.getSyllabusCourses();
+  const courses = allCourses.filter(c=>c.semesterId===semId);
   const q = (document.getElementById('syllabusSearch').value||'').toLowerCase().trim();
   const sortBy = document.getElementById('syllabusSort').value;
 
@@ -43,8 +46,8 @@ function renderSyllabusGrid(){
   if(!list.length){
     grid.innerHTML = `<div class="col-12"><div class="glass card-pad text-center py-5 text-faint fade-in">
       <i class="bi bi-journal-bookmark" style="font-size:1.8rem;opacity:.5"></i>
-      <div class="mt-2 fw-bold" style="color:var(--text)">${courses.length? 'No subjects match your search' : 'No subjects yet'}</div>
-      <div style="font-size:.85rem">${courses.length? 'Try a different course title or code.' : 'Tap "Add Subject" to encode your first course syllabus.'}</div>
+      <div class="mt-2 fw-bold" style="color:var(--text)">${courses.length? 'No subjects match your search' : 'No syllabi yet'}</div>
+      <div style="font-size:.85rem">${courses.length? 'Try a different course title or code.' : (sem ? `Tap "Add Subject" to add your first syllabus for ${sem.schoolYear} • ${sem.name}.` : 'Tap "Add Subject" to encode your first course syllabus.')}</div>
     </div></div>`;
     return;
   }
@@ -89,6 +92,9 @@ function renderSyllabusGrid(){
    ============================================================ */
 function openCourseModal(id){
   const c = id ? DB.getSyllabusCourse(id) : null;
+  const activeSem = DB.getActiveSemester();
+  const defaultSemName = activeSem ? activeSem.name : '1st Semester';
+  const defaultYear = activeSem ? activeSem.schoolYear : '2026-2027';
   const body = document.getElementById('courseModalBody');
   body.innerHTML = `
     <div class="modal-header" style="border:none;padding:0 0 12px 0">
@@ -102,13 +108,14 @@ function openCourseModal(id){
       <div class="col-md-4"><label>Credit Units *</label><input type="number" min="0" step="0.5" class="form-control" id="cUnits" placeholder="3" value="${c?c.creditUnits:''}"></div>
       <div class="col-md-8"><label>Instructor</label><input class="form-control" id="cInstructor" placeholder="Optional" value="${c?escapeHtml(c.instructor||''):''}"></div>
       <div class="col-12"><label>Course Description *</label><textarea class="form-control" id="cDesc" rows="3" placeholder="Introduction to linear and non-linear data structures…">${c?escapeHtml(c.courseDescription):''}</textarea></div>
-      <div class="col-md-6"><label>Semester</label><input class="form-control" id="cSemester" placeholder="1st Semester" value="${c?escapeHtml(c.semester||''):''}"></div>
-      <div class="col-md-6"><label>Academic Year</label><input class="form-control" id="cYear" placeholder="2026-2027" value="${c?escapeHtml(c.academicYear||''):''}"></div>
+      <div class="col-md-6"><label>Semester</label><input class="form-control" id="cSemester" placeholder="1st Semester" value="${c?escapeHtml(c.semester||''):defaultSemName}"></div>
+      <div class="col-md-6"><label>Academic Year</label><input class="form-control" id="cYear" placeholder="2026-2027" value="${c?escapeHtml(c.academicYear||''):defaultYear}"></div>
     </div>
     <div class="d-flex gap-2 mt-3">
       <button class="btn btn-accent flex-grow-1" onclick="saveCourse()"><i class="bi bi-check2 me-1"></i>${c?'Update':'Save'} Subject</button>
       ${c?`<button class="btn btn-ghost" onclick="deleteCourse('${c.id}')"><i class="bi bi-trash3"></i></button>`:''}
     </div>`;
+  new bootstrap.Modal(document.getElementById('courseModal')).show();
   new bootstrap.Modal(document.getElementById('courseModal')).show();
 }
 
@@ -125,11 +132,13 @@ function saveCourse(){
     Toast.show('Credit Units must be numeric','high','bi-exclamation-triangle'); return;
   }
 
+  const semId = DB.getActiveSemesterId();
   const data = {
     courseTitle, courseCode, creditUnits:Number(unitsRaw), courseDescription,
     instructor: document.getElementById('cInstructor').value.trim(),
     semester: document.getElementById('cSemester').value.trim(),
     academicYear: document.getElementById('cYear').value.trim(),
+    semesterId: semId,
   };
   const id = document.getElementById('cId').value;
   const courses = DB.getSyllabusCourses();

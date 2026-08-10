@@ -1,9 +1,10 @@
 /* ============================================================
-   ATTENDANCE.JS (Enhanced)
+   ATTENDANCE.JS (Multi-Semester Edition)
    ============================================================ */
 
 function initAttendance(){
-  const subs = DB.getSubjects().filter(s=>!s.archived);
+  const semId = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   document.getElementById('attSubject').innerHTML = subs.map(s=>`<option value="${s.id}">${s.code}</option>`).join('');
   document.getElementById('attDate').value = todayKey();
   renderAttendanceAll();
@@ -15,10 +16,11 @@ function logAttendance(){
   const status = document.getElementById('attStatus').value;
   const online = document.getElementById('attOnline').checked;
   if(!subjectId || !date){ Toast.show('Select subject and date','high','bi-exclamation-triangle'); return; }
+  const semId = DB.getActiveSemesterId();
   const records = DB.getAttendance();
   const existing = records.find(r=>r.subjectId===subjectId && r.date===date);
   if(existing){ existing.status = status; existing.online = online; }
-  else records.push({ id:DB.uid(), subjectId, date, status, online });
+  else records.push({ id:DB.uid(), subjectId, date, status, online, semesterId: semId });
   DB.saveAttendance(records);
   Toast.show('Attendance logged');
   renderAttendanceAll();
@@ -33,7 +35,8 @@ function renderAttendanceAll(){
 
 /* ======== OVERALL RATE (excludes No Classes) ======== */
 function renderOverallRate(){
-  const records = DB.getAttendance();
+  const semId = DB.getActiveSemesterId();
+  const records = DB.getAttendance().filter(r=>r.semesterId===semId);
   const relevantRecords = records.filter(r => r.status !== 'No Classes');
   const rate = relevantRecords.length ? Math.round(relevantRecords.filter(r=>r.status==='Present'||r.status==='Excused').length/relevantRecords.length*100) : null;
   document.getElementById('aRate').textContent = rate===null ? '--%' : rate+'%';
@@ -42,8 +45,9 @@ function renderOverallRate(){
 
 /* ======== ATTENDANCE STATISTICS ======== */
 function renderStatistics(){
-  const records = DB.getAttendance();
-  
+  const semId = DB.getActiveSemesterId();
+  const records = DB.getAttendance().filter(r=>r.semesterId===semId);
+
   const stats = {
     Present: records.filter(r => r.status === 'Present').length,
     Late: records.filter(r => r.status === 'Late').length,
@@ -52,16 +56,16 @@ function renderStatistics(){
     'No Classes': records.filter(r => r.status === 'No Classes').length,
     Online: records.filter(r => r.online).length,
   };
-  
+
   const relevantRecords = records.filter(r => r.status !== 'No Classes');
   const total = relevantRecords.length;
-  
+
   const wrap = document.getElementById('attendanceStats');
   if(!records.length){
     wrap.innerHTML = `<div class="text-faint text-center py-3" style="font-size:.82rem; grid-column: 1/-1;">Log attendance to see statistics</div>`;
     return;
   }
-  
+
   wrap.innerHTML = `
     <div class="att-stat-card present">
       <div class="stat-label">Present</div>
@@ -96,23 +100,24 @@ function renderStatistics(){
   `;
 }
 
-/* ======== SUBJECT RANKING (Compact) - Excludes No Classes ======== */
+/* ======== SUBJECT RANKING - Excludes No Classes ======== */
 function renderRanking(){
-  const subs = DB.getSubjects().filter(s=>!s.archived);
-  const records = DB.getAttendance();
-  
+  const semId = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
+  const records = DB.getAttendance().filter(r=>r.semesterId===semId);
+
   const ranked = subs.map(s=>{
     const recs = records.filter(r=>r.subjectId===s.id && r.status !== 'No Classes');
     const rate = recs.length ? Math.round(recs.filter(r=>r.status==='Present'||r.status==='Excused').length/recs.length*100) : null;
     return { s, rate, count:recs.length };
   }).filter(r=>r.rate!==null).sort((a,b)=>b.rate-a.rate);
-  
+
   const wrap = document.getElementById('subjectRanking');
-  if(!ranked.length){ 
-    wrap.innerHTML = `<div class="text-faint text-center py-3" style="font-size:.82rem">Log attendance to see ranking</div>`; 
-    return; 
+  if(!ranked.length){
+    wrap.innerHTML = `<div class="text-faint text-center py-3" style="font-size:.82rem">Log attendance to see ranking</div>`;
+    return;
   }
-  
+
   wrap.innerHTML = ranked.map((r,i)=>{
     const dotColor = r.s.color || '#888';
     return `
@@ -131,24 +136,25 @@ function renderRanking(){
   }).join('');
 }
 
-/* ======== ATTENDANCE LOG (Compact) - Includes No Classes ======== */
+/* ======== ATTENDANCE LOG - Includes No Classes ======== */
 function renderLog(){
+  const semId = DB.getActiveSemesterId();
   const subs = DB.getSubjects();
-  const records = [...DB.getAttendance()].sort((a,b)=>b.date.localeCompare(a.date));
+  const records = [...DB.getAttendance().filter(r=>r.semesterId===semId)].sort((a,b)=>b.date.localeCompare(a.date));
   const wrap = document.getElementById('attendanceLog');
-  
-  if(!records.length){ 
-    wrap.innerHTML = `<div class="text-faint text-center py-4" style="font-size:.82rem">No attendance logged yet</div>`; 
-    return; 
+
+  if(!records.length){
+    wrap.innerHTML = `<div class="text-faint text-center py-4" style="font-size:.82rem">No attendance logged yet</div>`;
+    return;
   }
-  
+
   wrap.innerHTML = records.map(r=>{
     const s = subs.find(x=>x.id===r.subjectId);
     const dotColor = s ? s.color : '#888';
     const statusClass = r.status === 'No Classes' ? 'noclasses' : r.status.toLowerCase().replace(' ', '');
     const statusDisplay = r.status === 'No Classes' ? 'No Class' : r.status;
     const onlineBadge = r.online ? `<span class="att-status-badge online" style="margin-left: 4px;">Online</span>` : '';
-    
+
     return `
       <div class="att-log-row">
         <div class="att-log-dot" style="background: ${dotColor};"></div>
@@ -169,8 +175,8 @@ function deleteAttendance(id){
   confirmAction({
     title:'Remove attendance record?',
     message:'This log entry will be permanently removed.',
-    confirmLabel:'Remove', 
-    danger:true, 
+    confirmLabel:'Remove',
+    danger:true,
     icon:'bi-trash-fill',
     onConfirm(){
       DB.saveAttendance(DB.getAttendance().filter(r=>r.id!==id));

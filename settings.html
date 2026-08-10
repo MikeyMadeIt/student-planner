@@ -10,6 +10,19 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
+<style>
+.sem-year-group { }
+.sem-year-label { font-size:.75rem; font-weight:700; letter-spacing:.08em; color:var(--text-faint); text-transform:uppercase; margin-bottom:8px; }
+.sem-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:12px; background:var(--surface-2); margin-bottom:6px; border:1px solid var(--border); transition:border-color .2s; }
+.sem-item-active { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+.sem-item-left { display:flex; align-items:center; gap:10px; min-width:0; }
+.sem-item-name { font-weight:600; font-size:.88rem; }
+.sem-item-dates { font-size:.72rem; color:var(--text-faint); margin-top:1px; }
+.sem-item-actions { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.sem-dot { width:9px; height:9px; border-radius:50%; background:var(--border); flex-shrink:0; }
+.sem-dot.active { background:var(--accent); box-shadow:0 0 6px var(--accent); }
+.sem-active-chip { font-size:.68rem; padding:2px 8px; background:color-mix(in srgb, var(--accent) 20%, transparent); color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -34,16 +47,9 @@
         </div>
 
         <div class="glass card-pad fade-in mb-3">
-          <div class="section-title"><i class="bi bi-flag-fill"></i>Semester</div>
-          <div class="row g-2">
-            <div class="col-md-6"><label>Semester Name</label><input class="form-control" id="semName"></div>
-            <div class="col-md-6"><label>School Year</label><input class="form-control" id="semYear"></div>
-            <div class="col-md-4"><label>Start Date</label><input type="date" class="form-control" id="semStart"></div>
-            <div class="col-md-4"><label>End Date</label><input type="date" class="form-control" id="semEnd"></div>
-            <div class="col-md-4"><label>Finals Date</label><input type="date" class="form-control" id="semFinals"></div>
-            <div class="col-md-6"><label>Total Weeks</label><input type="number" class="form-control" id="semWeeks"></div>
-          </div>
-          <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterSettings()">Save Semester</button>
+          <div class="section-title"><i class="bi bi-calendar3"></i>Academic Semesters</div>
+          <p class="text-faint mb-3" style="font-size:.8rem">Create, manage, and switch between semesters. Each semester has its own subjects, attendance, grades, tasks, notes, and syllabi.</p>
+          <div id="semesterManager">Loading…</div>
         </div>
 
         <div class="glass card-pad fade-in">
@@ -80,13 +86,29 @@
         <div class="glass card-pad fade-in">
           <div class="section-title"><i class="bi bi-info-circle-fill"></i>About</div>
           <p class="text-soft" style="font-size:.85rem">Student Planner PWA — all your data stays on this device via localStorage. No account, no server, no tracking.</p>
-          <p class="text-faint" style="font-size:.75rem">Version 1.0.0</p>
+          <p class="text-faint" style="font-size:.75rem">Version 2.0.0 · Multi-Semester Edition</p>
         </div>
       </div>
     </div>
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
+
+<!-- Semester Modal -->
+<div class="modal fade" id="semModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass" style="border:1px solid var(--border)">
+      <div class="modal-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="mb-0 fw-bold" id="semModalTitle">Add Semester</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div id="semModalBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/storage.js"></script>

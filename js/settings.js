@@ -1,5 +1,5 @@
 /* ============================================================
-   SETTINGS.JS
+   SETTINGS.JS — includes Academic Semester Management
    ============================================================ */
 
 function initSettings(){
@@ -11,17 +11,10 @@ function initSettings(){
   document.getElementById('sSection').value = s.section||'';
   document.getElementById('sSchool').value = s.school||'';
 
-  const sem = DB.getSemester();
-  document.getElementById('semName').value = sem.name;
-  document.getElementById('semYear').value = sem.schoolYear;
-  document.getElementById('semStart').value = sem.startDate;
-  document.getElementById('semEnd').value = sem.endDate;
-  document.getElementById('semFinals').value = sem.finalsDate;
-  document.getElementById('semWeeks').value = sem.totalWeeks;
-
   highlightTheme(s.theme);
   renderAccentPicker(s.accent);
   renderNotifToggles(s.notifications);
+  renderSemesterManager();
 }
 
 function saveProfile(){
@@ -36,19 +29,187 @@ function saveProfile(){
   Toast.show('Profile saved');
 }
 
-function saveSemesterSettings(){
-  const sem = {
-    name: document.getElementById('semName').value.trim(),
-    schoolYear: document.getElementById('semYear').value.trim(),
-    startDate: document.getElementById('semStart').value,
-    endDate: document.getElementById('semEnd').value,
-    finalsDate: document.getElementById('semFinals').value,
-    totalWeeks: parseInt(document.getElementById('semWeeks').value)||15,
-  };
-  DB.saveSemester(sem);
-  Toast.show('Semester updated');
+/* ============================================================
+   SEMESTER MANAGEMENT
+   ============================================================ */
+
+function renderSemesterManager(){
+  const wrap = document.getElementById('semesterManager');
+  if(!wrap) return;
+  const semesters = DB.getSemesters();
+  const activeId = DB.getActiveSemesterId();
+
+  // Group by school year
+  const byYear = {};
+  semesters.forEach(sem => {
+    if(!byYear[sem.schoolYear]) byYear[sem.schoolYear] = [];
+    byYear[sem.schoolYear].push(sem);
+  });
+
+  const sortedYears = Object.keys(byYear).sort();
+
+  let html = '';
+  sortedYears.forEach(year => {
+    const yearSems = byYear[year].sort((a,b) => a.name.localeCompare(b.name));
+    html += `<div class="sem-year-group mb-3">
+      <div class="sem-year-label">${year}</div>
+      ${yearSems.map(sem => {
+        const isActive = sem.id === activeId;
+        return `<div class="sem-item ${isActive?'sem-item-active':''}">
+          <div class="sem-item-left">
+            <span class="sem-dot ${isActive?'active':''}"></span>
+            <div>
+              <div class="sem-item-name">${escapeSettingsHtml(sem.name)}</div>
+              <div class="sem-item-dates">${sem.startDate} – ${sem.endDate}</div>
+            </div>
+          </div>
+          <div class="sem-item-actions">
+            ${isActive ? '<span class="chip sem-active-chip"><i class="bi bi-check2"></i> Active</span>' :
+              `<button class="btn btn-ghost btn-sm" onclick="switchActiveSemester('${sem.id}')"><i class="bi bi-toggle-off me-1"></i>Switch</button>`}
+            <button class="btn btn-ghost btn-sm" onclick="openEditSemesterModal('${sem.id}')"><i class="bi bi-pencil"></i></button>
+            ${semesters.length > 1 ? `<button class="btn btn-ghost btn-sm text-danger" onclick="confirmDeleteSemester('${sem.id}')"><i class="bi bi-trash"></i></button>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  html += `<div class="d-flex gap-2 mt-2">
+    <button class="btn btn-accent btn-sm flex-grow-1" onclick="openAddSemesterModal()"><i class="bi bi-plus me-1"></i>Add Semester</button>
+  </div>`;
+
+  wrap.innerHTML = html;
 }
 
+function switchActiveSemester(id){
+  DB.setActiveSemester(id);
+  renderSemesterManager();
+  const sem = DB.getActiveSemester();
+  Toast.show(`Switched to ${sem.schoolYear} • ${sem.name}`);
+}
+
+function openAddSemesterModal(){
+  const body = document.getElementById('semModalBody');
+  body.innerHTML = `
+    <input type="hidden" id="editSemId" value="">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <label>School Year</label>
+        <input class="form-control" id="semYearInput" placeholder="e.g. 2026-2027" value="${new Date().getFullYear()}-${new Date().getFullYear()+1}">
+      </div>
+      <div class="col-md-6">
+        <label>Semester</label>
+        <select class="form-select" id="semNameInput">
+          <option value="1st Semester">1st Semester</option>
+          <option value="2nd Semester">2nd Semester</option>
+        </select>
+      </div>
+      <div class="col-md-6"><label>Start Date</label><input type="date" class="form-control" id="semStartInput" value="${ymdLocalNow()}"></div>
+      <div class="col-md-6"><label>End Date</label><input type="date" class="form-control" id="semEndInput" value="${ymdLocalFuture(105)}"></div>
+      <div class="col-md-6"><label>Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${ymdLocalFuture(100)}"></div>
+      <div class="col-md-6"><label>Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="15"></div>
+    </div>
+    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1"></i>Add Semester</button>`;
+  document.getElementById('semModalTitle').textContent = 'Add Semester';
+  new bootstrap.Modal(document.getElementById('semModal')).show();
+}
+
+function openEditSemesterModal(id){
+  const sem = DB.getSemesters().find(s=>s.id===id);
+  if(!sem) return;
+  const body = document.getElementById('semModalBody');
+  body.innerHTML = `
+    <input type="hidden" id="editSemId" value="${sem.id}">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <label>School Year</label>
+        <input class="form-control" id="semYearInput" value="${sem.schoolYear}" readonly style="opacity:.7">
+        <div class="text-faint mt-1" style="font-size:.75rem">School year cannot be changed (affects ID)</div>
+      </div>
+      <div class="col-md-6">
+        <label>Semester</label>
+        <input class="form-control" id="semNameInput" value="${sem.name}" readonly style="opacity:.7">
+        <div class="text-faint mt-1" style="font-size:.75rem">Name cannot be changed (affects ID)</div>
+      </div>
+      <div class="col-md-6"><label>Start Date</label><input type="date" class="form-control" id="semStartInput" value="${sem.startDate}"></div>
+      <div class="col-md-6"><label>End Date</label><input type="date" class="form-control" id="semEndInput" value="${sem.endDate}"></div>
+      <div class="col-md-6"><label>Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${sem.finalsDate}"></div>
+      <div class="col-md-6"><label>Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="${sem.totalWeeks}"></div>
+    </div>
+    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1"></i>Update Semester</button>`;
+  document.getElementById('semModalTitle').textContent = 'Edit Semester';
+  new bootstrap.Modal(document.getElementById('semModal')).show();
+}
+
+function saveSemesterModal(){
+  const editId = document.getElementById('editSemId').value;
+  const schoolYear = (document.getElementById('semYearInput').value||'').trim();
+  const semNameEl = document.getElementById('semNameInput');
+  const semName = semNameEl ? semNameEl.value.trim() : '1st Semester';
+  const startDate = document.getElementById('semStartInput').value;
+  const endDate = document.getElementById('semEndInput').value;
+  const finalsDate = document.getElementById('semFinalsInput').value;
+  const totalWeeks = parseInt(document.getElementById('semWeeksInput').value)||15;
+
+  if(!schoolYear){ Toast.show('School year is required','high','bi-exclamation-triangle'); return; }
+
+  if(editId){
+    DB.updateSemester(editId, { startDate, endDate, finalsDate, totalWeeks });
+    Toast.show('Semester updated');
+  } else {
+    const result = DB.addSemester(schoolYear, semName, { startDate, endDate, finalsDate, totalWeeks });
+    if(!result){
+      Toast.show('That semester already exists','high','bi-exclamation-triangle');
+    } else {
+      Toast.show('Semester added');
+    }
+  }
+
+  const modalEl = document.getElementById('semModal');
+  const inst = bootstrap.Modal.getInstance(modalEl);
+  if(inst) inst.hide();
+  renderSemesterManager();
+}
+
+function confirmDeleteSemester(id){
+  const sem = DB.getSemesters().find(s=>s.id===id);
+  if(!sem) return;
+  const subCount = DB.getSubjectsForSemester(id).length;
+  const taskCount = DB.getTasksForSemester(id).length;
+  const noteCount = DB.getNotesForSemester(id).length;
+  const attCount = DB.getAttendanceForSemester(id).length;
+  confirmAction({
+    title:`Delete ${sem.schoolYear} ${sem.name}?`,
+    message:`This will remove the semester record only. All linked data (${subCount} subjects, ${attCount} attendance, ${taskCount} tasks, ${noteCount} notes) will remain in storage but will no longer be associated with an active semester.`,
+    confirmLabel:'Delete Semester', danger:true, icon:'bi-trash-fill',
+    onConfirm(){
+      if(!DB.deleteSemester(id)){
+        Toast.show('Cannot delete the only semester','high','bi-exclamation-triangle');
+      } else {
+        Toast.show('Semester deleted');
+        renderSemesterManager();
+      }
+    }
+  });
+}
+
+function ymdLocalNow(){
+  return ymdLocal(new Date());
+}
+function ymdLocalFuture(days){
+  return ymdLocal(new Date(Date.now()+ 1000*60*60*24*days));
+}
+function ymdLocal(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function escapeSettingsHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+/* ============================================================
+   THEME / ACCENT / NOTIF (unchanged)
+   ============================================================ */
 function chooseTheme(theme){ setTheme(theme); highlightTheme(theme); }
 function highlightTheme(theme){
   ['dark','light','amoled'].forEach(t=> document.getElementById('theme_'+t).classList.toggle('btn-accent', t===theme));

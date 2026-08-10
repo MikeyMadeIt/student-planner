@@ -1702,3 +1702,83 @@ td { vertical-align: middle; }
 @media (min-width: 992px) {
   .sidebar-section + .nav-link { margin-top: 2px; }
 }
+
+/* ── Active Semester Banner ── */
+#semBanner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  pointer-events: none;
+  user-select: none;
+}
+#semBanner i {
+  font-size: .75rem;
+  opacity: .85;
+}
+
+/* On desktop: shift right to clear the sidebar */
+@media (min-width: 992px) {
+  #semBanner {
+    left: calc(200px + 50%);   /* 200px = sidebar width */
+    transform: translateX(-50%);
+    top: 14px;
+  }
+}
+@media (min-width: 1400px) {
+  #semBanner {
+    left: calc(230px + 50%);
+  }
+}
+/* On mobile: sit at top-center, below the mobile topbar */
+@media (max-width: 991px) {
+  #semBanner {
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom));  /* above mobile nav */
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* ── Schedule toggle buttons (archive + view switchers) ── */
+.sched-toggle-btn {
+  height: 38px;
+  min-width: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  background: transparent;
+  transition: background .18s, color .18s, border-color .18s, box-shadow .18s;
+}
+.sched-toggle-btn:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.sched-toggle-btn.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}

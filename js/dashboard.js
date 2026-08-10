@@ -23,7 +23,8 @@ function initDashboard(){
 /* ---------- TODAY'S SCHEDULE ---------- */
 function todaysSubjects(){
   const dayName = DAY_NAMES[new Date().getDay()];
-  return DB.getSubjects().filter(s=>!s.archived && s.days.includes(dayName))
+  const semId = DB.getActiveSemesterId();
+  return DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived && s.days.includes(dayName))
     .sort((a,b)=> a.start.localeCompare(b.start));
 }
 function renderTodaySchedule(){
@@ -53,7 +54,8 @@ function renderNextClassCountdown(){
   for(let d=0; d<7; d++){
     const day = new Date(now); day.setDate(now.getDate()+d);
     const dayName = DAY_NAMES[day.getDay()];
-    DB.getSubjects().filter(s=>!s.archived && s.days.includes(dayName)).forEach(s=>{
+    const _semId = DB.getActiveSemesterId();
+    DB.getSubjects().filter(s=>s.semesterId===_semId && !s.archived && s.days.includes(dayName)).forEach(s=>{
       const dateStr = ymdLocal(day);
       const mins = minutesUntil(dateStr, s.start);
       if(mins >= -5 && mins < bestMin){ bestMin = mins; best = s; }
@@ -81,7 +83,8 @@ function renderNextClassCountdown(){
 /* ---------- TODAY'S TASKS ---------- */
 function renderTodayTasks(){
   const wrap = document.getElementById('todayTasks');
-  const tasks = DB.getTasks().filter(t=>t.dueDate===todayKey() && t.status!=='completed').sort((a,b)=>a.dueTime.localeCompare(b.dueTime));
+  const _semId2 = DB.getActiveSemesterId();
+  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId2 && t.dueDate===todayKey() && t.status!=='completed').sort((a,b)=>a.dueTime.localeCompare(b.dueTime));
   if(!tasks.length){ wrap.innerHTML = emptyState('bi-check2-circle','All clear for today',''); return; }
   wrap.innerHTML = tasks.slice(0,5).map(t=>`
     <div class="list-row">
@@ -106,8 +109,9 @@ function quickCompleteTask(id, el){
 /* ---------- UPCOMING DEADLINES ---------- */
 function renderUpcomingDeadlines(){
   const wrap = document.getElementById('upcomingDeadlines');
-  const subs = DB.getSubjects();
-  const tasks = DB.getTasks().filter(t=>t.status!=='completed' && t.dueDate>=todayKey())
+  const _semId3 = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===_semId3);
+  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId3 && t.status!=='completed' && t.dueDate>=todayKey())
     .sort((a,b)=> (a.dueDate+a.dueTime).localeCompare(b.dueDate+b.dueTime)).slice(0,5);
   if(!tasks.length){ wrap.innerHTML = emptyState('bi-emoji-smile','No upcoming deadlines',''); return; }
   wrap.innerHTML = tasks.map(t=>{
@@ -126,7 +130,8 @@ function renderUpcomingDeadlines(){
 
 /* ---------- ASSIGNMENT PROGRESS ---------- */
 function renderAssignmentProgress(){
-  const tasks = DB.getTasks().filter(t=>['Homework','Project','Quiz','Exam'].includes(t.category));
+  const _semId4 = DB.getActiveSemesterId();
+  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId4 && ['Homework','Project','Quiz','Exam'].includes(t.category));
   const done = tasks.filter(t=>t.status==='completed').length;
   const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
   document.getElementById('assignProg').textContent = pct+'%';
@@ -136,7 +141,9 @@ function renderAssignmentProgress(){
 
 /* ---------- ATTENDANCE STAT ---------- */
 function computeAttendanceRate(){
-  const records = DB.getAttendance();
+  const semId = DB.getActiveSemesterId();
+  const allRecs = DB.getAttendance().filter(r=>r.semesterId===semId);
+  const records = allRecs.filter(r=>r.status!=='No Classes');
   if(!records.length) return null;
   const present = records.filter(r=>r.status==='Present' || r.status==='Excused').length;
   return Math.round((present/records.length)*100);
@@ -149,8 +156,9 @@ function renderAttendanceStat(){
 
 /* ---------- GPA STAT ---------- */
 function computeGPA(){
-  const grades = DB.getGrades();
-  const subs = DB.getSubjects();
+  const semId = DB.getActiveSemesterId();
+  const grades = DB.getGrades().filter(g=>g.semesterId===semId);
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId);
   let totalPoints=0, totalUnits=0;
   grades.forEach(g=>{
     const sub = subs.find(s=>s.id===g.subjectId); if(!sub) return;
@@ -192,7 +200,8 @@ function renderWeekPreview(){
     const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i);
     const dateStr = ymdLocal(d);
     const isToday = dateStr===todayKey();
-    const dayTasks = tasks.filter(t=>t.dueDate===dateStr).length;
+    const semId2 = DB.getActiveSemesterId();
+    const dayTasks = DB.getTasks().filter(t=>t.semesterId===semId2 && t.dueDate===dateStr).length;
     const daySubs = todaysSubjectsFor(d).length;
     html += `<div class="col">
       <div class="cal-cell ${isToday?'today':''}" style="min-height:70px;cursor:pointer" onclick="location.href='calendar.html'">
@@ -206,7 +215,8 @@ function renderWeekPreview(){
 }
 function todaysSubjectsFor(date){
   const dayName = DAY_NAMES[date.getDay()];
-  return DB.getSubjects().filter(s=>!s.archived && s.days.includes(dayName));
+  const semId = DB.getActiveSemesterId();
+  return DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived && s.days.includes(dayName));
 }
 
 /* ---------- SEMESTER PROGRESS ---------- */
@@ -230,7 +240,8 @@ function renderSemesterProgress(){
 function renderProductivityChart(){
   const ctx = document.getElementById('prodChart');
   if(!ctx || !window.Chart) return;
-  const tasks = DB.getTasks();
+  const semId = DB.getActiveSemesterId();
+  const tasks = DB.getTasks().filter(t=>t.semesterId===semId);
   const labels=[], data=[];
   for(let i=6;i>=0;i--){
     const d = new Date(); d.setDate(d.getDate()-i);
@@ -253,8 +264,9 @@ function renderProductivityChart(){
 function saveQuickNote(){
   const box = document.getElementById('quickNoteBox');
   if(!box.value.trim()) return;
+  const semId = DB.getActiveSemesterId();
   const notes = DB.getNotes();
-  notes.unshift({ id:DB.uid(), title:'Quick Note', content:box.value.trim(), category:'Organization', pinned:false, favorite:false, checklist:[], createdAt:Date.now(), updatedAt:Date.now() });
+  notes.unshift({ id:DB.uid(), title:'Quick Note', content:box.value.trim(), category:'Organization', pinned:false, favorite:false, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
   DB.saveNotes(notes);
   box.value='';
   Toast.show('Note saved');
@@ -384,8 +396,9 @@ function setupQuickAddHandlers(){
 function quickAddModal(type){
   const body = document.getElementById('quickModalBody');
   const modal = new bootstrap.Modal(document.getElementById('quickModal'));
+  const semId = DB.getActiveSemesterId();
   if(type==='task'){
-    const subs = DB.getSubjects();
+    const subs = DB.getSubjects().filter(s=>s.semesterId===semId);
     body.innerHTML = `
       <div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-plus-square me-2"></i>Add Task</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="mb-2"><label>Title</label><input class="form-control" id="qaTitle" placeholder="e.g. Finish lab report"></div>
@@ -416,12 +429,14 @@ function quickAddModal(type){
 function saveQuickTask(){
   const title = document.getElementById('qaTitle').value.trim();
   if(!title){ Toast.show('Please enter a title','high','bi-exclamation-triangle'); return; }
+  const semId = DB.getActiveSemesterId();
   const tasks = DB.getTasks();
   tasks.push({
     id:DB.uid(), title, description:'', subjectId: document.getElementById('qaSub').value || null,
     priority: document.getElementById('qaPri').value, category: document.getElementById('qaCat').value,
     dueDate: document.getElementById('qaDate').value, dueTime: document.getElementById('qaTime').value,
-    status:'not-started', progress:0, reminder:true, checklist:[], repeat:'none', score:null, remarks:'', createdAt:Date.now()
+    status:'not-started', progress:0, reminder:true, checklist:[], repeat:'none', score:null, remarks:'',
+    semesterId: semId, createdAt:Date.now()
   });
   DB.saveTasks(tasks);
   bootstrap.Modal.getInstance(document.getElementById('quickModal')).hide();
@@ -431,8 +446,9 @@ function saveQuickTask(){
 function saveQuickNoteModal(){
   const title = document.getElementById('qaNTitle').value.trim() || 'Untitled';
   const content = document.getElementById('qaNContent').value.trim();
+  const semId = DB.getActiveSemesterId();
   const notes = DB.getNotes();
-  notes.unshift({ id:DB.uid(), title, content, category:'Organization', pinned:false, favorite:false, checklist:[], createdAt:Date.now(), updatedAt:Date.now() });
+  notes.unshift({ id:DB.uid(), title, content, category:'Organization', pinned:false, favorite:false, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
   DB.saveNotes(notes);
   bootstrap.Modal.getInstance(document.getElementById('quickModal')).hide();
   Toast.show('Note added');

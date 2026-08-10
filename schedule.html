@@ -42,17 +42,12 @@
             <option value="professor">Sort: Professor</option>
           </select>
         </div>
-        <div class="col-6 col-md-2">
-          <select class="form-select" id="semesterSelect"></select>
+        <div class="col-12 col-md-4 d-flex gap-2">
+          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" title="Show archived" id="archiveToggleBtn" onclick="toggleArchivedView()"><i class="bi bi-archive"></i></button>
+          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn active" data-view="card" onclick="switchView('card')" title="Card view"><i class="bi bi-grid-3x3-gap"></i></button>
+          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" data-view="timetable" onclick="switchView('timetable')" title="Weekly timetable"><i class="bi bi-calendar2-week"></i></button>
+          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" data-view="timeline" onclick="switchView('timeline')" title="Timeline"><i class="bi bi-list-ol"></i></button>
         </div>
-        <div class="col-6 col-md-2 d-flex gap-2">
-          <button class="btn-icon flex-grow-1" title="Show archived" id="archiveToggleBtn" onclick="toggleArchivedView()"><i class="bi bi-archive"></i></button>
-        </div>
-      </div>
-      <div class="btn-group mt-3" role="group">
-        <button class="btn btn-ghost btn-sm active" data-view="card" onclick="switchView('card')"><i class="bi bi-grid-3x3-gap me-1"></i>Cards</button>
-        <button class="btn btn-ghost btn-sm" data-view="timetable" onclick="switchView('timetable')"><i class="bi bi-calendar2-week me-1"></i>Weekly Timetable</button>
-        <button class="btn btn-ghost btn-sm" data-view="timeline" onclick="switchView('timeline')"><i class="bi bi-list-ol me-1"></i>Timeline</button>
       </div>
     </div>
 

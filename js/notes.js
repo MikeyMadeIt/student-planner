@@ -18,7 +18,8 @@ function toggleFavFilter(){
 function getFilteredNotes(){
   const q = document.getElementById('noteSearch').value.toLowerCase().trim();
   const cat = document.getElementById('noteCatFilter').value;
-  let list = DB.getNotes();
+  const semId = DB.getActiveSemesterId();
+  let list = DB.getNotes().filter(n=>n.semesterId===semId);
   if(q) list = list.filter(n=> n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
   if(cat) list = list.filter(n=>n.category===cat);
   if(favFilterOn) list = list.filter(n=>n.favorite);
@@ -118,7 +119,8 @@ function saveNote(){
     const idx = notes.findIndex(n=>n.id===id);
     notes[idx] = { ...notes[idx], title, content, category, pinned, favorite, updatedAt:Date.now() };
   } else {
-    notes.unshift({ id:DB.uid(), title, content, category, pinned, favorite, checklist:[], createdAt:Date.now(), updatedAt:Date.now() });
+    const semId = DB.getActiveSemesterId();
+    notes.unshift({ id:DB.uid(), title, content, category, pinned, favorite, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
   }
   DB.saveNotes(notes);
   bootstrap.Modal.getInstance(document.getElementById('noteModal')).hide();

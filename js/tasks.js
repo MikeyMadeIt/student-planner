@@ -29,7 +29,8 @@ function getFilteredTasks(){
   const cat = document.getElementById('taskCatFilter').value;
   const pri = document.getElementById('taskPriFilter').value;
   const sort = document.getElementById('taskSort').value;
-  let list = DB.getTasks().filter(t=>t.status!=='completed');
+  const semId = DB.getActiveSemesterId();
+  let list = DB.getTasks().filter(t=>t.semesterId===semId && t.status!=='completed');
   if(q) list = list.filter(t=> t.title.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q));
   if(cat) list = list.filter(t=>t.category===cat);
   if(pri) list = list.filter(t=>t.priority===pri);
@@ -76,7 +77,8 @@ function renderListView(){
 }
 
 function renderBoardView(){
-  const list = getFilteredTasks().concat(DB.getTasks().filter(t=>t.status==='completed').slice(0,10));
+  const semId = DB.getActiveSemesterId();
+  const list = getFilteredTasks().concat(DB.getTasks().filter(t=>t.semesterId===semId && t.status==='completed').slice(0,10));
   ['not-started','in-progress','completed'].forEach(status=>{
     const col = document.querySelector(`.kanban-col[data-status="${status}"]`);
     const items = list.filter(t=>t.status===status);
@@ -115,7 +117,8 @@ function completeTask(id){
 
 function renderCompletedHistory(){
   const wrap = document.getElementById('completedHistory');
-  const done = DB.getTasks().filter(t=>t.status==='completed').sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+  const semId = DB.getActiveSemesterId();
+  const done = DB.getTasks().filter(t=>t.semesterId===semId && t.status==='completed').sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
   if(!done.length){ wrap.innerHTML = `<div class="text-faint text-center py-3" style="font-size:.82rem">Nothing completed yet</div>`; return; }
   wrap.innerHTML = done.map(t=>`
     <div class="list-row completed">
@@ -150,7 +153,8 @@ function deleteTask(id){
 function openTaskModal(id){
   const t = id ? DB.getTasks().find(x=>x.id===id) : null;
   document.getElementById('taskModalTitle').textContent = t ? 'Edit Task' : 'Add Task';
-  const subs = DB.getSubjects();
+  const semId = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId);
   const checklist = t && t.checklist ? t.checklist : [];
   const showScore = t && ['Quiz','Exam','Project','Homework'].includes(t.category);
 
@@ -236,7 +240,8 @@ function saveTask(){
     tasks[idx] = { ...tasks[idx], ...data };
     if(!wasCompleted && data.status==='completed'){ tasks[idx].completedAt = Date.now(); fireConfetti(); }
   } else {
-    tasks.push({ id: DB.uid(), createdAt: Date.now(), ...data });
+    const newSemId = DB.getActiveSemesterId();
+    tasks.push({ id: DB.uid(), createdAt: Date.now(), semesterId: newSemId, ...data });
   }
   DB.saveTasks(tasks);
   bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();

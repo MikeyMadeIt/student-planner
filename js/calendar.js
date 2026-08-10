@@ -25,7 +25,8 @@ function navCal(dir){
 function eventsForDate(dateStr){
   const events = [];
   const dayName = DAY_NAMES[new Date(dateStr+'T00:00').getDay()];
-  DB.getSubjects().filter(s=>!s.archived && s.days.includes(dayName)).forEach(s=>{
+  const _calSemId = DB.getActiveSemesterId();
+  DB.getSubjects().filter(s=>s.semesterId===_calSemId && !s.archived && s.days.includes(dayName)).forEach(s=>{
     events.push({ title:`${s.code}`, color:s.color, type:'class', time:s.start, subject:s });
   });
   return events.sort((a,b)=> (a.time||'').localeCompare(b.time||''));
@@ -214,7 +215,8 @@ let taskCalDate = new Date();
 let taskEditingId = null;
 
 function taskEventsForDate(dateStr){
-  return DB.getTasks().filter(t=>t.dueDate===dateStr).map(t=>({ ...t, color: CATEGORY_COLORS[t.category]||'#8a90a6' }));
+  const _calSemId2 = DB.getActiveSemesterId();
+  return DB.getTasks().filter(t=>t.semesterId===_calSemId2 && t.dueDate===dateStr).map(t=>({ ...t, color: CATEGORY_COLORS[t.category]||'#8a90a6' }));
 }
 
 function setTaskCalMode(m){
@@ -317,7 +319,8 @@ function renderTaskCalListForPeriod(){
   const wrap = document.getElementById('taskCalList');
   if(!wrap) return;
   const periodDates = getTaskPeriodDates();
-  const tasks = DB.getTasks()
+  const _calSemId4 = DB.getActiveSemesterId();
+  const tasks = DB.getTasks().filter(t=>t.semesterId===_calSemId4)
     .filter(t=>periodDates.includes(t.dueDate))
     .sort((a,b)=> (a.dueDate+a.dueTime).localeCompare(b.dueDate+b.dueTime));
   if(!tasks.length){
@@ -340,7 +343,8 @@ function renderTaskCalListForPeriod(){
 function openTaskModal(id, presetDate){
   taskEditingId = id || null;
   const t = id ? DB.getTasks().find(x=>x.id===id) : null;
-  const subs = DB.getSubjects();
+  const _calSemId3 = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===_calSemId3);
   const body = document.getElementById('calTaskModalBody');
   body.innerHTML = `
     <h5 class="mb-3"><i class="bi bi-check2-square me-2"></i>${t?'Edit':'Add'} Task</h5>
@@ -382,7 +386,8 @@ function saveCalTask(){
     const idx = tasks.findIndex(t=>t.id===id);
     tasks[idx] = { ...tasks[idx], ...data };
   } else {
-    tasks.push({ id: DB.uid(), progress:0, repeat:'none', score:null, remarks:'', reminder:true, checklist:[], createdAt:Date.now(), ...data });
+    const _calNewSemId = DB.getActiveSemesterId();
+    tasks.push({ id: DB.uid(), progress:0, repeat:'none', score:null, remarks:'', reminder:true, checklist:[], createdAt:Date.now(), semesterId:_calNewSemId, ...data });
   }
   DB.saveTasks(tasks);
   bootstrap.Modal.getInstance(document.getElementById('calTaskModal')).hide();

@@ -53,12 +53,25 @@ function normalizeGradeRecord(g){
   return g;
 }
 function syncGradesWithSubjects(){
-  const subjects = DB.getSubjects().filter(s=>!s.archived);
-  let grades = DB.getGrades().map(normalizeGradeRecord);
-  subjects.forEach(s=>{ if(!grades.find(g=>g.subjectId===s.id)) grades.push({subjectId:s.id,components:[]}); });
-  grades = grades.filter(g=>subjects.some(s=>s.id===g.subjectId));
-  DB.saveGrades(grades);
-  return grades;
+  const semId = DB.getActiveSemesterId();
+  const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
+  let allGrades = DB.getGrades().map(normalizeGradeRecord);
+  // Add missing grade records for subjects in this semester
+  subjects.forEach(s=>{
+    if(!allGrades.find(g=>g.subjectId===s.id)){
+      allGrades.push({subjectId:s.id, semesterId:semId, components:[]});
+    }
+  });
+  // Ensure semesterId on existing grade records matches subject
+  allGrades.forEach(g=>{
+    if(!g.semesterId){
+      const sub = DB.getSubject(g.subjectId);
+      g.semesterId = sub ? sub.semesterId : semId;
+    }
+  });
+  DB.saveGrades(allGrades);
+  // Return only grades for active semester subjects
+  return allGrades.filter(g=>subjects.some(s=>s.id===g.subjectId));
 }
 
 /* ---- Grade math ---- */
@@ -95,7 +108,8 @@ function initGrades(){
 
 /* ---- Overview ---- */
 function renderGradesOverview(){
-  const subjects = DB.getSubjects().filter(s=>!s.archived);
+  const semId = DB.getActiveSemesterId();
+  const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   const grades = syncGradesWithSubjects();
   const rows = subjects.map(s=>{
     const g = grades.find(x=>x.subjectId===s.id)||{components:[]};
@@ -117,10 +131,13 @@ function renderGradesOverview(){
    ============================================================ */
 function renderGradeCards(){
   const wrap = document.getElementById('gradesWrap');
-  const subs = DB.getSubjects().filter(s=>!s.archived);
+  const semId = DB.getActiveSemesterId();
+  const sem = DB.getActiveSemester();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   const grades = DB.getGrades().map(normalizeGradeRecord);
   if(!subs.length){
-    wrap.innerHTML=`<div class="col-12"><div class="glass card-pad text-center py-5 text-faint">Add subjects in Schedule to start tracking grades.</div></div>`;
+    const msg = sem ? `No subjects yet for ${sem.schoolYear} • ${sem.name}. Add subjects in Schedule.` : 'Add subjects in Schedule to start tracking grades.';
+    wrap.innerHTML=`<div class="col-12"><div class="glass card-pad text-center py-5 text-faint">${msg}</div></div>`;
     return;
   }
   wrap.innerHTML = subs.map(s=>{
@@ -365,9 +382,11 @@ function saveGradeComponents(){
         .filter(a=>a.name||(a.score!==null&&a.totalItems!==null))
         .map(a=>({id:a.id||DB.uid(),name:(a.name||'').trim(),score:a.score,totalItems:a.totalItems}))
     })).filter(c=>c.name);
+  const semId = DB.getActiveSemesterId();
   const grades = DB.getGrades().map(normalizeGradeRecord);
   const idx = grades.findIndex(g=>g.subjectId===gradeDraftSubjectId);
-  if(idx>-1) grades[idx].components=cleaned; else grades.push({subjectId:gradeDraftSubjectId,components:cleaned});
+  if(idx>-1){ grades[idx].components=cleaned; grades[idx].semesterId = grades[idx].semesterId || semId; }
+  else grades.push({subjectId:gradeDraftSubjectId, semesterId:semId, components:cleaned});
   DB.saveGrades(grades);
   const inst = bootstrap.Modal.getInstance(document.getElementById('gradeModal'));
   if(inst) inst.hide();
