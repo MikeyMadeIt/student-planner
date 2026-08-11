@@ -548,7 +548,7 @@ function openTaskModal(id) {
   const subs = DB.getSubjects().filter(s => s.semesterId === semId);
   const checklist = t && t.checklist ? t.checklist : [];
 
-  const CATEGORIES = ['Academic', 'Assignment', 'Project', 'Exam', 'Personal', 'Organization', 'Other'];
+  const CATEGORIES = ['Academic', 'Assignment', 'Project', 'Exam', 'Homework', 'Personal', 'Organization', 'Other'];
   const PRIORITIES = ['low', 'medium', 'high'];
 
   document.getElementById('taskModalBody').innerHTML = `
