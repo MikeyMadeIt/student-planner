@@ -50,42 +50,73 @@
       </div>
     </div>
 
-    <!-- CONTROLS: SEARCH + FILTERS + SORT -->
-    <div class="tk-controls glass card-pad fade-in">
+    <!-- Hidden state inputs — read by JS, not shown to user -->
+    <input type="hidden" id="tkSort" value="due">
+    <input type="hidden" id="tkCatFilter" value="">
+    <input type="hidden" id="tkSubFilter" value="">
+
+    <!-- CONTROLS -->
+    <div class="tk-controls fade-in">
       <div class="tk-search-wrap">
         <i class="bi bi-search tk-search-icon"></i>
         <input class="form-control tk-search-input" id="tkSearch" placeholder="Search tasks…">
       </div>
-      <div class="tk-filter-pills" id="tkFilterPills">
-        <button class="tk-pill active" data-filter="all" onclick="setFilter('all')">All</button>
-        <button class="tk-pill" data-filter="active" onclick="setFilter('active')">Active</button>
-        <button class="tk-pill" data-filter="completed" onclick="setFilter('completed')">Completed</button>
-        <button class="tk-pill" data-filter="overdue" onclick="setFilter('overdue')">Overdue</button>
-      </div>
-      <div class="tk-sort-wrap">
-        <select class="form-select tk-sort-select" id="tkSort" onchange="renderTasks()">
-          <option value="due">Due Date</option>
-          <option value="priority">Priority</option>
-          <option value="created">Recently Created</option>
-          <option value="updated">Recently Updated</option>
-          <option value="alpha">Alphabetical</option>
-        </select>
-        <select class="form-select tk-sort-select" id="tkCatFilter" onchange="renderTasks()">
-          <option value="">All Categories</option>
-          <option>Academic</option>
-          <option>Assignment</option>
-          <option>Project</option>
-          <option>Exam</option>
-          <option>Personal</option>
-          <option>Organization</option>
-          <option>Other</option>
-        </select>
-        <select class="form-select tk-sort-select" id="tkSubFilter" onchange="renderTasks()">
-          <option value="">All Subjects</option>
-        </select>
+      <button class="tk-icon-btn" id="filterBtn" title="Filter by status">
+        <i class="bi bi-funnel"></i>
+        <span class="tk-btn-dot" id="filterDot" style="display:none"></span>
+      </button>
+      <button class="tk-icon-btn" id="sortBtn" title="Sort and filter">
+        <i class="bi bi-sliders2"></i>
+        <span class="tk-btn-dot" id="sortDot" style="display:none"></span>
+      </button>
+    </div>
+
+    <!-- FILTER PANEL (status) - inline below controls -->
+    <div class="tk-panel" id="filterPanel" style="display:none">
+      <div class="tk-pop-section-label">Status</div>
+      <div class="tk-panel-opts">
+        <button class="tk-panel-opt active" id="fopt-all" data-filter="all">All</button>
+        <button class="tk-panel-opt" id="fopt-active" data-filter="active">Active</button>
+        <button class="tk-panel-opt" id="fopt-completed" data-filter="completed">Completed</button>
+        <button class="tk-panel-opt" id="fopt-overdue" data-filter="overdue">Overdue</button>
       </div>
     </div>
 
+    <!-- SORT PANEL - inline below controls -->
+    <div class="tk-panel tk-panel-wide" id="sortPanel" style="display:none">
+      <div class="tk-panel-cols">
+        <div class="tk-panel-col">
+          <div class="tk-pop-section-label">Sort By</div>
+          <div class="tk-panel-opts">
+            <button class="tk-panel-opt active" data-sort="due">Due Date</button>
+            <button class="tk-panel-opt" data-sort="priority">Priority</button>
+            <button class="tk-panel-opt" data-sort="created">Recently Created</button>
+            <button class="tk-panel-opt" data-sort="updated">Recently Updated</button>
+            <button class="tk-panel-opt" data-sort="alpha">Alphabetical</button>
+          </div>
+        </div>
+        <div class="tk-panel-col">
+          <div class="tk-pop-section-label">Category</div>
+          <div class="tk-panel-opts">
+            <button class="tk-panel-opt active" data-cat="">All</button>
+            <button class="tk-panel-opt" data-cat="Academic">Academic</button>
+            <button class="tk-panel-opt" data-cat="Assignment">Assignment</button>
+            <button class="tk-panel-opt" data-cat="Project">Project</button>
+            <button class="tk-panel-opt" data-cat="Exam">Exam</button>
+            <button class="tk-panel-opt" data-cat="Homework">Homework</button>
+            <button class="tk-panel-opt" data-cat="Personal">Personal</button>
+            <button class="tk-panel-opt" data-cat="Organization">Organization</button>
+            <button class="tk-panel-opt" data-cat="Other">Other</button>
+          </div>
+        </div>
+        <div class="tk-panel-col">
+          <div class="tk-pop-section-label">Subject</div>
+          <div class="tk-panel-opts" id="tkSubOptions">
+            <button class="tk-panel-opt active" data-sub="">All</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- TASK GROUPS -->
     <div id="tkGroups"></div>
 

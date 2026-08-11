@@ -1,5 +1,5 @@
 /* ============================================================
-   TASKS.JS — Redesigned productivity-focused Task page
+   TASKS.JS
    ============================================================ */
 
 let tkFilter = 'all';
@@ -7,30 +7,93 @@ let tkExpandedId = null;
 
 /* ── Init ── */
 function initTasks() {
-  populateSubjectFilter();
+  populateSubjectOptions();
   renderTasks();
   document.getElementById('tkSearch').addEventListener('input', debounce(renderTasks, 180));
-  const params = new URLSearchParams(location.search);
+
+  document.getElementById('filterBtn').addEventListener('click', function() {
+    var fp = document.getElementById('filterPanel');
+    var sp = document.getElementById('sortPanel');
+    var opening = fp.style.display === 'none';
+    sp.style.display = 'none';
+    fp.style.display = opening ? 'block' : 'none';
+  });
+
+  document.getElementById('sortBtn').addEventListener('click', function() {
+    var fp = document.getElementById('filterPanel');
+    var sp = document.getElementById('sortPanel');
+    var opening = sp.style.display === 'none';
+    fp.style.display = 'none';
+    sp.style.display = opening ? 'block' : 'none';
+  });
+
+  // Status filter options
+  document.querySelectorAll('#filterPanel .tk-panel-opt[data-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      tkFilter = this.dataset.filter;
+      document.querySelectorAll('#filterPanel .tk-panel-opt').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('filterDot').style.display = tkFilter !== 'all' ? 'block' : 'none';
+      document.getElementById('filterPanel').style.display = 'none';
+      renderTasks();
+    });
+  });
+
+  // Sort options
+  document.querySelectorAll('#sortPanel .tk-panel-opt[data-sort]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('tkSort').value = this.dataset.sort;
+      document.querySelectorAll('#sortPanel .tk-panel-opt[data-sort]').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      updateSortDot();
+      renderTasks();
+    });
+  });
+
+  // Category options
+  document.querySelectorAll('#sortPanel .tk-panel-opt[data-cat]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('tkCatFilter').value = this.dataset.cat;
+      document.querySelectorAll('#sortPanel .tk-panel-opt[data-cat]').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      updateSortDot();
+      renderTasks();
+    });
+  });
+
+  var params = new URLSearchParams(location.search);
   if (params.get('new') === '1') openTaskModal();
-
-  // Register quick-add handler for sidebar shortcut
   window.quickAddHandlers = window.quickAddHandlers || {};
-  window.quickAddHandlers['task'] = () => openTaskModal();
+  window.quickAddHandlers['task'] = function() { openTaskModal(); };
 }
 
-function setFilter(f) {
-  tkFilter = f;
-  document.querySelectorAll('.tk-pill').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
-  renderTasks();
+function updateSortDot() {
+  var nonDefault = document.getElementById('tkSort').value !== 'due'
+    || document.getElementById('tkCatFilter').value !== ''
+    || document.getElementById('tkSubFilter').value !== '';
+  document.getElementById('sortDot').style.display = nonDefault ? 'block' : 'none';
 }
 
-function populateSubjectFilter() {
-  const semId = DB.getActiveSemesterId();
-  const subs = DB.getSubjects().filter(s => s.semesterId === semId);
-  const sel = document.getElementById('tkSubFilter');
-  sel.innerHTML = '<option value="">All Subjects</option>' +
-    subs.map(s => `<option value="${s.id}">${escHtml(s.code)}</option>`).join('');
+function populateSubjectOptions() {
+  var semId = DB.getActiveSemesterId();
+  var subs = DB.getSubjects().filter(function(s) { return s.semesterId === semId; });
+  var curSub = document.getElementById('tkSubFilter').value;
+  var wrap = document.getElementById('tkSubOptions');
+  wrap.innerHTML = '<button class="tk-panel-opt ' + (curSub === '' ? 'active' : '') + '" data-sub="">All</button>' +
+    subs.map(function(s) {
+      return '<button class="tk-panel-opt ' + (curSub === s.id ? 'active' : '') + '" data-sub="' + s.id + '">' + escHtml(s.code) + '</button>';
+    }).join('');
+  wrap.querySelectorAll('.tk-panel-opt').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.getElementById('tkSubFilter').value = this.dataset.sub;
+      wrap.querySelectorAll('.tk-panel-opt').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      updateSortDot();
+      renderTasks();
+    });
+  });
 }
+
 
 /* ── Compute task status ── */
 function computeStatus(t) {
@@ -294,12 +357,8 @@ function renderTasks() {
   document.getElementById('statDone').textContent = doneStat;
   document.getElementById('statOverdue').textContent = overdueStat;
 
-  // Subject filter options refresh
-  const semSubs = DB.getSubjects().filter(s => s.semesterId === semId);
-  const subSel = document.getElementById('tkSubFilter');
-  const curSubVal = subSel.value;
-  subSel.innerHTML = '<option value="">All Subjects</option>' +
-    semSubs.map(s => `<option value="${s.id}" ${s.id === curSubVal ? 'selected' : ''}>${escHtml(s.code)}</option>`).join('');
+  // Subject options refresh
+  populateSubjectOptions();
 
   // Search/filter
   const q = document.getElementById('tkSearch').value.toLowerCase().trim();
