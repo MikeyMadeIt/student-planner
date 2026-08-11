@@ -16,61 +16,91 @@
   <nav class="sidebar" id="sidebar"></nav>
   <main class="main-content">
     <div class="mobile-topbar"><div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div></div>
-    <div class="topbar">
-      <div><h1 class="page-title">Tasks &amp; Assignments</h1><p class="page-sub">Homework, projects, quizzes and exams — all tracked together</p></div>
+
+    <!-- PAGE HEADER -->
+    <div class="tk-header fade-in">
+      <div class="tk-header-text">
+        <h1 class="page-title">Tasks</h1>
+        <p class="page-sub">Stay on top of your academic and personal work.</p>
+      </div>
       <button class="btn btn-accent" onclick="openTaskModal()"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
     </div>
 
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="row g-2">
-        <div class="col-md-4"><input class="form-control" id="taskSearch" placeholder="Search tasks…"></div>
-        <div class="col-6 col-md-2"><select class="form-select" id="taskCatFilter"><option value="">All Categories</option><option>Homework</option><option>Project</option><option>Quiz</option><option>Exam</option><option>Personal</option><option>Organization</option></select></div>
-        <div class="col-6 col-md-2"><select class="form-select" id="taskPriFilter"><option value="">All Priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
-        <div class="col-6 col-md-2"><select class="form-select" id="taskSort"><option value="due">Sort: Due Date</option><option value="priority">Sort: Priority</option><option value="created">Sort: Created</option></select></div>
-        <div class="col-6 col-md-2">
-          <div class="btn-group w-100">
-            <button class="btn btn-ghost btn-sm active" data-tview="list" onclick="switchTaskView('list')"><i class="bi bi-list-task"></i></button>
-            <button class="btn btn-ghost btn-sm" data-tview="board" onclick="switchTaskView('board')"><i class="bi bi-kanban"></i></button>
-          </div>
-        </div>
+    <!-- STATS ROW -->
+    <div class="tk-stats-row fade-in" id="tkStatsRow">
+      <div class="tk-stat-card glass">
+        <div class="tk-stat-icon tk-stat-icon-total"><i class="bi bi-list-check"></i></div>
+        <div class="tk-stat-num" id="statTotal">0</div>
+        <div class="tk-stat-lbl">Total Tasks</div>
+      </div>
+      <div class="tk-stat-card glass">
+        <div class="tk-stat-icon tk-stat-icon-active"><i class="bi bi-hourglass-split"></i></div>
+        <div class="tk-stat-num tk-stat-active" id="statActive">0</div>
+        <div class="tk-stat-lbl">Active</div>
+      </div>
+      <div class="tk-stat-card glass">
+        <div class="tk-stat-icon tk-stat-icon-done"><i class="bi bi-check-circle"></i></div>
+        <div class="tk-stat-num tk-stat-done" id="statDone">0</div>
+        <div class="tk-stat-lbl">Completed</div>
+      </div>
+      <div class="tk-stat-card glass">
+        <div class="tk-stat-icon tk-stat-icon-overdue"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="tk-stat-num tk-stat-overdue" id="statOverdue">0</div>
+        <div class="tk-stat-lbl">Overdue</div>
       </div>
     </div>
 
-    <!-- LIST VIEW -->
-    <div id="taskListView">
-      <div class="glass card-pad fade-in" id="taskListWrap"></div>
-    </div>
-
-    <!-- BOARD (DRAG & DROP) VIEW -->
-    <div id="taskBoardView" class="row g-3 d-none">
-      <div class="col-md-4"><div class="glass card-pad">
-        <div class="section-title"><i class="bi bi-circle"></i>Not Started</div>
-        <div class="kanban-col" data-status="not-started" ondrop="onDrop(event)" ondragover="event.preventDefault()"></div>
-      </div></div>
-      <div class="col-md-4"><div class="glass card-pad">
-        <div class="section-title"><i class="bi bi-hourglass-split"></i>In Progress</div>
-        <div class="kanban-col" data-status="in-progress" ondrop="onDrop(event)" ondragover="event.preventDefault()"></div>
-      </div></div>
-      <div class="col-md-4"><div class="glass card-pad">
-        <div class="section-title"><i class="bi bi-check-circle"></i>Completed</div>
-        <div class="kanban-col" data-status="completed" ondrop="onDrop(event)" ondragover="event.preventDefault()"></div>
-      </div></div>
-    </div>
-
-    <div class="glass card-pad mt-3 fade-in">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="section-title mb-0"><i class="bi bi-clock-history"></i>Completed History</div>
+    <!-- CONTROLS: SEARCH + FILTERS + SORT -->
+    <div class="tk-controls glass card-pad fade-in">
+      <div class="tk-search-wrap">
+        <i class="bi bi-search tk-search-icon"></i>
+        <input class="form-control tk-search-input" id="tkSearch" placeholder="Search tasks…">
       </div>
-      <div id="completedHistory" style="max-height:220px;overflow-y:auto"></div>
+      <div class="tk-filter-pills" id="tkFilterPills">
+        <button class="tk-pill active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="tk-pill" data-filter="active" onclick="setFilter('active')">Active</button>
+        <button class="tk-pill" data-filter="completed" onclick="setFilter('completed')">Completed</button>
+        <button class="tk-pill" data-filter="overdue" onclick="setFilter('overdue')">Overdue</button>
+      </div>
+      <div class="tk-sort-wrap">
+        <select class="form-select tk-sort-select" id="tkSort" onchange="renderTasks()">
+          <option value="due">Due Date</option>
+          <option value="priority">Priority</option>
+          <option value="created">Recently Created</option>
+          <option value="updated">Recently Updated</option>
+          <option value="alpha">Alphabetical</option>
+        </select>
+        <select class="form-select tk-sort-select" id="tkCatFilter" onchange="renderTasks()">
+          <option value="">All Categories</option>
+          <option>Academic</option>
+          <option>Assignment</option>
+          <option>Project</option>
+          <option>Exam</option>
+          <option>Personal</option>
+          <option>Organization</option>
+          <option>Other</option>
+        </select>
+        <select class="form-select tk-sort-select" id="tkSubFilter" onchange="renderTasks()">
+          <option value="">All Subjects</option>
+        </select>
+      </div>
     </div>
+
+    <!-- TASK GROUPS -->
+    <div id="tkGroups"></div>
+
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
 
+<!-- ADD/EDIT TASK MODAL -->
 <div class="modal fade" id="taskModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title" id="taskModalTitle">Add Task</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header">
+        <h5 class="modal-title" id="taskModalTitle">Add Task</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
       <div class="modal-body" id="taskModalBody"></div>
     </div>
   </div>

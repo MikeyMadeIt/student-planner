@@ -378,7 +378,8 @@ function renderUpcomingTasks(){
 function taskCatIcon(cat){
   var map = {
     Homework:'bi-pencil-square', Project:'bi-kanban', Quiz:'bi-patch-question',
-    Exam:'bi-journal-text', Personal:'bi-person', Organization:'bi-folder'
+    Exam:'bi-journal-text', Personal:'bi-person', Organization:'bi-folder',
+    Academic:'bi-book', Assignment:'bi-pencil', Other:'bi-check2-square'
   };
   return map[cat] || 'bi-check2-square';
 }
