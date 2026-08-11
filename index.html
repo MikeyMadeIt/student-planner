@@ -11,6 +11,453 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
+<style>
+/* ===== DASHBOARD REDESIGN ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* Semester overview */
+.sem-overview {
+  background: linear-gradient(135deg, rgba(var(--accent),.12), rgba(var(--accent-2),.06));
+  border: 1px solid rgba(var(--accent),.22);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.sem-overview::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(var(--accent),.15), transparent 70%);
+  pointer-events: none;
+}
+.sem-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -.01em;
+}
+.sem-meta {
+  font-size: .75rem;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.sem-pct-label {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .82rem;
+  color: rgb(var(--accent));
+}
+.sem-progress-bar {
+  height: 7px;
+  background: var(--surface-2);
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+.sem-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  border-radius: 20px;
+  transition: width 1.2s cubic-bezier(.22,.9,.35,1);
+  width: 0%;
+}
+
+/* Stats row */
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .35s var(--ease);
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(0,0,0,.28); border-color: rgba(var(--accent),.3); }
+.stat-card:hover::after { transform: scaleX(1); }
+.stat-card-val {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.6rem;
+  line-height: 1;
+  background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-card-lbl {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+.stat-card-icon {
+  font-size: .9rem;
+  color: rgba(var(--accent), 1);
+  margin-bottom: 6px;
+  opacity: .7;
+}
+
+/* Grade bar chart */
+.grade-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.grade-bar-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  min-width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.grade-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.grade-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  transition: width 1.1s cubic-bezier(.22,.9,.35,1);
+  width: 0%;
+}
+.grade-bar-val {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  min-width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Donut chart */
+.donut-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.donut-wrap svg { transform: rotate(-90deg); }
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.donut-pct {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1;
+  background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.donut-sub {
+  font-size: .55rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-weight: 700;
+}
+.att-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.att-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .73rem;
+}
+.att-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-legend-label { color: var(--text-soft); flex: 1; }
+.att-legend-val { font-family: var(--font-mono); font-weight: 700; font-size: .7rem; }
+
+/* Academic progress bars */
+.acad-row {
+  margin-bottom: 10px;
+}
+.acad-row:last-child { margin-bottom: 0; }
+.acad-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.acad-row-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.acad-row-pct {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 700;
+  color: rgb(var(--accent));
+}
+.acad-bar-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.acad-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 1.2s cubic-bezier(.22,.9,.35,1);
+  width: 0%;
+}
+.acad-bar-fill.c-subjects { background: linear-gradient(90deg, #7c6cf6, #4f8cff); }
+.acad-bar-fill.c-syllabus { background: linear-gradient(90deg, #34d399, #22d3ee); }
+.acad-bar-fill.c-tasks    { background: linear-gradient(90deg, #fbbf24, #f472b6); }
+.acad-bar-fill.c-att      { background: linear-gradient(90deg, #fb7185, #f472b6); }
+
+/* Schedule today */
+.sched-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background .18s, border-color .18s;
+  margin-bottom: 6px;
+}
+.sched-row:last-child { margin-bottom: 0; }
+.sched-row:hover { background: var(--surface-2); border-color: var(--border); }
+.sched-time {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  min-width: 70px;
+  flex-shrink: 0;
+}
+.sched-code { font-weight: 700; font-size: .82rem; }
+.sched-room { font-size: .68rem; color: var(--text-faint); }
+.sched-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Upcoming tasks */
+.task-row-dash {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background .18s, border-color .18s;
+  margin-bottom: 6px;
+  cursor: default;
+}
+.task-row-dash:last-child { margin-bottom: 0; }
+.task-row-dash:hover { background: var(--surface-2); border-color: var(--border); }
+.task-row-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: rgba(var(--accent),.14);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: .8rem;
+  color: rgb(var(--accent));
+}
+.task-title-dash { font-weight: 700; font-size: .82rem; line-height: 1.2; }
+.task-meta-dash { font-size: .67rem; color: var(--text-faint); margin-top: 1px; }
+.task-days-left {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.days-urgent { background: rgba(251,113,133,.14); color: #fb7185; border: 1px solid rgba(251,113,133,.3); }
+.days-soon   { background: rgba(251,191,36,.14);  color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+.days-ok     { background: rgba(52,211,153,.14);  color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+
+/* Dashboard card section title */
+.dash-section-title {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.dash-section-title i { color: rgb(var(--accent)); font-size: .78rem; }
+
+/* Quick actions full-width variant */
+.qa-btn-full {
+  width: 100%;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  text-align: center;
+}
+.qa-btn-full i { font-size: 1.05rem; }
+.qa-btn-full span { font-size: .65rem; font-weight: 700; letter-spacing: .02em; color: var(--text-soft); }
+.qa-btn-full:hover span { color: var(--text); }
+@media (max-width: 575px) {
+  #quickActionsRow .col { min-width: 0; }
+  .qa-btn-full span { display: none; }
+  .qa-btn-full { padding: 10px 4px; }
+}
+
+/* view-all link */
+.view-all-link {
+  font-size: .7rem;
+  font-weight: 700;
+  color: rgb(var(--accent));
+  text-decoration: none;
+  opacity: .8;
+  transition: opacity .18s;
+}
+.view-all-link:hover { opacity: 1; color: rgb(var(--accent)); }
+
+/* card header with view-all */
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-header-row .dash-section-title { margin-bottom: 0; }
+
+/* Empty states */
+.dash-empty {
+  text-align: center;
+  padding: 18px 8px;
+}
+.dash-empty i {
+  font-size: 1.4rem;
+  color: var(--text-faint);
+  display: block;
+  margin-bottom: 6px;
+}
+.dash-empty-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  margin-bottom: 2px;
+}
+.dash-empty-sub {
+  font-size: .72rem;
+  color: var(--text-faint);
+}
+
+/* Card entrance animation */
+.dash-card-anim {
+  animation: dashCardIn .55s var(--ease) both;
+}
+@keyframes dashCardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dash-card-anim:nth-child(1) { animation-delay: .03s; }
+.dash-card-anim:nth-child(2) { animation-delay: .08s; }
+.dash-card-anim:nth-child(3) { animation-delay: .13s; }
+.dash-card-anim:nth-child(4) { animation-delay: .18s; }
+.dash-card-anim:nth-child(5) { animation-delay: .22s; }
+.dash-card-anim:nth-child(6) { animation-delay: .26s; }
+.dash-card-anim:nth-child(7) { animation-delay: .30s; }
+
+/* Now badge */
+.now-badge {
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+.done-badge {
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+/* Quick actions compact */
+.quick-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.qa-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s, transform .2s var(--ease);
+  text-decoration: none;
+}
+.qa-btn i { color: rgb(var(--accent)); font-size: .88rem; }
+.qa-btn:hover { background: rgba(var(--accent),.12); border-color: rgba(var(--accent),.35); color: var(--text); transform: translateY(-2px); }
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -34,173 +481,165 @@
       </div>
     </div>
 
-    <!-- QUICK ACTIONS -->
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="row row-cols-3 row-cols-md-6 g-2 text-center">
-        <div class="col"><div class="quick-action" onclick="openQuickAdd('subject')"><i class="bi bi-journal-plus"></i><span>Add Subject</span></div></div>
-        <div class="col"><div class="quick-action" onclick="openQuickAdd('task')"><i class="bi bi-plus-square"></i><span>Add Task</span></div></div>
-        <div class="col"><div class="quick-action" onclick="openQuickAdd('note')"><i class="bi bi-sticky"></i><span>Add Note</span></div></div>
-        <div class="col"><div class="quick-action" onclick="location.href='wallpaper.html'"><i class="bi bi-image"></i><span>Wallpaper</span></div></div>
-        <div class="col"><div class="quick-action" onclick="location.href='calendar.html'"><i class="bi bi-calendar3"></i><span>Calendar</span></div></div>
-        <div class="col"><div class="quick-action" onclick="location.href='settings.html#data'"><i class="bi bi-download"></i><span>Export</span></div></div>
+    <!-- SEMESTER OVERVIEW -->
+    <div class="sem-overview mb-3 dash-card-anim">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="sem-label" id="dashSemLabel">—</div>
+          <div class="sem-meta">
+            <span id="dashWeekInfo"><i class="bi bi-calendar3-week me-1"></i>–</span>
+            <span class="text-faint">·</span>
+            <span id="dashWeeksLeft">– weeks remaining</span>
+          </div>
+        </div>
+        <div class="text-end">
+          <div class="sem-pct-label" id="dashSemPct">0%</div>
+          <div style="font-size:.65rem;color:var(--text-faint);margin-top:1px">Semester Progress</div>
+        </div>
+      </div>
+      <div class="sem-progress-bar"><div class="sem-progress-fill" id="dashSemBar"></div></div>
+      <div style="font-size:.67rem;color:var(--text-faint)" id="dashSemDates">— · — days to end</div>
+    </div>
+
+    <!-- QUICK ACTIONS — 8 equal-width, Export always last -->
+    <div class="row g-2 mb-3 dash-card-anim" id="quickActionsRow">
+      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('task');return false;"><i class="bi bi-plus-square"></i><span>Add Task</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('note');return false;"><i class="bi bi-sticky"></i><span>Add Note</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('subject');return false;"><i class="bi bi-journal-plus"></i><span>Subject</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="schedule.html"><i class="bi bi-calendar2-week"></i><span>Schedule</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="grades.html"><i class="bi bi-mortarboard"></i><span>Grades</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="attendance.html"><i class="bi bi-person-check"></i><span>Attendance</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="calendar.html"><i class="bi bi-calendar3"></i><span>Calendar</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="settings.html#data" onclick="window.exportData?window.exportData():location.href='settings.html#data';return false;"><i class="bi bi-download"></i><span>Export</span></a></div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="row g-2 mb-3 dash-card-anim">
+      <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift">
+          <i class="bi bi-journal-bookmark-fill stat-card-icon"></i>
+          <div class="stat-card-val" id="statSubjects">–</div>
+          <div class="stat-card-lbl">Subjects</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift">
+          <i class="bi bi-mortarboard-fill stat-card-icon"></i>
+          <div class="stat-card-val" id="statGwa">–</div>
+          <div class="stat-card-lbl">GWA</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift">
+          <i class="bi bi-person-check-fill stat-card-icon"></i>
+          <div class="stat-card-val" id="statAtt">–</div>
+          <div class="stat-card-lbl">Attendance</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift">
+          <i class="bi bi-check2-square stat-card-icon"></i>
+          <div class="stat-card-val" id="statTasks">–</div>
+          <div class="stat-card-lbl">Tasks</div>
+        </div>
       </div>
     </div>
 
-    <div class="row g-3">
-      <!-- LEFT COLUMN -->
-      <div class="col-lg-8">
-        <div class="row g-3">
-          <!-- Next class countdown -->
-          <div class="col-md-5">
-            <div class="glass card-pad h-100 fade-in text-center d-flex flex-column justify-content-center">
-              <div class="section-title justify-content-center"><i class="bi bi-hourglass-split"></i>Next Class</div>
-              <div class="countdown-ring-wrap">
-                <svg width="132" height="132" viewBox="0 0 132 132">
-                  <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="rgb(var(--accent))"/><stop offset="100%" stop-color="rgb(var(--accent-2))"/>
-                  </linearGradient></defs>
-                  <circle class="countdown-ring-bg" cx="66" cy="66" r="58"></circle>
-                  <circle class="countdown-ring-fg" id="ringFg" cx="66" cy="66" r="58" stroke-dasharray="364" stroke-dashoffset="364"></circle>
-                </svg>
-                <div class="countdown-center">
-                  <div class="num" id="cdNum">--</div>
-                  <div class="lbl" id="cdLbl">no class</div>
-                </div>
-              </div>
-              <div class="mt-3" id="nextClassInfo"><span class="text-faint" style="font-size:.82rem">Nothing scheduled today</span></div>
-            </div>
+    <!-- GRADE PERFORMANCE + ATTENDANCE DONUT -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6 dash-card-anim">
+        <div class="glass card-pad h-100">
+          <div class="card-header-row">
+            <div class="dash-section-title"><i class="bi bi-bar-chart-fill"></i>Grade Performance</div>
+            <a href="grades.html" class="view-all-link">View Grades →</a>
           </div>
-          <!-- Today's schedule -->
-          <div class="col-md-7">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-calendar2-day"></i>Today's Schedule</div>
-              <div id="todaySchedule" style="max-height:230px;overflow-y:auto"></div>
-            </div>
-          </div>
-
-          <!-- Today's Tasks -->
-          <div class="col-md-6">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-check2-square"></i>Today's Tasks</div>
-              <div id="todayTasks"></div>
-            </div>
-          </div>
-          <!-- Upcoming Deadlines -->
-          <div class="col-md-6">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-alarm"></i>Upcoming Deadlines</div>
-              <div id="upcomingDeadlines"></div>
-            </div>
-          </div>
-
-          <!-- Assignment progress + Attendance + GWA -->
-          <div class="col-md-4">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-bar-chart-fill"></i>Assignments</div>
-              <div class="stat-num" id="assignProg">0%</div>
-              <div class="progress my-2"><div class="progress-bar" id="assignProgBar" style="width:0%"></div></div>
-              <div class="text-faint" style="font-size:.78rem" id="assignSub">0 of 0 completed</div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-person-check"></i>Attendance</div>
-              <div class="stat-num" id="attRate">--%</div>
-              <div class="progress my-2"><div class="progress-bar" id="attBar" style="width:0%"></div></div>
-              <div class="text-faint" style="font-size:.78rem">Semester average</div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="glass card-pad h-100 fade-in">
-              <div class="section-title"><i class="bi bi-mortarboard"></i>GWA</div>
-              <div class="stat-num" id="gpaNum">--</div>
-              <div class="progress my-2"><div class="progress-bar" id="gpaBar" style="width:0%"></div></div>
-              <div class="text-faint" style="font-size:.78rem">1.00–5.00 scale · lower is better</div>
-            </div>
-          </div>
-
-          <!-- Weekly productivity -->
-          <div class="col-12">
-            <div class="glass card-pad fade-in">
-              <div class="section-title"><i class="bi bi-graph-up"></i>Weekly Productivity</div>
-              <canvas id="prodChart" height="90"></canvas>
-            </div>
-          </div>
-
-          <!-- Calendar preview -->
-          <div class="col-12">
-            <div class="glass card-pad fade-in">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="section-title mb-0"><i class="bi bi-calendar3"></i>This Week</div>
-                <a href="calendar.html" class="btn btn-ghost btn-sm">Open Calendar</a>
-              </div>
-              <div class="row g-2 text-center" id="weekPreview"></div>
-            </div>
-          </div>
+          <div id="dashGradeChart"></div>
         </div>
       </div>
-
-      <!-- RIGHT COLUMN -->
-      <div class="col-lg-4">
-        <div class="row g-3">
-          <!-- Semester progress -->
-          <div class="col-12">
-            <div class="glass card-pad fade-in">
-              <div class="section-title"><i class="bi bi-flag-fill"></i>Semester Progress</div>
-              <div class="d-flex justify-content-between" style="font-size:.82rem">
-                <span class="text-soft">Week <b id="semWeek">-</b> of <b id="semTotal">-</b></span>
-                <span class="text-soft"><b id="semDays">-</b> days to finals</span>
+      <div class="col-md-6 dash-card-anim">
+        <div class="glass card-pad h-100">
+          <div class="dash-section-title"><i class="bi bi-pie-chart-fill"></i>Attendance Overview</div>
+          <div class="d-flex align-items-center gap-16" style="gap:18px">
+            <div class="donut-wrap">
+              <svg width="110" height="110" viewBox="0 0 110 110">
+                <circle cx="55" cy="55" r="44" fill="none" stroke="var(--surface-2)" stroke-width="12"/>
+                <circle id="donutPresent" cx="55" cy="55" r="44" fill="none" stroke="#7c6cf6" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1)"/>
+                <circle id="donutLate" cx="55" cy="55" r="44" fill="none" stroke="#fbbf24" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .15s"/>
+                <circle id="donutExcused" cx="55" cy="55" r="44" fill="none" stroke="#34d399" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .25s"/>
+                <circle id="donutAbsent" cx="55" cy="55" r="44" fill="none" stroke="#fb7185" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .35s"/>
+              </svg>
+              <div class="donut-center">
+                <div class="donut-pct" id="donutPct">–</div>
+                <div class="donut-sub">Attend.</div>
               </div>
-              <div class="progress my-2"><div class="progress-bar" id="semBar" style="width:0%"></div></div>
-              <div class="text-faint" style="font-size:.75rem" id="semPct">0% complete</div>
+            </div>
+            <div class="att-legend" id="donutLegend">
+              <div class="att-legend-row"><div class="att-dot" style="background:#7c6cf6"></div><span class="att-legend-label">Present</span><span class="att-legend-val" id="attPresent">–</span></div>
+              <div class="att-legend-row"><div class="att-dot" style="background:#fbbf24"></div><span class="att-legend-label">Late</span><span class="att-legend-val" id="attLate">–</span></div>
+              <div class="att-legend-row"><div class="att-dot" style="background:#34d399"></div><span class="att-legend-label">Excused</span><span class="att-legend-val" id="attExcused">–</span></div>
+              <div class="att-legend-row"><div class="att-dot" style="background:#fb7185"></div><span class="att-legend-label">Absent</span><span class="att-legend-val" id="attAbsent">–</span></div>
             </div>
           </div>
+          <div style="margin-top:10px;font-size:.67rem;color:var(--text-faint)">No Classes excluded from rate</div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Quick notes -->
-          <div class="col-12">
-            <div class="glass card-pad fade-in">
-              <div class="section-title"><i class="bi bi-sticky-fill"></i>Quick Notes</div>
-              <textarea class="form-control" id="quickNoteBox" rows="3" placeholder="Jot something down…"></textarea>
-              <button class="btn btn-accent btn-sm mt-2 w-100" onclick="saveQuickNote()"><i class="bi bi-save2 me-1"></i>Save Note</button>
-            </div>
+    <!-- ACADEMIC PROGRESS -->
+    <div class="glass card-pad mb-3 dash-card-anim">
+      <div class="dash-section-title"><i class="bi bi-graph-up-arrow"></i>Academic Progress</div>
+      <div class="row g-3" id="acadProgressWrap">
+        <div class="col-sm-6">
+          <div class="acad-row">
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-journal-bookmark me-1"></i>Subjects</span><span class="acad-row-pct" id="acadSubPct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-subjects" id="acadSubBar"></div></div>
           </div>
-
-          <!-- Pomodoro -->
-          <div class="col-12">
-            <div class="glass card-pad fade-in text-center">
-              <div class="section-title justify-content-center"><i class="bi bi-stopwatch-fill"></i>Pomodoro Timer</div>
-              <div class="pomo-ring-wrap">
-                <svg width="180" height="180" viewBox="0 0 180 180">
-                  <circle cx="90" cy="90" r="80" fill="none" stroke="var(--surface-2)" stroke-width="10"></circle>
-                  <circle id="pomoRing" cx="90" cy="90" r="80" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round"
-                    stroke-dasharray="502.4" stroke-dashoffset="0" transform="rotate(-90 90 90)"></circle>
-                </svg>
-                <div class="countdown-center" style="position:relative;margin-top:-150px;height:180px">
-                  <div class="pomo-time" id="pomoTime">25:00</div>
-                  <div class="lbl" id="pomoMode">FOCUS</div>
-                </div>
-              </div>
-              <div class="d-flex justify-content-center gap-2 mt-2 flex-wrap">
-                <button class="btn-ghost btn btn-sm" id="pomoPreset2525" onclick="Pomo.set(25,5)">25/5</button>
-                <button class="btn-ghost btn btn-sm" id="pomoPreset5010" onclick="Pomo.set(50,10)">50/10</button>
-                <button class="btn-ghost btn btn-sm" id="pomoPresetCustom" onclick="Pomo.custom()">Custom</button>
-              </div>
-              <div class="d-flex justify-content-center gap-2 mt-2">
-                <button class="btn-accent btn btn-sm px-4" id="pomoToggle" onclick="Pomo.toggle()"><i class="bi bi-play-fill"></i> Start</button>
-                <button class="btn-icon" onclick="Pomo.reset()"><i class="bi bi-arrow-counterclockwise"></i></button>
-              </div>
-              <div class="text-faint mt-2" style="font-size:.72rem"><span id="pomoStats">0 sessions · 0m focused today</span></div>
-            </div>
+          <div class="acad-row">
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-book me-1"></i>Syllabus</span><span class="acad-row-pct" id="acadSylPct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-syllabus" id="acadSylBar"></div></div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="acad-row">
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-check2-square me-1"></i>Tasks</span><span class="acad-row-pct" id="acadTaskPct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-tasks" id="acadTaskBar"></div></div>
+          </div>
+          <div class="acad-row">
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-person-check me-1"></i>Attendance</span><span class="acad-row-pct" id="acadAttPct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-att" id="acadAttBar"></div></div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- TODAY'S SCHEDULE + UPCOMING TASKS -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6 dash-card-anim">
+        <div class="glass card-pad h-100">
+          <div class="card-header-row">
+            <div class="dash-section-title"><i class="bi bi-calendar2-day"></i>Today's Schedule</div>
+            <a href="schedule.html" class="view-all-link">Schedule →</a>
+          </div>
+          <div id="dashTodaySchedule"></div>
+        </div>
+      </div>
+      <div class="col-md-6 dash-card-anim">
+        <div class="glass card-pad h-100">
+          <div class="card-header-row">
+            <div class="dash-section-title"><i class="bi bi-alarm"></i>Upcoming Tasks</div>
+            <a href="tasks.html" class="view-all-link">View All →</a>
+          </div>
+          <div id="dashUpcomingTasks"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
 <nav class="mobile-nav" id="mobileNav"></nav>
 
-<!-- Quick Add Modals -->
+<!-- Modals -->
 <div class="modal fade" id="quickModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content card-pad" id="quickModalBody"></div>
@@ -208,7 +647,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 <script src="js/dashboard.js"></script>

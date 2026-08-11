@@ -1,454 +1,474 @@
 /* ============================================================
-   DASHBOARD.JS
+   DASHBOARD.JS — Redesigned Command Center
    ============================================================ */
 
 function initDashboard(){
+  renderSemesterOverview();
+  renderStatCards();
+  renderGradePerformance();
+  renderAttendanceDonut();
+  renderAcademicProgress();
   renderTodaySchedule();
-  renderNextClassCountdown();
-  renderTodayTasks();
-  renderUpcomingDeadlines();
-  renderAssignmentProgress();
-  renderAttendanceStat();
-  renderGpaStat();
-  renderWeekPreview();
-  renderSemesterProgress();
-  renderProductivityChart();
-  Pomo.init();
-  setupQuickAddHandlers();
+  renderUpcomingTasks();
 
-  setInterval(renderNextClassCountdown, 30000);
+  // Refresh schedule every minute
   setInterval(renderTodaySchedule, 60000);
 }
 
-/* ---------- TODAY'S SCHEDULE ---------- */
-function todaysSubjects(){
-  const dayName = DAY_NAMES[new Date().getDay()];
-  const semId = DB.getActiveSemesterId();
-  return DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived && s.days.includes(dayName))
-    .sort((a,b)=> a.start.localeCompare(b.start));
-}
-function renderTodaySchedule(){
-  const wrap = document.getElementById('todaySchedule');
-  const list = todaysSubjects();
-  if(!list.length){ wrap.innerHTML = emptyState('bi-calendar-x','No classes today','Enjoy the free day!'); return; }
-  wrap.innerHTML = list.map(s=>{
-    const nowMin = new Date().getHours()*60+new Date().getMinutes();
-    const [sh,sm]=s.start.split(':').map(Number), [eh,em]=s.end.split(':').map(Number);
-    const startMin=sh*60+sm, endMin=eh*60+em;
-    const status = nowMin>=startMin && nowMin<=endMin ? 'now' : (nowMin>endMin ? 'done' : 'upcoming');
-    return `<div class="list-row">
-      <span class="dot-color" style="background:${s.color}"></span>
-      <div class="flex-grow-1">
-        <div style="font-weight:700;font-size:.86rem">${s.code} <span class="text-faint fw-normal">· ${s.room}, ${s.building}</span></div>
-        <div class="text-faint" style="font-size:.75rem">${fmtTime(s.start)} – ${fmtTime(s.end)} · ${s.professor}</div>
-      </div>
-      ${status==='now' ? '<span class="chip">Now</span>' : status==='done' ? '<span class="chip low" style="opacity:.6">Done</span>' : ''}
-    </div>`;
-  }).join('');
+/* ============================================================
+   1. SEMESTER OVERVIEW
+   ============================================================ */
+function renderSemesterOverview(){
+  const sem = DB.getActiveSemester();
+  if(!sem) return;
+
+  const labelEl = document.getElementById('dashSemLabel');
+  if(labelEl) labelEl.textContent = sem.schoolYear + ' \u00B7 ' + sem.name;
+
+  const start = new Date(sem.startDate + 'T00:00:00');
+  const end   = new Date(sem.endDate   + 'T00:00:00');
+  const now   = new Date();
+
+  const totalMs   = end - start;
+  const elapsedMs = Math.min(Math.max(now - start, 0), totalMs);
+  const pct       = totalMs > 0 ? Math.round(elapsedMs / totalMs * 100) : 0;
+
+  const totalWeeks = sem.totalWeeks || 15;
+  const weekNum    = Math.min(totalWeeks, Math.max(1, Math.ceil((now - start) / (1000*60*60*24*7))));
+  const weeksLeft  = Math.max(0, totalWeeks - weekNum);
+
+  var wiEl = document.getElementById('dashWeekInfo');
+  if(wiEl) wiEl.innerHTML = '<i class="bi bi-calendar3-week me-1"></i>Week ' + weekNum + ' of ' + totalWeeks;
+  var wlEl = document.getElementById('dashWeeksLeft');
+  if(wlEl) wlEl.textContent = weeksLeft + ' week' + (weeksLeft !== 1 ? 's' : '') + ' remaining';
+  var spEl = document.getElementById('dashSemPct');
+  if(spEl) spEl.textContent = pct + '%';
+
+  const daysLeft = Math.max(0, Math.ceil((end - now) / (1000*60*60*24)));
+  const startStr = start.toLocaleDateString([], {month:'short', day:'numeric'});
+  const endStr   = end.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+  var sdEl = document.getElementById('dashSemDates');
+  if(sdEl) sdEl.textContent = startStr + ' \u2013 ' + endStr + ' \u00B7 ' + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' to end';
+
+  setTimeout(function(){
+    var bar = document.getElementById('dashSemBar');
+    if(bar) bar.style.width = pct + '%';
+  }, 120);
 }
 
-/* ---------- NEXT CLASS COUNTDOWN ---------- */
-function renderNextClassCountdown(){
-  const now = new Date();
-  let best = null, bestMin = Infinity;
-  for(let d=0; d<7; d++){
-    const day = new Date(now); day.setDate(now.getDate()+d);
-    const dayName = DAY_NAMES[day.getDay()];
-    const _semId = DB.getActiveSemesterId();
-    DB.getSubjects().filter(s=>s.semesterId===_semId && !s.archived && s.days.includes(dayName)).forEach(s=>{
-      const dateStr = ymdLocal(day);
-      const mins = minutesUntil(dateStr, s.start);
-      if(mins >= -5 && mins < bestMin){ bestMin = mins; best = s; }
-    });
+/* ============================================================
+   2. STAT CARDS
+   ============================================================ */
+function renderStatCards(){
+  const semId    = DB.getActiveSemesterId();
+  const subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
+  const tasks    = DB.getTasks().filter(function(t){ return t.semesterId === semId; });
+  const done     = tasks.filter(function(t){ return t.status === 'completed'; }).length;
+
+  animateCountUp('statSubjects', 0, subjects.length, 700, function(v){ return String(Math.round(v)); });
+
+  const gwa = computeDashGWA(semId, subjects);
+  if(gwa !== null){
+    animateCountUp('statGwa', 0, gwa, 900, function(v){ return v.toFixed(2); });
+  } else {
+    var el = document.getElementById('statGwa');
+    if(el) el.textContent = '\u2013';
   }
-  const ring = document.getElementById('ringFg');
-  const circumference = 364;
-  if(!best){
-    document.getElementById('cdNum').textContent='--';
-    document.getElementById('cdLbl').textContent='no class';
-    document.getElementById('nextClassInfo').innerHTML = `<span class="text-faint" style="font-size:.82rem">Nothing scheduled soon</span>`;
-    ring.style.strokeDashoffset = circumference;
+
+  const attRate = computeAttendanceRate(semId);
+  if(attRate !== null){
+    animateCountUp('statAtt', 0, attRate, 900, function(v){ return Math.round(v) + '%'; });
+  } else {
+    var el2 = document.getElementById('statAtt');
+    if(el2) el2.textContent = '\u2013';
+  }
+
+  var tel = document.getElementById('statTasks');
+  if(tel) tel.textContent = done + '/' + tasks.length;
+}
+
+function animateCountUp(id, from, to, duration, fmt){
+  var el = document.getElementById(id);
+  if(!el) return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    el.textContent = fmt(to); return;
+  }
+  var start = performance.now();
+  function step(now){
+    var t = Math.min(1, (now - start) / duration);
+    var eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(from + (to - from) * eased);
+    if(t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================================================
+   3. GRADE PERFORMANCE
+   ============================================================ */
+var GRADE_TABLE_DASH = [
+  { point:1.00, min:99 }, { point:1.25, min:96 }, { point:1.50, min:93 },
+  { point:1.75, min:90 }, { point:2.00, min:87 }, { point:2.25, min:84 },
+  { point:2.50, min:81 }, { point:2.75, min:78 }, { point:3.00, min:75 },
+  { point:5.00, min:0  },
+];
+
+function pctToGWAPoint(pct){
+  if(pct === null || isNaN(pct)) return null;
+  for(var i=0;i<GRADE_TABLE_DASH.length;i++){
+    if(pct >= GRADE_TABLE_DASH[i].min) return GRADE_TABLE_DASH[i].point;
+  }
+  return 5.00;
+}
+
+function compAvgDash(c){
+  if(Array.isArray(c.assessments) && c.assessments.length){
+    var valid = c.assessments.filter(function(a){ return a.score !== null && a.score !== undefined && a.totalItems; });
+    if(!valid.length) return null;
+    return valid.reduce(function(s,a){ return s + (a.score / a.totalItems * 100); }, 0) / valid.length;
+  }
+  // legacy
+  if(c.score !== null && c.score !== undefined && c.score !== '') return +c.score;
+  return null;
+}
+
+function computeDashSubjectGrades(semId, subjects){
+  var allGrades = DB.getGrades();
+  return subjects.map(function(s){
+    var g = allGrades.find(function(x){ return x.subjectId === s.id; });
+    if(!g || !Array.isArray(g.components) || !g.components.length) return { subject:s, pct:null, point:null };
+    var scored = g.components.filter(function(c){ return compAvgDash(c) !== null && c.weight; });
+    if(!scored.length) return { subject:s, pct:null, point:null };
+    var pct = scored.reduce(function(sum,c){ return sum + (compAvgDash(c) * (+c.weight||0) / 100); }, 0);
+    return { subject:s, pct:pct, point:pctToGWAPoint(pct) };
+  });
+}
+
+function computeDashGWA(semId, subjects){
+  var rows = computeDashSubjectGrades(semId, subjects).filter(function(r){ return r.point !== null; });
+  if(!rows.length) return null;
+  var tu = rows.reduce(function(s,r){ return s + (+r.subject.units||0); }, 0);
+  if(!tu) return null;
+  return rows.reduce(function(s,r){ return s + r.point * (+r.subject.units||0); }, 0) / tu;
+}
+
+function renderGradePerformance(){
+  var semId    = DB.getActiveSemesterId();
+  var subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
+  var wrap     = document.getElementById('dashGradeChart');
+  if(!wrap) return;
+
+  if(!subjects.length){
+    wrap.innerHTML = dashEmpty('bi-mortarboard','No subjects yet','Add subjects in Schedule.');
     return;
   }
-  const hrs = Math.floor(bestMin/60), mins = bestMin%60;
-  document.getElementById('cdNum').textContent = bestMin<=0 ? 'NOW' : (hrs>0? `${hrs}h ${mins}m` : `${mins}m`);
-  document.getElementById('cdLbl').textContent = best.code;
-  document.getElementById('nextClassInfo').innerHTML = `
-    <div style="font-weight:700">${best.desc}</div>
-    <div class="text-faint" style="font-size:.78rem">${fmtTime(best.start)} · ${best.room}, ${best.building}</div>`;
-  const pct = Math.max(0, Math.min(1, 1 - bestMin/180));
-  ring.style.strokeDashoffset = circumference - (circumference*pct);
+
+  var rows        = computeDashSubjectGrades(semId, subjects);
+  var withGrades  = rows.filter(function(r){ return r.point !== null; });
+
+  if(!withGrades.length){
+    wrap.innerHTML = dashEmpty('bi-bar-chart','No grades yet','Enter grades on the Grades page.');
+    return;
+  }
+
+  var display = withGrades.slice(0, 7);
+  var html = display.map(function(r, i){
+    return '<div class="grade-bar-row">' +
+      '<div class="grade-bar-label" title="' + escHtml(r.subject.desc) + '">' + escHtml(r.subject.code) + '</div>' +
+      '<div class="grade-bar-track"><div class="grade-bar-fill" id="gbar' + i + '" style="width:0%"></div></div>' +
+      '<div class="grade-bar-val">' + (r.point !== null ? r.point.toFixed(2) : '\u2013') + '</div>' +
+    '</div>';
+  }).join('');
+  wrap.innerHTML = html;
+
+  setTimeout(function(){
+    display.forEach(function(r, i){
+      // 1.00 = 100%, 3.00 = 50%, 5.00 = 0% (lower grade = wider bar)
+      var pct = Math.round(((5 - r.point) / 4) * 100);
+      var el = document.getElementById('gbar' + i);
+      if(el) el.style.width = pct + '%';
+    });
+  }, 180);
 }
 
-/* ---------- TODAY'S TASKS ---------- */
-function renderTodayTasks(){
-  const wrap = document.getElementById('todayTasks');
-  const _semId2 = DB.getActiveSemesterId();
-  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId2 && t.dueDate===todayKey() && t.status!=='completed').sort((a,b)=>a.dueTime.localeCompare(b.dueTime));
-  if(!tasks.length){ wrap.innerHTML = emptyState('bi-check2-circle','All clear for today',''); return; }
-  wrap.innerHTML = tasks.slice(0,5).map(t=>`
-    <div class="list-row">
-      <div class="task-check" onclick="quickCompleteTask('${t.id}', this)"><i class="bi bi-check2" style="opacity:0"></i></div>
-      <div class="flex-grow-1">
-        <div style="font-weight:700;font-size:.85rem">${escapeHtml(t.title)}</div>
-        <div class="text-faint" style="font-size:.73rem">${fmtTime(t.dueTime)} · ${t.category}</div>
-      </div>
-      <span class="chip ${t.priority}">${t.priority}</span>
-    </div>`).join('');
-}
-function quickCompleteTask(id, el){
-  const tasks = DB.getTasks();
-  const t = tasks.find(x=>x.id===id); if(!t) return;
-  t.status='completed'; t.progress=100;
-  DB.saveTasks(tasks);
-  el.classList.add('checked'); el.querySelector('i').style.opacity=1;
-  fireConfetti(); Toast.show('Task completed — nice work!');
-  setTimeout(()=>{ renderTodayTasks(); renderAssignmentProgress(); renderUpcomingDeadlines(); }, 400);
+/* ============================================================
+   4. ATTENDANCE DONUT
+   ============================================================ */
+function computeAttendanceRate(semId){
+  var records = DB.getAttendance().filter(function(r){ return r.semesterId === semId && r.status !== 'No Classes'; });
+  if(!records.length) return null;
+  var present = records.filter(function(r){ return r.status === 'Present' || r.status === 'Excused'; }).length;
+  return Math.round(present / records.length * 100);
 }
 
-/* ---------- UPCOMING DEADLINES ---------- */
-function renderUpcomingDeadlines(){
-  const wrap = document.getElementById('upcomingDeadlines');
-  const _semId3 = DB.getActiveSemesterId();
-  const subs = DB.getSubjects().filter(s=>s.semesterId===_semId3);
-  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId3 && t.status!=='completed' && t.dueDate>=todayKey())
-    .sort((a,b)=> (a.dueDate+a.dueTime).localeCompare(b.dueDate+b.dueTime)).slice(0,5);
-  if(!tasks.length){ wrap.innerHTML = emptyState('bi-emoji-smile','No upcoming deadlines',''); return; }
-  wrap.innerHTML = tasks.map(t=>{
-    const sub = subs.find(s=>s.id===t.subjectId);
-    const mins = minutesUntil(t.dueDate, t.dueTime);
-    return `<div class="list-row">
-      <span class="dot-color" style="background:${sub?sub.color:'#8a90a6'}"></span>
-      <div class="flex-grow-1">
-        <div style="font-weight:700;font-size:.85rem">${escapeHtml(t.title)}</div>
-        <div class="text-faint" style="font-size:.73rem">${sub?sub.code+' · ':''}${t.dueDate} ${fmtTime(t.dueTime)}</div>
-      </div>
-      <span class="chip ${mins<1440?'high':'medium'}">${fmtDuration(mins)}</span>
-    </div>`;
+function renderAttendanceDonut(){
+  var semId = DB.getActiveSemesterId();
+  var all   = DB.getAttendance().filter(function(r){ return r.semesterId === semId; });
+  var recs  = all.filter(function(r){ return r.status !== 'No Classes'; });
+
+  var counts = {
+    Present: all.filter(function(r){ return r.status === 'Present'; }).length,
+    Late:    all.filter(function(r){ return r.status === 'Late'; }).length,
+    Excused: all.filter(function(r){ return r.status === 'Excused'; }).length,
+    Absent:  all.filter(function(r){ return r.status === 'Absent'; }).length,
+  };
+  var total  = recs.length;
+  var pctNum = total ? Math.round((counts.Present + counts.Excused) / total * 100) : null;
+
+  var pctEl = document.getElementById('donutPct');
+  if(pctEl) pctEl.textContent = pctNum !== null ? pctNum + '%' : '\u2013';
+
+  document.getElementById('attPresent').textContent = counts.Present;
+  document.getElementById('attLate').textContent    = counts.Late;
+  document.getElementById('attExcused').textContent = counts.Excused;
+  document.getElementById('attAbsent').textContent  = counts.Absent;
+
+  // SVG donut — stacked arcs technique
+  var circ = 276.46; // 2 * Math.PI * 44
+  var order = [
+    { id:'donutPresent', count:counts.Present },
+    { id:'donutLate',    count:counts.Late    },
+    { id:'donutExcused', count:counts.Excused },
+    { id:'donutAbsent',  count:counts.Absent  },
+  ];
+
+  if(!total){
+    order.forEach(function(seg){
+      var el = document.getElementById(seg.id);
+      if(el){ el.setAttribute('stroke-dasharray','0 ' + circ); el.setAttribute('stroke-dashoffset', circ); }
+    });
+    return;
+  }
+
+  // Build stacked donut: each circle has dasharray=slice gap, offset=start position
+  var cumAngle = 0;
+  order.forEach(function(seg){
+    var el = document.getElementById(seg.id);
+    if(!el) return;
+    var slice  = (seg.count / total) * circ;
+    var gap    = circ - slice;
+    el.setAttribute('stroke-dasharray', slice + ' ' + gap);
+    // stroke-dashoffset starts the arc. circ/4 rotates to top. Then subtract cumAngle.
+    el.setAttribute('stroke-dashoffset', circ - cumAngle + '');
+    cumAngle += slice;
+  });
+}
+
+/* ============================================================
+   5. ACADEMIC PROGRESS BARS
+   ============================================================ */
+function renderAcademicProgress(){
+  var semId    = DB.getActiveSemesterId();
+  var subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
+  var tasks    = DB.getTasks().filter(function(t){ return t.semesterId === semId; });
+
+  var subPct = subjects.length > 0 ? 100 : 0;
+
+  // Syllabus coverage
+  var courses  = DB.getSyllabusCourses().filter(function(c){ return c.semesterId === semId; });
+  var sylPct   = 0;
+  if(courses.length){
+    var sem       = DB.getActiveSemester();
+    var totalWks  = sem ? (sem.totalWeeks || 15) : 15;
+    var covered   = courses.reduce(function(s,c){ return s + ((c.weeks||[]).length); }, 0);
+    var expected  = courses.length * totalWks;
+    sylPct = expected > 0 ? Math.min(100, Math.round(covered / expected * 100)) : 0;
+  }
+
+  var done    = tasks.filter(function(t){ return t.status === 'completed'; }).length;
+  var taskPct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  var attPct  = computeAttendanceRate(semId) || 0;
+
+  setAcadBar('acadSubBar',  'acadSubPct',  subPct);
+  setAcadBar('acadSylBar',  'acadSylPct',  sylPct);
+  setAcadBar('acadTaskBar', 'acadTaskPct', taskPct);
+  setAcadBar('acadAttBar',  'acadAttPct',  attPct);
+}
+
+function setAcadBar(barId, pctId, val){
+  var pctEl = document.getElementById(pctId);
+  var barEl = document.getElementById(barId);
+  if(pctEl) pctEl.textContent = val + '%';
+  setTimeout(function(){ if(barEl) barEl.style.width = val + '%'; }, 200);
+}
+
+/* ============================================================
+   6. TODAY'S SCHEDULE
+   ============================================================ */
+function renderTodaySchedule(){
+  var wrap    = document.getElementById('dashTodaySchedule');
+  if(!wrap) return;
+  var semId   = DB.getActiveSemesterId();
+  var dayName = DAY_NAMES[new Date().getDay()];
+  var list    = DB.getSubjects()
+    .filter(function(s){ return s.semesterId === semId && !s.archived && s.days && s.days.includes(dayName); })
+    .sort(function(a,b){ return a.start.localeCompare(b.start); });
+
+  if(!list.length){
+    wrap.innerHTML = dashEmpty('bi-calendar-x','No classes today','Enjoy the free day!');
+    return;
+  }
+
+  var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+
+  wrap.innerHTML = list.map(function(s){
+    var parts   = s.start.split(':').map(Number);
+    var eParts  = s.end.split(':').map(Number);
+    var startM  = parts[0]*60+parts[1];
+    var endM    = eParts[0]*60+eParts[1];
+    var isNow   = nowMin >= startM && nowMin <= endM;
+    var isDone  = nowMin > endM;
+    var badge   = isNow
+      ? '<span class="now-badge">Now</span>'
+      : isDone
+        ? '<span class="done-badge">Done</span>'
+        : '';
+    var room = (s.room || '') + (s.building ? ' \u00B7 ' + s.building : '');
+    return '<div class="sched-row">' +
+      '<div class="sched-dot" style="background:' + (s.color||'rgb(var(--accent))') + '"></div>' +
+      '<div class="flex-grow-1">' +
+        '<div class="sched-code">' + escHtml(s.code) + '</div>' +
+        '<div class="sched-room">' + escHtml(room) + '</div>' +
+      '</div>' +
+      '<div class="text-end">' +
+        '<div class="sched-time">' + fmtTime(s.start) + '</div>' +
+        badge +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
-/* ---------- ASSIGNMENT PROGRESS ---------- */
-function renderAssignmentProgress(){
-  const _semId4 = DB.getActiveSemesterId();
-  const tasks = DB.getTasks().filter(t=>t.semesterId===_semId4 && ['Homework','Project','Quiz','Exam'].includes(t.category));
-  const done = tasks.filter(t=>t.status==='completed').length;
-  const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
-  document.getElementById('assignProg').textContent = pct+'%';
-  document.getElementById('assignProgBar').style.width = pct+'%';
-  document.getElementById('assignSub').textContent = `${done} of ${tasks.length} completed`;
-}
+/* ============================================================
+   7. UPCOMING TASKS (next 3)
+   ============================================================ */
+function renderUpcomingTasks(){
+  var wrap  = document.getElementById('dashUpcomingTasks');
+  if(!wrap) return;
+  var semId = DB.getActiveSemesterId();
+  var subs  = DB.getSubjects().filter(function(s){ return s.semesterId === semId; });
+  var today = todayKey();
+  var tasks = DB.getTasks()
+    .filter(function(t){ return t.semesterId === semId && t.status !== 'completed' && t.dueDate >= today; })
+    .sort(function(a,b){ return (a.dueDate+(a.dueTime||'')).localeCompare(b.dueDate+(b.dueTime||'')); })
+    .slice(0, 3);
 
-/* ---------- ATTENDANCE STAT ---------- */
-function computeAttendanceRate(){
-  const semId = DB.getActiveSemesterId();
-  const allRecs = DB.getAttendance().filter(r=>r.semesterId===semId);
-  const records = allRecs.filter(r=>r.status!=='No Classes');
-  if(!records.length) return null;
-  const present = records.filter(r=>r.status==='Present' || r.status==='Excused').length;
-  return Math.round((present/records.length)*100);
-}
-function renderAttendanceStat(){
-  const rate = computeAttendanceRate();
-  document.getElementById('attRate').textContent = rate===null ? '--%' : rate+'%';
-  document.getElementById('attBar').style.width = (rate||0)+'%';
-}
-
-/* ---------- GPA STAT ---------- */
-function computeGPA(){
-  const semId = DB.getActiveSemesterId();
-  const grades = DB.getGrades().filter(g=>g.semesterId===semId);
-  const subs = DB.getSubjects().filter(s=>s.semesterId===semId);
-  let totalPoints=0, totalUnits=0;
-  grades.forEach(g=>{
-    const sub = subs.find(s=>s.id===g.subjectId); if(!sub) return;
-    const avg = computeSubjectAverage(g);
-    if(avg===null) return;
-    const gp = percentTo4pt(avg);
-    totalPoints += gp*sub.units; totalUnits += sub.units;
-  });
-  return totalUnits ? (totalPoints/totalUnits) : null;
-}
-function computeSubjectAverage(g){
-  const parts = [];
-  const avgArr = (arr)=> arr && arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-  const q=avgArr(g.quiz), a=avgArr(g.activity), l=avgArr(g.lab), p=avgArr(g.project);
-  [q,a,l,p,g.midterm,g.finals].forEach(v=>{ if(v!==null && v!==undefined && !isNaN(v)) parts.push(v); });
-  if(!parts.length) return null;
-  return parts.reduce((x,y)=>x+y,0)/parts.length;
-}
-function percentTo4pt(pct){
-  if(pct>=97) return 4.0; if(pct>=93) return 3.7; if(pct>=90) return 3.3;
-  if(pct>=87) return 3.0; if(pct>=83) return 2.7; if(pct>=80) return 2.3;
-  if(pct>=77) return 2.0; if(pct>=73) return 1.7; if(pct>=70) return 1.3;
-  if(pct>=60) return 1.0; return 0;
-}
-function renderGpaStat(){
-  const gpa = computeGPA();
-  document.getElementById('gpaNum').textContent = gpa===null ? '--' : gpa.toFixed(2);
-  document.getElementById('gpaBar').style.width = gpa===null ? '0%' : (gpa/4*100)+'%';
-}
-
-/* ---------- WEEK PREVIEW ---------- */
-function renderWeekPreview(){
-  const wrap = document.getElementById('weekPreview');
-  const tasks = DB.getTasks();
-  const now = new Date();
-  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate()-now.getDay());
-  let html='';
-  for(let i=0;i<7;i++){
-    const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i);
-    const dateStr = ymdLocal(d);
-    const isToday = dateStr===todayKey();
-    const semId2 = DB.getActiveSemesterId();
-    const dayTasks = DB.getTasks().filter(t=>t.semesterId===semId2 && t.dueDate===dateStr).length;
-    const daySubs = todaysSubjectsFor(d).length;
-    html += `<div class="col">
-      <div class="cal-cell ${isToday?'today':''}" style="min-height:70px;cursor:pointer" onclick="location.href='calendar.html'">
-        <div class="cal-daynum">${d.getDate()}</div>
-        <div class="text-faint" style="font-size:.62rem">${DAY_NAMES[d.getDay()]}</div>
-        ${daySubs?`<div class="text-faint" style="font-size:.6rem;margin-top:4px"><i class="bi bi-calendar2"></i> ${daySubs}</div>`:''}
-        ${dayTasks?`<div class="text-faint" style="font-size:.6rem"><i class="bi bi-check2-square"></i> ${dayTasks}</div>`:''}
-      </div></div>`;
+  if(!tasks.length){
+    wrap.innerHTML = dashEmpty('bi-emoji-smile','No upcoming tasks','You\'re all caught up!');
+    return;
   }
-  wrap.innerHTML = html;
-}
-function todaysSubjectsFor(date){
-  const dayName = DAY_NAMES[date.getDay()];
-  const semId = DB.getActiveSemesterId();
-  return DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived && s.days.includes(dayName));
+
+  wrap.innerHTML = tasks.map(function(t){
+    var sub      = subs.find(function(s){ return s.id === t.subjectId; });
+    var daysLeft = Math.ceil((new Date(t.dueDate+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+    var dayClass = daysLeft <= 1 ? 'days-urgent' : daysLeft <= 3 ? 'days-soon' : 'days-ok';
+    var dayLabel = daysLeft === 0 ? 'Today' : daysLeft === 1 ? '1 day left' : daysLeft + ' days left';
+    var dateStr  = new Date(t.dueDate+'T00:00:00').toLocaleDateString([], {month:'short', day:'numeric'});
+    var catIcon  = taskCatIcon(t.category);
+    return '<div class="task-row-dash">' +
+      '<div class="task-row-icon"><i class="bi ' + catIcon + '"></i></div>' +
+      '<div class="flex-grow-1">' +
+        '<div class="task-title-dash">' + escHtml(t.title) + '</div>' +
+        '<div class="task-meta-dash">' + (sub ? escHtml(sub.code) + ' \u00B7 ' : '') + dateStr + '</div>' +
+      '</div>' +
+      '<div class="task-days-left ' + dayClass + '">' + dayLabel + '</div>' +
+    '</div>';
+  }).join('');
 }
 
-/* ---------- SEMESTER PROGRESS ---------- */
-function renderSemesterProgress(){
-  const sem = DB.getSemester();
-  const start = new Date(sem.startDate), end = new Date(sem.endDate), finals = new Date(sem.finalsDate);
-  const now = new Date();
-  const totalMs = end-start;
-  const elapsedMs = Math.min(Math.max(now-start,0), totalMs);
-  const pct = totalMs>0 ? Math.round(elapsedMs/totalMs*100) : 0;
-  const week = Math.min(sem.totalWeeks, Math.max(1, Math.ceil((now-start)/(1000*60*60*24*7))));
-  const daysToFinals = Math.max(0, Math.ceil((finals-now)/(1000*60*60*24)));
-  document.getElementById('semWeek').textContent = week;
-  document.getElementById('semTotal').textContent = sem.totalWeeks;
-  document.getElementById('semDays').textContent = daysToFinals;
-  document.getElementById('semBar').style.width = pct+'%';
-  document.getElementById('semPct').textContent = pct+'% of semester complete';
-}
-
-/* ---------- PRODUCTIVITY CHART ---------- */
-function renderProductivityChart(){
-  const ctx = document.getElementById('prodChart');
-  if(!ctx || !window.Chart) return;
-  const semId = DB.getActiveSemesterId();
-  const tasks = DB.getTasks().filter(t=>t.semesterId===semId);
-  const labels=[], data=[];
-  for(let i=6;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const k = ymdLocal(d);
-    labels.push(DAY_NAMES[d.getDay()]);
-    data.push(tasks.filter(t=>t.status==='completed' && t.dueDate===k).length);
-  }
-  const style = getComputedStyle(document.documentElement);
-  new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ label:'Tasks completed', data, borderRadius:8, backgroundColor:'rgba(124,108,246,.55)', hoverBackgroundColor:'rgb(124,108,246)' }]},
-    options:{ plugins:{legend:{display:false}}, scales:{
-      x:{ grid:{display:false}, ticks:{color:style.getPropertyValue('--text-faint')} },
-      y:{ beginAtZero:true, ticks:{stepSize:1, color:style.getPropertyValue('--text-faint')}, grid:{color:'rgba(128,128,128,.12)'} }
-    }}
-  });
-}
-
-/* ---------- QUICK NOTE ---------- */
-function saveQuickNote(){
-  const box = document.getElementById('quickNoteBox');
-  if(!box.value.trim()) return;
-  const semId = DB.getActiveSemesterId();
-  const notes = DB.getNotes();
-  notes.unshift({ id:DB.uid(), title:'Quick Note', content:box.value.trim(), category:'Organization', pinned:false, favorite:false, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
-  DB.saveNotes(notes);
-  box.value='';
-  Toast.show('Note saved');
-}
-
-/* ---------- HELPERS ---------- */
-function emptyState(icon, title, sub){
-  return `<div class="text-center py-4">
-    <i class="bi ${icon}" style="font-size:1.6rem;color:var(--text-faint)"></i>
-    <div class="text-soft mt-2" style="font-size:.85rem;font-weight:600">${title}</div>
-    ${sub?`<div class="text-faint" style="font-size:.75rem">${sub}</div>`:''}
-  </div>`;
-}
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-/* ---------- POMODORO ---------- */
-const Pomo = {
-  focusMin:25, breakMin:5, remaining:25*60, running:false, onBreak:false, interval:null,
-  init(){
-    const saved = JSON.parse(localStorage.getItem('sp_pomo_live')||'null');
-    if(saved){ this.focusMin=saved.focusMin; this.breakMin=saved.breakMin; this.remaining=saved.remaining; this.onBreak=saved.onBreak; }
-    this.render();
-    this.updateStatsLabel();
-    this.updatePresetHighlight();
-  },
-  set(f,b){ this.focusMin=f; this.breakMin=b; this.onBreak=false; this.remaining=f*60; this.running=false; clearInterval(this.interval); this.render(); this.persist(); this.updatePresetHighlight(); document.getElementById('pomoToggle').innerHTML='<i class="bi bi-play-fill"></i> Start'; },
-  updatePresetHighlight(){
-    const b25 = document.getElementById('pomoPreset2525'), b50 = document.getElementById('pomoPreset5010'), bc = document.getElementById('pomoPresetCustom');
-    if(!b25) return;
-    b25.classList.toggle('btn-accent', this.focusMin===25 && this.breakMin===5);
-    b50.classList.toggle('btn-accent', this.focusMin===50 && this.breakMin===10);
-    const isCustom = !(this.focusMin===25 && this.breakMin===5) && !(this.focusMin===50 && this.breakMin===10);
-    bc.classList.toggle('btn-accent', isCustom);
-    bc.textContent = isCustom ? `Custom (${this.focusMin}/${this.breakMin})` : 'Custom';
-  },
-  custom(){
-    const body = document.getElementById('quickModalBody');
-    body.innerHTML = `
-      <div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-sliders me-2"></i>Custom Timer</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="row g-3">
-        <div class="col-6">
-          <label>Focus minutes</label>
-          <input type="number" min="1" max="180" class="form-control" id="pcFocus" value="${this.focusMin}">
-        </div>
-        <div class="col-6">
-          <label>Break minutes</label>
-          <input type="number" min="1" max="60" class="form-control" id="pcBreak" value="${this.breakMin}">
-        </div>
-      </div>
-      <button class="btn btn-accent w-100 mt-3" onclick="Pomo.applyCustom()"><i class="bi bi-check2 me-1"></i>Apply Timer</button>`;
-    new bootstrap.Modal(document.getElementById('quickModal')).show();
-  },
-  applyCustom(){
-    const f = Math.max(1, Math.min(180, parseInt(document.getElementById('pcFocus').value)||25));
-    const b = Math.max(1, Math.min(60, parseInt(document.getElementById('pcBreak').value)||5));
-    this.set(f,b);
-    const modalEl = document.getElementById('quickModal');
-    const inst = bootstrap.Modal.getInstance(modalEl);
-    if(inst) inst.hide();
-    Toast.show(`Timer set to ${f}/${b}`);
-  },
-  toggle(){
-    this.running = !this.running;
-    const btn = document.getElementById('pomoToggle');
-    if(this.running){
-      btn.innerHTML = '<i class="bi bi-pause-fill"></i> Pause';
-      this.interval = setInterval(()=>this.tick(), 1000);
-    } else {
-      btn.innerHTML = '<i class="bi bi-play-fill"></i> Start';
-      clearInterval(this.interval);
-    }
-  },
-  reset(){ this.running=false; clearInterval(this.interval); this.onBreak=false; this.remaining=this.focusMin*60; this.render(); this.persist(); document.getElementById('pomoToggle').innerHTML='<i class="bi bi-play-fill"></i> Start'; },
-  tick(){
-    this.remaining--;
-    if(this.remaining <= 0){
-      if(!this.onBreak){
-        this.logSession();
-        Toast.show('Focus session complete — take a break!','accent','bi-cup-hot-fill');
-        notifyUser('Pomodoro finished','Time for a short break.');
-        this.onBreak=true; this.remaining=this.breakMin*60;
-      } else {
-        Toast.show('Break over — back to focus!');
-        this.onBreak=false; this.remaining=this.focusMin*60;
-      }
-    }
-    this.render(); this.persist();
-  },
-  logSession(){
-    const p = DB.getPomo();
-    const today = new Date().toDateString();
-    if(p.lastDate !== today){ p.sessionsToday=0; p.lastDate=today; }
-    p.sessionsToday++; p.totalFocusMinutes += this.focusMin;
-    DB.savePomo(p);
-    this.updateStatsLabel();
-  },
-  updateStatsLabel(){
-    const p = DB.getPomo();
-    const el = document.getElementById('pomoStats');
-    if(el) el.textContent = `${p.sessionsToday} sessions · ${p.totalFocusMinutes}m focused today`;
-  },
-  persist(){ localStorage.setItem('sp_pomo_live', JSON.stringify({focusMin:this.focusMin, breakMin:this.breakMin, remaining:this.remaining, onBreak:this.onBreak})); },
-  render(){
-    const m = Math.floor(this.remaining/60), s = this.remaining%60;
-    const timeEl = document.getElementById('pomoTime'); if(timeEl) timeEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    const modeEl = document.getElementById('pomoMode'); if(modeEl) modeEl.textContent = this.onBreak ? 'BREAK' : 'FOCUS';
-    const total = (this.onBreak?this.breakMin:this.focusMin)*60;
-    const ring = document.getElementById('pomoRing');
-    if(ring){ const c=502.4; ring.style.strokeDashoffset = c - c*(1-this.remaining/total); }
-  }
-};
-function notifyUser(title, body){
-  const s = DB.getSettings();
-  if(s.notifications && s.notifications.pomodoroFinished && 'Notification' in window && Notification.permission==='granted'){
-    new Notification(title, { body, icon:'icons/icon-192.png' });
-  }
-}
-
-/* ---------- QUICK ADD MODALS ---------- */
-function setupQuickAddHandlers(){
-  window.quickAddHandlers = {
-    subject: ()=>quickAddModal('subject'),
-    task: ()=>quickAddModal('task'),
-    note: ()=>quickAddModal('note'),
+function taskCatIcon(cat){
+  var map = {
+    Homework:'bi-pencil-square', Project:'bi-kanban', Quiz:'bi-patch-question',
+    Exam:'bi-journal-text', Personal:'bi-person', Organization:'bi-folder'
   };
+  return map[cat] || 'bi-check2-square';
 }
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function dashEmpty(icon, title, sub){
+  return '<div class="dash-empty">' +
+    '<i class="bi ' + icon + '"></i>' +
+    '<div class="dash-empty-title">' + title + '</div>' +
+    (sub ? '<div class="dash-empty-sub">' + sub + '</div>' : '') +
+    '</div>';
+}
+
+function escHtml(s){
+  var d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+/* ============================================================
+   QUICK ADD MODALS
+   ============================================================ */
 function quickAddModal(type){
-  const body = document.getElementById('quickModalBody');
-  const modal = new bootstrap.Modal(document.getElementById('quickModal'));
-  const semId = DB.getActiveSemesterId();
-  if(type==='task'){
-    const subs = DB.getSubjects().filter(s=>s.semesterId===semId);
-    body.innerHTML = `
-      <div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-plus-square me-2"></i>Add Task</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="mb-2"><label>Title</label><input class="form-control" id="qaTitle" placeholder="e.g. Finish lab report"></div>
-      <div class="row g-2 mb-2">
-        <div class="col-6"><label>Category</label><select class="form-select" id="qaCat"><option>Homework</option><option>Project</option><option>Quiz</option><option>Exam</option><option>Personal</option><option>Organization</option></select></div>
-        <div class="col-6"><label>Priority</label><select class="form-select" id="qaPri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
-      </div>
-      <div class="row g-2 mb-2">
-        <div class="col-6"><label>Due Date</label><input type="date" class="form-control" id="qaDate" value="${todayKey()}"></div>
-        <div class="col-6"><label>Due Time</label><input type="time" class="form-control" id="qaTime" value="23:59"></div>
-      </div>
-      <div class="mb-3"><label>Subject (optional)</label><select class="form-select" id="qaSub"><option value="">None</option>${subs.map(s=>`<option value="${s.id}">${s.code}</option>`).join('')}</select></div>
-      <button class="btn btn-accent w-100" onclick="saveQuickTask()">Save Task</button>`;
-  } else if(type==='note'){
-    body.innerHTML = `
-      <div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-sticky me-2"></i>Add Note</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <div class="mb-2"><label>Title</label><input class="form-control" id="qaNTitle" placeholder="Note title"></div>
-      <div class="mb-3"><label>Content</label><textarea class="form-control" id="qaNContent" rows="4" placeholder="Write your note…"></textarea></div>
-      <button class="btn btn-accent w-100" onclick="saveQuickNoteModal()">Save Note</button>`;
-  } else if(type==='subject'){
-    body.innerHTML = `
-      <div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>Add Subject</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-      <p class="text-soft" style="font-size:.85rem">Full subject setup (days, room, professor, color) lives on the Schedule page for a smoother flow.</p>
-      <button class="btn btn-accent w-100" onclick="location.href='schedule.html?new=1'">Go to Schedule</button>`;
+  var body  = document.getElementById('quickModalBody');
+  var modal = new bootstrap.Modal(document.getElementById('quickModal'));
+  var semId = DB.getActiveSemesterId();
+  if(type === 'task'){
+    var subs = DB.getSubjects().filter(function(s){ return s.semesterId === semId; });
+    body.innerHTML =
+      '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-plus-square me-2"></i>Add Task</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
+      '<div class="mb-2"><label>Title</label><input class="form-control" id="qaTitle" placeholder="e.g. Finish lab report"></div>' +
+      '<div class="row g-2 mb-2">' +
+        '<div class="col-6"><label>Category</label><select class="form-select" id="qaCat"><option>Homework</option><option>Project</option><option>Quiz</option><option>Exam</option><option>Personal</option><option>Organization</option></select></div>' +
+        '<div class="col-6"><label>Priority</label><select class="form-select" id="qaPri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>' +
+      '</div>' +
+      '<div class="row g-2 mb-2">' +
+        '<div class="col-6"><label>Due Date</label><input type="date" class="form-control" id="qaDate" value="' + todayKey() + '"></div>' +
+        '<div class="col-6"><label>Due Time</label><input type="time" class="form-control" id="qaTime" value="23:59"></div>' +
+      '</div>' +
+      '<div class="mb-3"><label>Subject (optional)</label><select class="form-select" id="qaSub"><option value="">None</option>' +
+      subs.map(function(s){ return '<option value="' + s.id + '">' + escHtml(s.code) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<button class="btn btn-accent w-100" onclick="saveQuickTask()">Save Task</button>';
+  } else if(type === 'note'){
+    body.innerHTML =
+      '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-sticky me-2"></i>Add Note</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
+      '<div class="mb-2"><label>Title</label><input class="form-control" id="qaNTitle" placeholder="Note title"></div>' +
+      '<div class="mb-3"><label>Content</label><textarea class="form-control" id="qaNContent" rows="4" placeholder="Write your note\u2026"></textarea></div>' +
+      '<button class="btn btn-accent w-100" onclick="saveQuickNoteModal()">Save Note</button>';
+  } else if(type === 'subject'){
+    body.innerHTML =
+      '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>Add Subject</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
+      '<p class="text-soft" style="font-size:.85rem">Full subject setup (days, room, professor, color) lives on the Schedule page.</p>' +
+      '<button class="btn btn-accent w-100" onclick="location.href=\'schedule.html?new=1\'">Go to Schedule</button>';
   }
   modal.show();
 }
+
 function saveQuickTask(){
-  const title = document.getElementById('qaTitle').value.trim();
+  var title = document.getElementById('qaTitle').value.trim();
   if(!title){ Toast.show('Please enter a title','high','bi-exclamation-triangle'); return; }
-  const semId = DB.getActiveSemesterId();
-  const tasks = DB.getTasks();
+  var semId = DB.getActiveSemesterId();
+  var tasks = DB.getTasks();
   tasks.push({
-    id:DB.uid(), title, description:'', subjectId: document.getElementById('qaSub').value || null,
-    priority: document.getElementById('qaPri').value, category: document.getElementById('qaCat').value,
-    dueDate: document.getElementById('qaDate').value, dueTime: document.getElementById('qaTime').value,
-    status:'not-started', progress:0, reminder:true, checklist:[], repeat:'none', score:null, remarks:'',
-    semesterId: semId, createdAt:Date.now()
+    id: DB.uid(), title: title, description: '',
+    subjectId: document.getElementById('qaSub').value || null,
+    priority: document.getElementById('qaPri').value,
+    category: document.getElementById('qaCat').value,
+    dueDate: document.getElementById('qaDate').value,
+    dueTime: document.getElementById('qaTime').value,
+    status: 'not-started', progress: 0, reminder: true, checklist: [],
+    repeat: 'none', score: null, remarks: '',
+    semesterId: semId, createdAt: Date.now()
   });
   DB.saveTasks(tasks);
   bootstrap.Modal.getInstance(document.getElementById('quickModal')).hide();
   Toast.show('Task added');
-  renderTodayTasks(); renderUpcomingDeadlines(); renderAssignmentProgress();
+  renderUpcomingTasks();
+  renderStatCards();
+  renderAcademicProgress();
 }
+
 function saveQuickNoteModal(){
-  const title = document.getElementById('qaNTitle').value.trim() || 'Untitled';
-  const content = document.getElementById('qaNContent').value.trim();
-  const semId = DB.getActiveSemesterId();
-  const notes = DB.getNotes();
-  notes.unshift({ id:DB.uid(), title, content, category:'Organization', pinned:false, favorite:false, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
+  var title   = document.getElementById('qaNTitle').value.trim() || 'Untitled';
+  var content = document.getElementById('qaNContent').value.trim();
+  var semId   = DB.getActiveSemesterId();
+  var notes   = DB.getNotes();
+  notes.unshift({ id:DB.uid(), title:title, content:content, category:'Organization', pinned:false, favorite:false, checklist:[], semesterId:semId, createdAt:Date.now(), updatedAt:Date.now() });
   DB.saveNotes(notes);
   bootstrap.Modal.getInstance(document.getElementById('quickModal')).hide();
   Toast.show('Note added');
