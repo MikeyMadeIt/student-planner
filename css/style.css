@@ -2336,13 +2336,13 @@ td { vertical-align: middle; }
 .tk-meta-row {
   display: flex;
   align-items: inline;
-  gap: 30px;
+  gap: 55px;
   font-size: .65rem;
 }
 .tk-meta-k {
   font-weight: 700;
   color: var(--text-faint);
-  min-width: 68px;
+  min-width: 60px;
   flex-shrink: 0;
   font-size: .65rem;
   text-transform: uppercase;
