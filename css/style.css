@@ -2337,14 +2337,14 @@ td { vertical-align: middle; }
   display: flex;
   align-items: inline;
   gap: 30px;
-  font-size: .70rem;
+  font-size: .65rem;
 }
 .tk-meta-k {
   font-weight: 700;
   color: var(--text-faint);
   min-width: 68px;
   flex-shrink: 0;
-  font-size: .70rem;
+  font-size: .65rem;
   text-transform: uppercase;
   letter-spacing: .05em;
 }
