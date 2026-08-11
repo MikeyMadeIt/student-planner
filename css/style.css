@@ -2289,12 +2289,12 @@ td { vertical-align: middle; }
 .tk-meta-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 .tk-meta-row {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 30px;
   font-size: .78rem;
 }
 .tk-meta-k {
