@@ -23,25 +23,44 @@
       <a href="syllabus.html" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Subjects</a>
     </div>
 
+    <!-- Course Header Card (name, code, units, instructor, schedule, room, progress) -->
     <div id="courseHeader"></div>
 
+    <!-- Course Description -->
+    <div id="svDescCard"></div>
+
+    <!-- Course Outline -->
     <div class="glass card-pad mb-3 fade-in">
-      <input class="form-control" id="weekSearch" placeholder="Search this syllabus — week, learning outcome, topic…" oninput="renderWeeksAccordion()">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="section-title mb-0"><i class="bi bi-map"></i>Course Outline</div>
+        <button class="btn btn-accent btn-sm" onclick="openWeekModal(currentCourseId())"><i class="bi bi-plus-lg me-1"></i>Add Topic</button>
+      </div>
+      <div class="mb-3">
+        <input class="form-control" id="weekSearch" placeholder="Search topics, outcomes, subtopics…" oninput="renderWeeksAccordion()">
+      </div>
+      <div id="weeksAccordion" class="syl-week-list"></div>
     </div>
 
-    <div class="glass card-pad fade-in">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="section-title mb-0"><i class="bi bi-calendar3-week"></i>Weekly Breakdown</div>
-        <button class="btn btn-accent btn-sm" onclick="openWeekModal(currentCourseId())"><i class="bi bi-plus-lg me-1"></i>Add Week</button>
-      </div>
-      <div id="weeksAccordion" class="syl-accordion accordion"></div>
-    </div>
+    <!-- Learning Outcomes -->
+    <div id="svOutcomesCard"></div>
+
+    <!-- Grading -->
+    <div id="svGradingCard"></div>
+
+    <!-- Requirements -->
+    <div id="svReqCard"></div>
+
+    <!-- Important Policies -->
+    <div id="svPoliciesCard"></div>
+
+    <!-- References -->
+    <div id="svRefsCard"></div>
 
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
 
-<button class="fab-btn" id="addWeekFab" onclick="openWeekModal(currentCourseId())" title="Add Week"><i class="bi bi-plus-lg"></i></button>
+<button class="fab-btn" id="addWeekFab" onclick="openWeekModal(currentCourseId())" title="Add Topic"><i class="bi bi-plus-lg"></i></button>
 
 <!-- Add/Edit Subject Modal (reused) -->
 <div class="modal fade" id="courseModal" tabindex="-1">
@@ -52,7 +71,7 @@
   </div>
 </div>
 
-<!-- Add/Edit Week Modal -->
+<!-- Add/Edit Week/Topic Modal -->
 <div class="modal fade" id="weekModal" tabindex="-1" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">

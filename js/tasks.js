@@ -62,7 +62,7 @@ function initTasks() {
   });
 
   var params = new URLSearchParams(location.search);
-  if (params.get('new') === '1') openTaskModal();
+  if (params.get('new') === '1') openTaskModal(null, params.get('syllabusWeekId'), params.get('title'));
   window.quickAddHandlers = window.quickAddHandlers || {};
   window.quickAddHandlers['task'] = function() { openTaskModal(); };
 }
@@ -541,7 +541,7 @@ function deleteTask(id) {
 }
 
 /* ── Add/Edit Modal ── */
-function openTaskModal(id) {
+function openTaskModal(id, prefillSyllabusWeekId, prefillTitle) {
   const t = id ? DB.getTasks().find(x => x.id === id) : null;
   document.getElementById('taskModalTitle').textContent = t ? 'Edit Task' : 'Add Task';
   const semId = DB.getActiveSemesterId();
@@ -554,9 +554,10 @@ function openTaskModal(id) {
   document.getElementById('taskModalBody').innerHTML = `
     <div class="row g-2">
       <input type="hidden" id="tId" value="${t ? t.id : ''}">
+      <input type="hidden" id="tSyllabusWeekId" value="${t ? (t.syllabusWeekId||'') : (prefillSyllabusWeekId||'')}">
       <div class="col-12">
         <label>Task Title *</label>
-        <input class="form-control" id="tTitle" value="${t ? escHtml(t.title) : ''}" placeholder="What needs to be done?" autocomplete="off">
+        <input class="form-control" id="tTitle" value="${t ? escHtml(t.title) : (prefillTitle ? escHtml(prefillTitle) : '')}" placeholder="What needs to be done?" autocomplete="off">
       </div>
       <div class="col-12">
         <label>Description</label>
@@ -634,6 +635,7 @@ function saveTask() {
   const id = document.getElementById('tId').value;
   const tasks = DB.getTasks();
 
+  const syllabusWeekIdEl = document.getElementById('tSyllabusWeekId');
   const data = {
     title,
     description: document.getElementById('tDesc').value.trim(),
@@ -643,6 +645,7 @@ function saveTask() {
     dueDate: document.getElementById('tDueDate').value,
     dueTime: document.getElementById('tDueTime').value,
     checklist,
+    syllabusWeekId: syllabusWeekIdEl ? (syllabusWeekIdEl.value || null) : null,
     updatedAt: Date.now(),
   };
   data.progress = computeProgressFromChecklist(checklist, id ? (tasks.find(x => x.id === id) || {}).progress : 0);

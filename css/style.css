@@ -497,8 +497,16 @@ a:focus-visible, button:focus-visible, .form-control:focus-visible{
 @media (max-width:991px){ .fab-btn{ bottom:86px; } }
 
 /* ---------- SYLLABUS: subject cards ---------- */
-.syllabus-card{ border-radius:18px; padding:18px; position:relative; overflow:hidden; height:100%; }
+.syllabus-card{ border-radius:12px; padding:12px 13px; position:relative; overflow:hidden; height:100%; }
 .syllabus-card .code-chip{ font-family:var(--font-mono); }
+/* Uniform 30px buttons inside every syllabus card */
+.syllabus-card .btn-accent,
+.syllabus-card .btn-ghost,
+.syllabus-card .btn-icon {
+  height: 30px !important; font-size: .74rem !important;
+  border-radius: 8px !important; padding-left: 10px !important; padding-right: 10px !important;
+}
+.syllabus-card .btn-icon { width: 30px !important; padding: 0 !important; }
 
 /* ---------- SYLLABUS: accordion (weeks) ---------- */
 .syl-accordion .accordion-item{
@@ -1575,13 +1583,17 @@ label { font-size: .77rem; font-weight: 700; color: var(--text-soft); margin-bot
 
 /* ── Syllabus cards ── */
 .syllabus-card {
-  border-radius: 13px;
-  padding: 13px 14px;
+  border-radius: 12px;
+  padding: 12px 13px;
   position: relative;
   overflow: hidden;
   height: 100%;
   border: 1px solid var(--border);
 }
+.syllabus-card .fw-bold[style*="1.02rem"] { font-size: .92rem !important; }
+.syllabus-card .text-faint[style*=".78rem"] { font-size: .74rem !important; }
+.syllabus-card .d-flex.gap-3 { gap: 10px !important; }
+.syllabus-card .d-flex.gap-2 { gap: 6px !important; }
 
 /* ── Attendance rows ── */
 .att-row {
@@ -2436,4 +2448,457 @@ td { vertical-align: middle; }
   .tk-progress-bar-fill { transition: none !important; }
   .tk-card { animation: none !important; }
   .tk-card-body-expanded { animation: none !important; }
+}
+
+/* ============================================================
+   SYLLABUS VIEW — INTERACTIVE COURSE ROADMAP
+   ============================================================ */
+
+/* ---- Shared button height token for syllabus pages ---- */
+/* All interactive buttons on syllabus pages use --syl-btn-h = 30px (btn-sm size) */
+/* btn-accent.btn-sm, btn-ghost.btn-sm, btn-icon on syllabus view all share this */
+
+/* ---- Course Header Card ---- */
+.syl-course-header-card { position: relative; }
+
+.syl-header-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
+.syl-header-meta-row {
+  display: flex; align-items: center; gap: 7px;
+  font-size: .8rem; color: var(--text-soft);
+}
+.syl-header-meta-row i { width: 13px; flex-shrink: 0; font-size: .78rem; }
+
+/* ---- Course Progress ---- */
+.syl-progress-block {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px; margin-top: 10px;
+}
+.syl-progress-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-faint);
+}
+.syl-progress-pct {
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: .82rem; color: rgb(var(--accent));
+}
+.syl-progress-track {
+  height: 5px; background: var(--border); border-radius: 20px;
+  overflow: hidden; margin-bottom: 4px;
+}
+.syl-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  border-radius: 20px;
+  transition: width .5s cubic-bezier(.22,.9,.35,1);
+}
+.syl-progress-sub { font-size: .7rem; color: var(--text-faint); }
+
+/* ---- Course Header action buttons — uniform 30px height ---- */
+.syl-course-header-card .btn-ghost,
+.syl-course-header-card .btn-accent {
+  height: 30px !important;
+  padding: 0 10px !important;
+  font-size: .76rem !important;
+  border-radius: 8px !important;
+}
+
+/* ---- Description ---- */
+.syl-desc-text { font-size: .86rem; color: var(--text-soft); line-height: 1.6; margin: 0; }
+
+/* ---- Week List (Course Outline) ---- */
+.syl-week-list { display: flex; flex-direction: column; gap: 5px; }
+
+.syl-week-item {
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface-2); overflow: hidden;
+  transition: border-color .25s, box-shadow .25s;
+}
+.syl-week-item:hover { border-color: rgba(var(--accent),.22); }
+.syl-week-item.completed { border-color: rgba(52,211,153,.22); }
+
+.syl-week-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 13px; cursor: pointer; user-select: none;
+  gap: 10px; transition: background .2s;
+}
+.syl-week-header:hover { background: rgba(var(--accent),.05); }
+
+.syl-week-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+
+.syl-week-badge {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: .68rem; color: var(--text-soft); flex-shrink: 0;
+  transition: background .25s, color .25s, border-color .25s;
+}
+.syl-week-badge.done {
+  background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.38); color: #34d399;
+}
+
+.syl-week-info { flex: 1; min-width: 0; }
+.syl-week-label {
+  font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+  color: rgb(var(--accent)); text-transform: uppercase; margin-bottom: 1px;
+}
+.syl-week-title { font-weight: 700; font-size: .86rem; color: var(--text); overflow-wrap: anywhere; line-height: 1.3; }
+.syl-week-date { font-size: .71rem; color: var(--text-faint); margin-top: 1px; }
+
+.syl-week-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+.syl-week-meta span {
+  font-size: .66rem; color: var(--text-faint);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 1px 7px;
+}
+
+.syl-week-actions { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+
+/* All icon-buttons in week rows: uniform 30px */
+.syl-week-tool-btn {
+  width: 30px !important; height: 30px !important;
+  font-size: .78rem !important; border-radius: 8px !important;
+}
+.syl-week-tool-btn.btn-icon-danger:hover {
+  color: rgb(var(--danger)); border-color: rgba(var(--danger),.4);
+}
+
+.syl-week-chevron {
+  font-size: .72rem; color: var(--text-faint);
+  transition: transform .3s var(--ease); margin-left: 1px; flex-shrink: 0;
+}
+.syl-week-chevron.open { transform: rotate(90deg); }
+
+/* ---- "Add Topic" button in outline header — 30px ---- */
+#weeksAccordion ~ * .btn-accent,
+.glass .btn-accent.btn-sm,
+.glass .btn-ghost.btn-sm {
+  height: 30px !important;
+  font-size: .76rem !important;
+  border-radius: 8px !important;
+}
+
+/* ---- Week Body (expanded) ---- */
+.syl-week-body { border-top: 1px solid var(--border); animation: slideDown .18s var(--ease); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.syl-week-body-inner { padding: 13px 15px 15px; }
+
+.syl-body-section { margin-bottom: 13px; }
+.syl-body-section:last-of-type { margin-bottom: 0; }
+
+.syl-body-section-title {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-faint); margin-bottom: 7px;
+  display: flex; align-items: center; gap: 5px;
+}
+.syl-body-section-title i { color: rgb(var(--accent)); font-size: .76rem; }
+.syl-body-section-title span { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+/* ---- Related tasks ---- */
+.syl-task-list { display: flex; flex-direction: column; gap: 5px; }
+.syl-task-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: .82rem; color: var(--text); padding: 5px 9px;
+  border-radius: var(--radius-sm); background: var(--surface);
+  border: 1px solid var(--border); transition: border-color .2s;
+}
+.syl-task-item.completed .syl-task-title { text-decoration: line-through; color: var(--text-faint); }
+.syl-task-icon { font-size: .82rem; flex-shrink: 0; color: var(--text-faint); }
+.syl-task-item.completed .syl-task-icon { color: #34d399; }
+.syl-task-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* Create task button — 30px */
+.syl-create-task-btn {
+  height: 30px !important; font-size: .74rem !important;
+  border-radius: 8px !important; padding: 0 10px !important;
+}
+
+/* ---- Mark complete row — 30px buttons ---- */
+.syl-week-complete-row {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+}
+.syl-week-complete-row .btn {
+  height: 30px !important; font-size: .76rem !important;
+  border-radius: 8px !important; padding: 0 12px !important;
+}
+.syl-btn-undo { opacity: .65; }
+
+/* ---- Learning Outcomes card ---- */
+.syl-course-outcomes {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.syl-course-outcomes li {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: .86rem; color: var(--text-soft); line-height: 1.45;
+}
+.syl-outcome-icon { color: #34d399; font-size: .86rem; margin-top: 2px; flex-shrink: 0; }
+
+/* ---- Grading card ---- */
+.syl-grading-list { display: flex; flex-direction: column; gap: 8px; }
+.syl-grading-row { display: flex; align-items: center; gap: 10px; }
+.syl-grading-name { font-size: .84rem; font-weight: 600; color: var(--text); width: 150px; flex-shrink: 0; }
+.syl-grading-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.syl-grading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  border-radius: 20px; transition: width .5s var(--ease);
+}
+.syl-grading-pct {
+  font-family: var(--font-mono); font-size: .78rem; font-weight: 700;
+  color: rgb(var(--accent)); width: 32px; text-align: right; flex-shrink: 0;
+}
+.syl-grading-total {
+  margin-top: 8px; font-size: .74rem; font-weight: 600;
+  padding: 4px 9px; border-radius: var(--radius-sm);
+}
+.syl-grading-total.warn { background: rgba(251,191,36,.1); color: #fbbf24; border: 1px solid rgba(251,191,36,.25); }
+.syl-grading-total.ok  { background: rgba(52,211,153,.1);  color: #34d399; border: 1px solid rgba(52,211,153,.25); }
+
+/* References expand/collapse button — 30px */
+#svRefsCard .btn { height: 30px !important; font-size: .74rem !important; border-radius: 8px !important; padding: 0 10px !important; }
+
+/* ---- Requirements / Policies ---- */
+.syl-policy-text { font-size: .84rem; color: var(--text-soft); line-height: 1.65; }
+
+/* ---- References ---- */
+.syl-refs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.syl-refs-list li {
+  font-size: .84rem; color: var(--text-soft);
+  padding: 4px 0 4px 11px;
+  border-left: 2px solid rgba(var(--accent),.35);
+}
+
+/* ---- Course modal section labels ---- */
+.syl-modal-section-label {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; color: rgb(var(--accent)); margin-bottom: 7px; margin-top: 4px;
+}
+
+/* ---- Empty state ---- */
+.syl-empty-state { text-align: center; padding: 32px 20px; color: var(--text-faint); }
+
+/* ---- Syllabus list page: search + sort bar buttons — 30px ---- */
+#syllabusSearch, #syllabusSort { height: 30px; font-size: .8rem; }
+
+/* ---- Responsive ---- */
+@media (max-width: 575px) {
+  .syl-week-header { padding: 9px 11px; }
+  .syl-week-body-inner { padding: 11px 12px 14px; }
+  .syl-grading-name { width: 100px; font-size: .78rem; }
+  .syl-week-badge { width: 28px; height: 28px; }
+  .syl-week-title { font-size: .83rem; }
+  .syl-header-meta-row { font-size: .77rem; }
+  .syl-week-tool-btn { display: none !important; }
+}
+@media (max-width: 400px) {
+  .syl-grading-row { flex-wrap: wrap; gap: 5px; }
+  .syl-grading-name { width: 100%; }
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .syl-week-chevron { transition: none !important; }
+  .syl-progress-fill { transition: none !important; }
+  .syl-week-body { animation: none !important; }
+  .syl-grading-bar { transition: none !important; }
+}
+
+/* ============================================================
+   SCHEDULE PAGE — Daily Command Center
+   ============================================================ */
+
+/* ── Week nav card ── */
+.sch-nav-card { padding: 14px 16px; }
+.sch-week-label {
+  font-size: .88rem; font-weight: 700; color: var(--text);
+  flex: 1; text-align: center; white-space: nowrap;
+}
+.sch-nav-btn { width: 30px !important; height: 30px !important; font-size: .8rem !important; border-radius: 8px !important; }
+.sch-today-btn { height: 30px !important; font-size: .76rem !important; border-radius: 8px !important; padding: 0 12px !important; flex-shrink: 0; }
+
+/* ── Day selector strip ── */
+.sch-day-strip {
+  display: flex; gap: 6px; justify-content: space-between;
+}
+.sch-day-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 7px 4px 6px; border-radius: 10px; cursor: pointer;
+  border: 1px solid transparent; background: transparent;
+  transition: background .18s, border-color .18s, color .18s;
+  min-width: 0;
+}
+.sch-day-btn:hover { background: rgba(var(--accent),.08); border-color: rgba(var(--accent),.18); }
+.sch-day-btn.selected {
+  background: rgba(var(--accent),.15); border-color: rgba(var(--accent),.4);
+}
+.sch-day-btn.today .sch-day-num { color: rgb(var(--accent)); }
+.sch-day-name { font-size: .62rem; font-weight: 700; letter-spacing: .07em; color: var(--text-faint); text-transform: uppercase; }
+.sch-day-btn.selected .sch-day-name { color: rgb(var(--accent)); }
+.sch-day-num { font-size: .95rem; font-weight: 800; font-family: var(--font-mono); color: var(--text); margin-top: 1px; }
+.sch-day-btn.selected .sch-day-num { color: rgb(var(--accent)); }
+.sch-today-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgb(var(--accent)); margin-top: 3px;
+}
+
+/* ── Next / Current class card ── */
+.sch-next-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  border-left: 3px solid var(--sc-color, rgba(var(--accent),1));
+  padding: 14px 16px; position: relative;
+}
+.sch-next-badge {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.sch-next-badge.now { background: rgba(251,113,133,.18); color: #fb7185; animation: sch-pulse 2s ease-in-out infinite; }
+.sch-next-badge.next { background: rgba(var(--accent),.15); color: rgb(var(--accent)); }
+.sch-next-badge.done { background: rgba(52,211,153,.15); color: #34d399; }
+@keyframes sch-pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.sch-next-body { flex: 1; min-width: 0; }
+.sch-next-label { font-size: .62rem; font-weight: 800; letter-spacing: .1em; color: var(--text-faint); text-transform: uppercase; margin-bottom: 3px; }
+.sch-next-subject { font-size: .96rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+.sch-next-meta { font-size: .78rem; color: var(--text-faint); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sch-dot-sep { opacity: .4; }
+.sch-next-loc { font-size: .78rem; color: var(--text-faint); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.sch-next-away { font-size: .82rem; font-weight: 700; color: rgb(var(--accent)); margin-top: 6px; }
+.sch-next-edit { position: absolute; top: 12px; right: 12px; height: 28px !important; width: 28px !important; font-size: .78rem !important; border-radius: 7px !important; }
+.sch-now-progress-wrap {}
+.sch-now-track { height: 5px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.sch-now-fill { height: 100%; border-radius: 20px; transition: width .5s var(--ease); }
+
+/* ── Day summary stats ── */
+.sch-day-summary { padding: 12px 16px; }
+.sch-summary-label { font-size: .62rem; font-weight: 800; letter-spacing: .1em; color: var(--text-faint); text-transform: uppercase; margin-bottom: 10px; }
+.sch-summary-stats { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.sch-stat { display: flex; flex-direction: column; }
+.sch-stat-val { font-size: .96rem; font-weight: 800; font-family: var(--font-mono); color: var(--text); line-height: 1.2; }
+.sch-stat-lbl { font-size: .68rem; color: var(--text-faint); }
+.sch-stat-div { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+/* ── Conflict banner ── */
+.sch-conflict-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  border-left: 3px solid #fbbf24; padding: 10px 14px;
+}
+.sch-conflict-icon { color: #fbbf24; font-size: .95rem; margin-top: 2px; flex-shrink: 0; }
+.sch-conflict-title { font-size: .82rem; font-weight: 700; color: #fbbf24; }
+.sch-conflict-body { font-size: .78rem; color: var(--text-soft); }
+
+/* ── Timeline ── */
+.sch-timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 12px; }
+
+.sch-tl-item { display: flex; gap: 0; align-items: stretch; }
+.sch-tl-left {
+  display: flex; flex-direction: column; align-items: center;
+  width: 70px; flex-shrink: 0; padding-right: 12px;
+}
+.sch-tl-time {
+  font-size: .72rem; font-weight: 700; font-family: var(--font-mono);
+  color: var(--text-faint); white-space: nowrap; padding-top: 14px;
+}
+.sch-tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 6px; min-height: 20px; }
+
+.sch-tl-card {
+  flex: 1; min-width: 0; margin-bottom: 8px; border-radius: var(--radius-md);
+  padding: 12px 14px; border-left: 3px solid var(--sc-color, rgba(var(--accent),1));
+  transition: border-color .2s, box-shadow .2s; position: relative;
+}
+.sch-tl-item.is-now .sch-tl-card { box-shadow: 0 0 0 1px rgba(251,113,133,.25), 0 4px 20px rgba(0,0,0,.15); border-left-color: #fb7185; }
+.sch-tl-item.is-past .sch-tl-card { opacity: .55; }
+
+.sch-now-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .62rem; font-weight: 800; letter-spacing: .08em;
+  color: #fb7185; text-transform: uppercase; margin-bottom: 6px;
+  animation: sch-pulse 2s ease-in-out infinite;
+}
+.sch-tl-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.sch-tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.sch-tl-info { flex: 1; min-width: 0; }
+.sch-tl-title { font-size: .9rem; font-weight: 700; color: var(--text); line-height: 1.3; overflow-wrap: anywhere; }
+.sch-tl-code { font-size: .72rem; color: var(--text-faint); margin-top: 1px; font-family: var(--font-mono); }
+.sch-tl-meta { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+.sch-tl-meta span { font-size: .75rem; color: var(--text-faint); display: flex; align-items: center; gap: 5px; }
+.sch-tl-meta i { font-size: .7rem; color: rgb(var(--accent)); opacity: .75; }
+.sch-tl-now-bar { height: 4px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.sch-tl-now-fill { height: 100%; border-radius: 20px; transition: width .5s var(--ease); }
+
+/* ── Task badge in timeline card ── */
+.sch-tl-tasks {
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  font-size: .76rem; font-weight: 600; color: rgb(var(--accent));
+  background: rgba(var(--accent),.08); border: 1px solid rgba(var(--accent),.2);
+  border-radius: 7px; padding: 5px 10px; margin-top: 8px;
+  transition: background .18s;
+}
+.sch-tl-tasks:hover { background: rgba(var(--accent),.14); }
+.sch-task-arrow { font-size: .7rem; opacity: .6; }
+
+/* ── Free time block ── */
+.sch-timeline-free { display: flex; gap: 0; align-items: center; }
+.sch-tl-connector { width: 70px; flex-shrink: 0; display: flex; justify-content: center; }
+.sch-tl-connector.free::before { content:''; display:block; width:1px; height:32px; background:var(--border); border-style:dashed; border-width:0 0 0 1px; border-color:var(--border); }
+.sch-free-block {
+  display: flex; align-items: center; gap: 7px; flex: 1;
+  font-size: .72rem; font-weight: 600; color: var(--text-faint);
+  padding: 5px 10px 5px 0; letter-spacing: .03em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sch-free-icon { font-size: .78rem; opacity: .6; }
+
+/* ── Empty day state ── */
+.sch-empty-day {
+  text-align: center; padding: 36px 20px; margin-bottom: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+
+/* ── Today's tasks panel ── */
+.sch-task-list { display: flex; flex-direction: column; gap: 6px; }
+.sch-task-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .84rem; color: var(--text);
+}
+.sch-task-row.done .sch-task-title { text-decoration: line-through; color: var(--text-faint); }
+.sch-task-icon { font-size: .86rem; flex-shrink: 0; color: var(--text-faint); }
+.sch-task-row.done .sch-task-icon { color: #34d399; }
+.sch-task-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* ── Timetable enhancements ── */
+.tt-head-today { color: rgb(var(--accent)) !important; }
+.tt-head-date { display: block; font-size: .68rem; font-weight: 400; color: var(--text-faint); margin-top: 1px; }
+.tt-head-date-today { color: rgb(var(--accent)); font-weight: 700; }
+.tt-col-today { background: rgba(var(--accent),.03); }
+.tt-block-code { font-size: .68rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-block-time { font-size: .6rem; font-weight: 400; opacity: .85; }
+.tt-block-room { font-size: .58rem; opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-block-now { box-shadow: 0 0 0 2px #fb7185, 0 4px 12px rgba(251,113,133,.3) !important; }
+
+/* ── Responsive ── */
+@media (max-width: 575px) {
+  .sch-day-strip { gap: 4px; }
+  .sch-day-btn { padding: 6px 2px 5px; border-radius: 8px; }
+  .sch-day-num { font-size: .88rem; }
+  .sch-tl-left { width: 58px; padding-right: 9px; }
+  .sch-tl-time { font-size: .66rem; }
+  .sch-tl-title { font-size: .84rem; }
+  .sch-next-subject { font-size: .88rem; }
+  .sch-next-card { padding: 12px 13px; gap: 10px; }
+  .sch-next-badge { width: 30px; height: 30px; font-size: .88rem; border-radius: 8px; }
+  .sch-week-label { font-size: .8rem; }
+}
+@media (max-width: 400px) {
+  .sch-tl-left { width: 52px; padding-right: 7px; }
+  .sch-day-name { font-size: .56rem; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .sch-next-badge.now, .sch-now-badge { animation: none !important; }
+  .sch-now-fill, .sch-tl-now-fill, .sch-progress-fill { transition: none !important; }
 }

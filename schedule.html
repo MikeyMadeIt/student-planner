@@ -18,58 +18,73 @@
     <div class="mobile-topbar">
       <div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div>
     </div>
+
+    <!-- Page header -->
     <div class="topbar">
-      <div><h1 class="page-title">Schedule Manager</h1><p class="page-sub">All your subjects, one place</p></div>
-      <button class="btn btn-accent" onclick="openSubjectModal()"><i class="bi bi-plus-lg me-1"></i>Add Subject</button>
+      <div>
+        <h1 class="page-title">Schedule</h1>
+        <p class="page-sub">See what's happening today and throughout the week.</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <button class="btn btn-ghost btn-sm sched-toggle-btn active" data-view="day" onclick="setSchedView('day')" title="Day view"><i class="bi bi-calendar-day"></i></button>
+        <button class="btn btn-ghost btn-sm sched-toggle-btn" data-view="timetable" onclick="setSchedView('timetable')" title="Week timetable"><i class="bi bi-calendar2-week"></i></button>
+        <button class="btn btn-ghost btn-sm sched-toggle-btn" data-view="list" onclick="setSchedView('list')" title="Subject list"><i class="bi bi-list-ul"></i></button>
+        <button class="btn btn-accent btn-sm" onclick="openSubjectModal()"><i class="bi bi-plus-lg me-1"></i>Add Subject</button>
+      </div>
     </div>
 
-    <!-- Controls -->
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="row g-2 align-items-center">
-        <div class="col-md-4">
-          <input class="form-control" id="searchInput" placeholder="Search subject, professor, room…">
+    <!-- Week navigation -->
+    <div class="glass card-pad mb-3 fade-in sch-nav-card">
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <button class="btn-icon sch-nav-btn" onclick="shiftWeek(-1)" title="Previous week"><i class="bi bi-chevron-left"></i></button>
+        <div class="sch-week-label" id="schWeekLabel"></div>
+        <button class="btn-icon sch-nav-btn" onclick="shiftWeek(1)" title="Next week"><i class="bi bi-chevron-right"></i></button>
+        <button class="btn btn-ghost btn-sm sch-today-btn" onclick="goToday()">Today</button>
+      </div>
+      <!-- Day selector strip -->
+      <div class="sch-day-strip" id="schDayStrip"></div>
+    </div>
+
+    <!-- Next class / current class card -->
+    <div id="schNextCard" class="mb-3 fade-in"></div>
+
+    <!-- Day view -->
+    <div id="schDayView">
+      <!-- Daily summary + timeline rendered here -->
+    </div>
+
+    <!-- Timetable view -->
+    <div id="schTimetableView" class="d-none">
+      <div class="glass card-pad mb-3 fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="section-title mb-0"><i class="bi bi-calendar2-week"></i>Weekly Timetable</div>
+          <div class="d-flex gap-2">
+            <button class="btn-icon sch-nav-btn" onclick="ttZoom(-1)" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
+            <button class="btn-icon sch-nav-btn" onclick="ttZoom(1)" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
+          </div>
         </div>
-        <div class="col-6 col-md-2">
-          <select class="form-select" id="filterDay">
-            <option value="">All Days</option>
-            <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
-          </select>
-        </div>
-        <div class="col-6 col-md-2">
-          <select class="form-select" id="sortBy">
-            <option value="time">Sort: Time</option>
-            <option value="code">Sort: Code</option>
-            <option value="professor">Sort: Professor</option>
-          </select>
-        </div>
-        <div class="col-12 col-md-4 d-flex gap-2">
-          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" title="Show archived" id="archiveToggleBtn" onclick="toggleArchivedView()"><i class="bi bi-archive"></i></button>
-          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn active" data-view="card" onclick="switchView('card')" title="Card view"><i class="bi bi-grid-3x3-gap"></i></button>
-          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" data-view="timetable" onclick="switchView('timetable')" title="Weekly timetable"><i class="bi bi-calendar2-week"></i></button>
-          <button class="btn btn-ghost flex-grow-1 sched-toggle-btn" data-view="timeline" onclick="switchView('timeline')" title="Timeline"><i class="bi bi-list-ol"></i></button>
+        <div class="scroll-x grabbable">
+          <div id="ttGrid" style="min-width:680px"></div>
         </div>
       </div>
     </div>
 
-    <!-- CARD VIEW -->
-    <div id="cardView" class="row g-3 stagger"></div>
-
-    <!-- TIMETABLE VIEW -->
-    <div id="timetableView" class="glass card-pad d-none fade-in">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="section-title mb-0"><i class="bi bi-calendar2-week"></i>Weekly Timetable</div>
-        <div class="d-flex gap-2">
-          <button class="btn-icon" onclick="ttZoom(-1)"><i class="bi bi-zoom-out"></i></button>
-          <button class="btn-icon" onclick="ttZoom(1)"><i class="bi bi-zoom-in"></i></button>
+    <!-- Subject list view -->
+    <div id="schListView" class="d-none">
+      <div class="glass card-pad mb-3 fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="section-title mb-0"><i class="bi bi-journal-bookmark"></i>All Subjects</div>
+          <div class="d-flex gap-2">
+            <input class="form-control" id="schSearchInput" placeholder="Search…" style="height:30px;font-size:.8rem;width:160px" oninput="renderListView()">
+            <button class="btn btn-ghost btn-sm" id="schArchiveBtn" onclick="toggleArchivedView()"><i class="bi bi-archive me-1"></i>Archived</button>
+          </div>
         </div>
-      </div>
-      <div class="scroll-x grabbable">
-        <div id="ttGrid" style="min-width:760px"></div>
+        <div id="schSubjectList" class="row g-3 stagger"></div>
       </div>
     </div>
 
-    <!-- TIMELINE VIEW -->
-    <div id="timelineView" class="glass card-pad d-none fade-in"></div>
+    <!-- Today's tasks panel (day view only) -->
+    <div id="schTasksPanel" class="mb-3"></div>
 
   </main>
 </div>
@@ -79,13 +94,13 @@
 <div class="modal fade" id="subjectModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title" id="subjectModalTitle">Add Subject</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title" id="subjectModalTitle">Add Subject</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
       <div class="modal-body" id="subjectModalBody"></div>
     </div>
   </div>
 </div>
 
-<!-- Subject Detail Modal (timetable click) -->
+<!-- Subject Detail Modal -->
 <div class="modal fade" id="detailModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content card-pad" id="detailModalBody"></div>
