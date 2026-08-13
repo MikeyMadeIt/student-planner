@@ -2801,6 +2801,7 @@ td { vertical-align: middle; }
 .sch-tl-time {
   font-size: .72rem; font-weight: 700; font-family: var(--font-mono);
   color: var(--text-faint); white-space: nowrap; padding-top: 14px;
+  width: 100%; text-align: right; padding-right: 12px; box-sizing: border-box;
 }
 .sch-tl-line { flex: 1; width: 1px; background: var(--border); margin-top: 6px; min-height: 20px; }
 
@@ -2841,14 +2842,24 @@ td { vertical-align: middle; }
 .sch-task-arrow { font-size: .7rem; opacity: .6; }
 
 /* ── Free time block ── */
-.sch-timeline-free { display: flex; gap: 0; align-items: center; }
-.sch-tl-connector { width: 70px; flex-shrink: 0; display: flex; justify-content: center; }
-.sch-tl-connector.free::before { content:''; display:block; width:1px; height:32px; background:var(--border); border-style:dashed; border-width:0 0 0 1px; border-color:var(--border); }
+.sch-timeline-free { display: flex; gap: 0; align-items: center; margin-bottom: 8px; }
+/* Match the 70px left column; line is centered within that column before the 12px right padding,
+   so its centre sits at (70 - 12) / 2 = 29px from the left edge of the column */
+.sch-tl-connector {
+  width: 70px; flex-shrink: 0;
+  display: flex; justify-content: center;
+  padding-right: 12px; /* mirrors .sch-tl-left padding */
+  box-sizing: border-box;
+}
+.sch-tl-connector.free::before {
+  content: ''; display: block;
+  width: 1px; height: 28px;
+  background: var(--border);
+}
 .sch-free-block {
   display: flex; align-items: center; gap: 7px; flex: 1;
   font-size: .72rem; font-weight: 600; color: var(--text-faint);
-  padding: 5px 10px 5px 0; letter-spacing: .03em; text-transform: uppercase;
-  margin-bottom: 8px;
+  padding: 0; letter-spacing: .03em; text-transform: uppercase;
 }
 .sch-free-icon { font-size: .78rem; opacity: .6; }
 
@@ -2885,7 +2896,8 @@ td { vertical-align: middle; }
   .sch-day-btn { padding: 6px 2px 5px; border-radius: 8px; }
   .sch-day-num { font-size: .88rem; }
   .sch-tl-left { width: 58px; padding-right: 9px; }
-  .sch-tl-time { font-size: .66rem; }
+  .sch-tl-time { font-size: .66rem; padding-right: 9px; }
+  .sch-tl-connector { width: 58px; padding-right: 9px; }
   .sch-tl-title { font-size: .84rem; }
   .sch-next-subject { font-size: .88rem; }
   .sch-next-card { padding: 12px 13px; gap: 10px; }
@@ -2894,6 +2906,8 @@ td { vertical-align: middle; }
 }
 @media (max-width: 400px) {
   .sch-tl-left { width: 52px; padding-right: 7px; }
+  .sch-tl-time { padding-right: 7px; }
+  .sch-tl-connector { width: 52px; padding-right: 7px; }
   .sch-day-name { font-size: .56rem; }
 }
 

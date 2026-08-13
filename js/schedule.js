@@ -86,14 +86,14 @@ function selectDay(d){
 /* ── Navigation bar render ── */
 function renderNav(){
   const ws = weekStart(_selectedDate);
-  const we = dateAddDays(ws, 4); // Mon-Fri
+  const we = dateAddDays(ws, 6); // Mon-Sun
   const label = `${MONTH_NAMES[ws.getMonth()]} ${ws.getDate()} – ${we.getDate()}, ${ws.getFullYear()}`;
   document.getElementById('schWeekLabel').textContent = label;
 
   const strip = document.getElementById('schDayStrip');
   const today = new Date();
-  // Show Mon-Fri of the selected week
-  strip.innerHTML = [0,1,2,3,4].map(i=>{
+  // Show Mon-Sun of the selected week
+  strip.innerHTML = [0,1,2,3,4,5,6].map(i=>{
     const d = dateAddDays(ws, i);
     const isToday = sameDay(d, today);
     const isSel = sameDay(d, _selectedDate);
@@ -400,11 +400,11 @@ function renderTimetable(){
   const todayName = DAY_SHORT[today.getDay()];
   const nm = nowMins();
 
-  // Build Mon-Fri columns
+  // Build Mon-Sun columns
   const ws = weekStart(_selectedDate);
-  const weekDays = [0,1,2,3,4].map(i=>dateAddDays(ws,i));
+  const weekDays = [0,1,2,3,4,5,6].map(i=>dateAddDays(ws,i));
 
-  let html = `<div style="display:grid;grid-template-columns:52px repeat(5,minmax(0,1fr));position:relative">`;
+  let html = `<div style="display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr));position:relative">`;
   // Header row
   html += `<div></div>`;
   weekDays.forEach(d=>{
