@@ -496,49 +496,291 @@ a:focus-visible, button:focus-visible, .form-control:focus-visible{
 .fab-btn:hover{ transform:translateY(-3px) scale(1.04); box-shadow:0 16px 34px rgba(var(--accent),.55); color:#fff; }
 @media (max-width:991px){ .fab-btn{ bottom:86px; } }
 
-/* ---------- SYLLABUS: subject cards ---------- */
-.syllabus-card{ border-radius:12px; padding:12px 13px; position:relative; overflow:hidden; height:100%; }
-.syllabus-card .code-chip{ font-family:var(--font-mono); }
-/* Uniform 30px buttons inside every syllabus card */
-.syllabus-card .btn-accent,
-.syllabus-card .btn-ghost,
-.syllabus-card .btn-icon {
-  height: 30px !important; font-size: .74rem !important;
-  border-radius: 8px !important; padding-left: 10px !important; padding-right: 10px !important;
-}
-.syllabus-card .btn-icon { width: 30px !important; padding: 0 !important; }
+/* ============================================================
+   SYLLABUS  —  List page + View page (Refined Compact Edition)
+   ============================================================ */
 
-/* ---------- SYLLABUS: accordion (weeks) ---------- */
-.syl-accordion .accordion-item{
-  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md)!important;
-  margin-bottom:10px; overflow:hidden;
+/* ── Shared button token ── */
+.sv-btn {
+  height: 26px !important; font-size: .72rem !important;
+  border-radius: 6px !important; padding: 0 9px !important;
 }
-.syl-accordion .accordion-header{ display:flex; align-items:stretch; }
-.syl-accordion .accordion-button{
-  background:transparent; color:var(--text); font-weight:700; font-size:.92rem;
-  box-shadow:none!important; padding:14px 16px; flex:1 1 auto; width:auto; min-width:0;
-}
-.syl-accordion .accordion-button:not(.collapsed){ background:rgba(var(--accent),.1); color:rgb(var(--accent)); }
-.syl-accordion .accordion-button::after{ filter:invert(1) grayscale(1) brightness(1.6); }
-[data-theme="light"] .syl-accordion .accordion-button::after{ filter:none; }
-.syl-accordion .accordion-body{ padding:6px 18px 18px; border-top:1px solid var(--border); color:var(--text); }
-.syl-week-tools{ display:flex; align-items:center; gap:4px; padding:0 10px; flex-shrink:0; }
-.syl-week-tools .btn-icon{ width:32px; height:32px; color:var(--text-soft); }
-.syl-week-tools .btn-icon.btn-icon-danger:hover{ color:rgb(var(--danger)); border-color:rgba(var(--danger),.4); }
-.syl-outcome-list{ padding-left:1.3em; margin-bottom:0; font-size:.88rem; color:var(--text); }
-.syl-outcome-list li{ margin-bottom:5px; }
-.syl-main-topic{ margin-bottom:12px; }
-.syl-main-topic:last-child{ margin-bottom:0; }
-.syl-main-topic-title{ font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:8px; color:var(--text); }
-.syl-main-topic-title i{ color:rgb(var(--accent)); }
-.syl-subtopic-list{ padding-left:1.6em; margin:4px 0 0; font-size:.85rem; color:var(--text-soft); }
-.syl-subtopic-list li{ margin-bottom:3px; }
 
-/* ---------- SYLLABUS: week editor (modal) ---------- */
-.syl-edit-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.syl-edit-row .form-control{ flex:1; }
-.syl-topic-block{ border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px; background:var(--surface-2); }
-.syl-topic-block .syl-subtopics{ margin-left:18px; margin-top:8px; padding-left:12px; border-left:2px solid var(--border); }
+/* ── List page: full-width search bar ── */
+#syllabusSearch { width: 100% !important; min-width: 0; }
+
+/* ── List page grid ── */
+.syl-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+/* ── List card — much more compact ── */
+.syl-list-card {
+  border-radius: 10px; padding: 10px 11px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.syl-lc-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.syl-lc-code {
+  font-family: var(--font-mono); font-size: .68rem; font-weight: 800;
+  letter-spacing: .06em; color: rgb(var(--accent)); text-transform: uppercase;
+  display: flex; align-items: center; gap: 4px;
+}
+.syl-lc-code i { font-size: .7rem; }
+.syl-lc-menu { width: 24px !important; height: 24px !important; font-size: .72rem !important; border-radius: 5px !important; }
+.syl-lc-title {
+  font-size: .84rem; font-weight: 700; color: var(--text);
+  line-height: 1.3; overflow-wrap: anywhere;
+}
+/* Icon-prefixed meta rows */
+.syl-lc-meta {
+  display: flex; flex-direction: column; gap: 1px;
+  font-size: .7rem; color: var(--text-faint);
+}
+.syl-lc-meta-row {
+  display: flex; align-items: center; gap: 4px;
+}
+.syl-lc-meta-row i { font-size: .66rem; flex-shrink: 0; color: var(--text-faint); opacity: .7; }
+/* Progress */
+.syl-lc-prog { margin-top: 1px; }
+.syl-lc-prog-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 3px; font-size: .64rem; color: var(--text-faint);
+}
+.syl-lc-prog-header i { font-size: .64rem; }
+.syl-lc-track { height: 3px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.syl-lc-bar {
+  height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  transition: width .4s var(--ease);
+}
+.syl-lc-prog-empty { font-size: .66rem; color: var(--text-faint); font-style: italic; }
+.syl-lc-actions { margin-top: 1px; }
+.syl-lc-actions .sv-btn { height: 26px !important; width: 100%; }
+
+/* ── Shared edit-row (modal) ── */
+.syl-edit-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.syl-edit-row .form-control { flex: 1; }
+.syl-row-num { width: 18px; flex-shrink: 0; font-size: .72rem; color: var(--text-faint); text-align: right; }
+.syl-topic-block { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 11px; margin-bottom: 8px; background: var(--surface-2); }
+.syl-topic-block .syl-subtopics { margin-left: 12px; margin-top: 6px; padding-left: 9px; border-left: 2px solid var(--border); }
+.syl-modal-section-label { font-size: .63rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; color: rgb(var(--accent)); margin-bottom: 6px; margin-top: 2px; }
+.syl-field-label { font-size: .72rem; color: var(--text-faint); margin-bottom: 3px; display: block; }
+
+/* ── View page: section title ── */
+.sv-section-title {
+  font-size: .63rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--text-faint); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 5px;
+}
+.sv-section-title i { color: rgb(var(--accent)); font-size: .7rem; }
+
+/* ── Info card ── */
+.sv-info-header { margin-bottom: 8px; }
+.sv-info-code { font-family: var(--font-mono); font-size: .66rem; font-weight: 800; letter-spacing: .08em; color: rgb(var(--accent)); text-transform: uppercase; margin-bottom: 2px; }
+.sv-info-title { font-size: 1rem; font-weight: 800; color: var(--text); line-height: 1.25; overflow-wrap: anywhere; }
+.sv-info-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 5px 14px; margin-bottom: 8px;
+}
+.sv-info-item { display: flex; flex-direction: column; gap: 2px; }
+.sv-info-lbl { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+.sv-info-val { font-size: .84rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.sv-progress-wrap { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.sv-prog-label { font-size: .63rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); }
+.sv-prog-pct { font-size: .7rem; font-family: var(--font-mono); color: rgb(var(--accent)); }
+.sv-prog-track { height: 4px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.sv-prog-fill {
+  height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  transition: width .5s cubic-bezier(.22,.9,.35,1);
+}
+
+/* ── Shared body text ── */
+.sv-body-text { font-size: .82rem; color: var(--text-soft); line-height: 1.6; margin: 0; }
+
+/* ── Outcomes list — icon badge instead of numbers ── */
+.sv-outcome-list { list-style: none; padding: 0; margin: 0; }
+.sv-outcome-list li {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: .82rem; color: var(--text-soft); margin-bottom: 5px; line-height: 1.5;
+}
+.sv-outcome-list li::before { display: none; } /* kill any list marker */
+.sv-outcome-icon {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  background: rgba(52,211,153,.15); border: 1px solid rgba(52,211,153,.35);
+  color: #34d399; display: flex; align-items: center; justify-content: center;
+  font-size: .58rem;
+}
+
+/* ── Requirements list — icon badge ── */
+.sv-req-list { list-style: none; padding: 0; margin: 0; }
+.sv-req-list li {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: .82rem; color: var(--text-soft); margin-bottom: 5px; line-height: 1.5;
+}
+.sv-req-icon {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  background: rgba(var(--accent),.12); border: 1px solid rgba(var(--accent),.28);
+  color: rgb(var(--accent)); display: flex; align-items: center; justify-content: center;
+  font-size: .56rem;
+}
+
+/* ── Week rows (Course Outline) ── */
+.syl-week-list { display: flex; flex-direction: column; gap: 3px; }
+.sv-week-row {
+  border: 1px solid var(--border); border-radius: 9px;
+  background: var(--surface-2); overflow: hidden; transition: border-color .2s;
+}
+.sv-week-row:hover { border-color: rgba(var(--accent),.18); }
+.sv-week-row.done { border-color: rgba(52,211,153,.2); }
+
+/* Header: NOT clickable as whole — only chevron triggers toggle */
+.sv-week-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px; user-select: none;
+}
+
+.sv-week-badge {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: .62rem; font-weight: 800;
+  color: var(--text-faint); background: var(--surface); border: 1px solid var(--border);
+  transition: background .2s, color .2s, border-color .2s;
+}
+.sv-week-badge.done { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.35); color: #34d399; }
+
+.sv-week-info { flex: 1; min-width: 0; }
+/* Week label now contains the full range — no separate date row below */
+.sv-week-label {
+  font-size: .56rem; font-weight: 800; letter-spacing: .1em;
+  color: rgb(var(--accent)); text-transform: uppercase;
+  line-height: 1.2; margin-bottom: 1px;
+}
+.sv-week-title { font-size: .83rem; font-weight: 700; color: var(--text); overflow-wrap: anywhere; line-height: 1.3; }
+/* sv-week-date hidden — range is embedded in sv-week-label instead */
+.sv-week-date { display: none; }
+
+.sv-week-controls { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+/* Edit button: same style as sv-btn */
+.sv-week-edit-btn {
+  height: 26px !important; font-size: .68rem !important;
+  padding: 0 7px !important; border-radius: 6px !important;
+}
+/* Delete button: same size as chevron button */
+.sv-week-tool {
+  width: 26px !important; height: 26px !important;
+  font-size: .7rem !important; border-radius: 6px !important;
+}
+.sv-week-tool:hover { color: rgb(var(--danger)); border-color: rgba(var(--danger),.35); }
+/* Chevron as a proper icon button — same box as delete */
+.sv-week-chevron-btn {
+  width: 26px !important; height: 26px !important;
+  font-size: .7rem !important; border-radius: 6px !important;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
+}
+.sv-week-chevron-btn .bi { transition: transform .25s var(--ease); }
+.sv-week-chevron-btn.open .bi { transform: rotate(90deg); }
+
+/* ── Week body (expanded) ── */
+.sv-week-body { border-top: 1px solid var(--border); animation: svBodyIn .18s var(--ease); }
+@keyframes svBodyIn { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
+.sv-week-body-inner { padding: 10px 12px 12px; }
+
+.sv-body-block { margin-bottom: 10px; }
+.sv-body-block:last-of-type { margin-bottom: 0; }
+.sv-body-block-title {
+  font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-faint); margin-bottom: 5px;
+  display: flex; align-items: center; gap: 4px;
+}
+.sv-body-block-title i { color: rgb(var(--accent)); font-size: .65rem; }
+
+/* Topics hierarchy */
+.sv-topics-list { display: flex; flex-direction: column; gap: 5px; }
+.sv-topic-main { display: flex; align-items: baseline; gap: 5px; font-size: .82rem; font-weight: 600; color: var(--text); line-height: 1.4; }
+.sv-topic-icon { font-size: .62rem; color: rgb(var(--accent)); flex-shrink: 0; margin-top: 3px; }
+.sv-subtopic-row { display: flex; align-items: baseline; gap: 4px; font-size: .76rem; color: var(--text-soft); padding-left: 13px; margin-top: 2px; line-height: 1.4; }
+.sv-subtopic-icon { font-size: .84rem; color: var(--text-faint); flex-shrink: 0; line-height: 1; }
+
+/* Compact item rows (activities, resources, assessments) */
+.sv-compact-item { display: flex; align-items: baseline; gap: 6px; font-size: .8rem; color: var(--text-soft); margin-bottom: 3px; line-height: 1.5; }
+.sv-item-num { width: 16px; flex-shrink: 0; font-size: .7rem; color: var(--text-faint); text-align: right; }
+.sv-bullet { font-size: .34rem; color: rgb(var(--accent)); flex-shrink: 0; margin-top: 6px; }
+
+/* Task rows */
+.sv-tasks-block { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 8px 9px; }
+.sv-task-row { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--text); margin-bottom: 4px; }
+.sv-task-row:last-of-type { margin-bottom: 0; }
+.sv-task-row.done span { text-decoration: line-through; color: var(--text-faint); }
+.sv-task-icon { font-size: .78rem; flex-shrink: 0; color: var(--text-faint); }
+.sv-task-row.done .sv-task-icon { color: #34d399; }
+.sv-task-due { margin-left: auto; font-size: .65rem; color: var(--text-faint); flex-shrink: 0; }
+.sv-task-count { font-size: .6rem; background: rgba(var(--accent),.15); color: rgb(var(--accent)); border-radius: 20px; padding: 1px 6px; font-weight: 700; }
+
+/* Complete row */
+.sv-complete-row { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+.sv-complete-row .sv-btn { height: 26px !important; }
+
+/* ── Grading: inline bar + pct, no wasted space ── */
+.sv-grade-table { width: 100%; border-collapse: collapse; }
+.sv-grade-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.sv-grade-name {
+  font-size: .8rem; color: var(--text); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; flex: 0 0 45%; min-width: 0;
+}
+.sv-grade-bar-cell { flex: 1; min-width: 0; }
+.sv-grade-bar-track { height: 4px; background: var(--border); border-radius: 20px; overflow: hidden; }
+.sv-grade-bar-fill {
+  height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
+}
+.sv-grade-pct {
+  font-family: var(--font-mono); font-size: .74rem; font-weight: 700;
+  color: rgb(var(--accent)); white-space: nowrap; flex-shrink: 0; width: 30px; text-align: right;
+}
+.sv-grade-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+.sv-grade-total {
+  display: flex; justify-content: space-between; font-size: .7rem;
+  padding-top: 2px; font-weight: 600;
+}
+.sv-grade-total.warn { color: #fbbf24; }
+.sv-grade-total.ok { color: #34d399; }
+
+/* ── References — accent border, no numbering ── */
+.sv-refs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.sv-refs-list li {
+  font-size: .8rem; color: var(--text-soft); line-height: 1.5;
+  border-left: 2px solid rgba(var(--accent),.4);
+  padding-left: 9px;
+}
+
+/* ── Empty state ── */
+.syl-empty-state { text-align: center; padding: 24px 14px; color: var(--text-faint); }
+
+/* ── Responsive ── */
+@media (max-width: 575px) {
+  .syl-list-grid { grid-template-columns: 1fr; gap: 7px; }
+  .sv-week-head { padding: 7px 9px; }
+  .sv-week-body-inner { padding: 9px 10px 11px; }
+  .sv-week-edit-btn { display: none !important; }
+  .sv-week-tool, .sv-week-chevron-btn { width: 26px !important; height: 26px !important; }
+  .sv-info-grid { grid-template-columns: 1fr 1fr; }
+  .sv-grade-name { flex: 0 0 38%; }
+}
+@media (max-width: 380px) {
+  .sv-info-grid { grid-template-columns: 1fr; }
+  .sv-grade-name { flex: 0 0 35%; font-size: .74rem; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .sv-week-chevron-btn .bi { transition: none !important; }
+  .sv-prog-fill, .syl-lc-bar { transition: none !important; }
+  .sv-week-body { animation: none !important; }
+}
 
 /* ============================================================
    GRADES PAGE
@@ -1581,20 +1823,6 @@ label { font-size: .77rem; font-weight: 700; color: var(--text-soft); margin-bot
 }
 .note-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.2); }
 
-/* ── Syllabus cards ── */
-.syllabus-card {
-  border-radius: 12px;
-  padding: 12px 13px;
-  position: relative;
-  overflow: hidden;
-  height: 100%;
-  border: 1px solid var(--border);
-}
-.syllabus-card .fw-bold[style*="1.02rem"] { font-size: .92rem !important; }
-.syllabus-card .text-faint[style*=".78rem"] { font-size: .74rem !important; }
-.syllabus-card .d-flex.gap-3 { gap: 10px !important; }
-.syllabus-card .d-flex.gap-2 { gap: 6px !important; }
-
 /* ── Attendance rows ── */
 .att-row {
   display: flex;
@@ -2450,262 +2678,6 @@ td { vertical-align: middle; }
   .tk-card-body-expanded { animation: none !important; }
 }
 
-/* ============================================================
-   SYLLABUS VIEW — INTERACTIVE COURSE ROADMAP
-   ============================================================ */
-
-/* ---- Shared button height token for syllabus pages ---- */
-/* All interactive buttons on syllabus pages use --syl-btn-h = 30px (btn-sm size) */
-/* btn-accent.btn-sm, btn-ghost.btn-sm, btn-icon on syllabus view all share this */
-
-/* ---- Course Header Card ---- */
-.syl-course-header-card { position: relative; }
-
-.syl-header-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
-.syl-header-meta-row {
-  display: flex; align-items: center; gap: 7px;
-  font-size: .8rem; color: var(--text-soft);
-}
-.syl-header-meta-row i { width: 13px; flex-shrink: 0; font-size: .78rem; }
-
-/* ---- Course Progress ---- */
-.syl-progress-block {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 9px 12px; margin-top: 10px;
-}
-.syl-progress-label {
-  font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--text-faint);
-}
-.syl-progress-pct {
-  font-family: var(--font-mono); font-weight: 700;
-  font-size: .82rem; color: rgb(var(--accent));
-}
-.syl-progress-track {
-  height: 5px; background: var(--border); border-radius: 20px;
-  overflow: hidden; margin-bottom: 4px;
-}
-.syl-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
-  border-radius: 20px;
-  transition: width .5s cubic-bezier(.22,.9,.35,1);
-}
-.syl-progress-sub { font-size: .7rem; color: var(--text-faint); }
-
-/* ---- Course Header action buttons — uniform 30px height ---- */
-.syl-course-header-card .btn-ghost,
-.syl-course-header-card .btn-accent {
-  height: 30px !important;
-  padding: 0 10px !important;
-  font-size: .76rem !important;
-  border-radius: 8px !important;
-}
-
-/* ---- Description ---- */
-.syl-desc-text { font-size: .86rem; color: var(--text-soft); line-height: 1.6; margin: 0; }
-
-/* ---- Week List (Course Outline) ---- */
-.syl-week-list { display: flex; flex-direction: column; gap: 5px; }
-
-.syl-week-item {
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-  background: var(--surface-2); overflow: hidden;
-  transition: border-color .25s, box-shadow .25s;
-}
-.syl-week-item:hover { border-color: rgba(var(--accent),.22); }
-.syl-week-item.completed { border-color: rgba(52,211,153,.22); }
-
-.syl-week-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 13px; cursor: pointer; user-select: none;
-  gap: 10px; transition: background .2s;
-}
-.syl-week-header:hover { background: rgba(var(--accent),.05); }
-
-.syl-week-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-
-.syl-week-badge {
-  width: 30px; height: 30px; border-radius: 8px;
-  background: var(--surface); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-mono); font-weight: 700;
-  font-size: .68rem; color: var(--text-soft); flex-shrink: 0;
-  transition: background .25s, color .25s, border-color .25s;
-}
-.syl-week-badge.done {
-  background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.38); color: #34d399;
-}
-
-.syl-week-info { flex: 1; min-width: 0; }
-.syl-week-label {
-  font-size: .6rem; font-weight: 700; letter-spacing: .1em;
-  color: rgb(var(--accent)); text-transform: uppercase; margin-bottom: 1px;
-}
-.syl-week-title { font-weight: 700; font-size: .86rem; color: var(--text); overflow-wrap: anywhere; line-height: 1.3; }
-.syl-week-date { font-size: .71rem; color: var(--text-faint); margin-top: 1px; }
-
-.syl-week-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
-.syl-week-meta span {
-  font-size: .66rem; color: var(--text-faint);
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 1px 7px;
-}
-
-.syl-week-actions { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
-
-/* All icon-buttons in week rows: uniform 30px */
-.syl-week-tool-btn {
-  width: 30px !important; height: 30px !important;
-  font-size: .78rem !important; border-radius: 8px !important;
-}
-.syl-week-tool-btn.btn-icon-danger:hover {
-  color: rgb(var(--danger)); border-color: rgba(var(--danger),.4);
-}
-
-.syl-week-chevron {
-  font-size: .72rem; color: var(--text-faint);
-  transition: transform .3s var(--ease); margin-left: 1px; flex-shrink: 0;
-}
-.syl-week-chevron.open { transform: rotate(90deg); }
-
-/* ---- "Add Topic" button in outline header — 30px ---- */
-#weeksAccordion ~ * .btn-accent,
-.glass .btn-accent.btn-sm,
-.glass .btn-ghost.btn-sm {
-  height: 30px !important;
-  font-size: .76rem !important;
-  border-radius: 8px !important;
-}
-
-/* ---- Week Body (expanded) ---- */
-.syl-week-body { border-top: 1px solid var(--border); animation: slideDown .18s var(--ease); }
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.syl-week-body-inner { padding: 13px 15px 15px; }
-
-.syl-body-section { margin-bottom: 13px; }
-.syl-body-section:last-of-type { margin-bottom: 0; }
-
-.syl-body-section-title {
-  font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .08em; color: var(--text-faint); margin-bottom: 7px;
-  display: flex; align-items: center; gap: 5px;
-}
-.syl-body-section-title i { color: rgb(var(--accent)); font-size: .76rem; }
-.syl-body-section-title span { text-transform: none; letter-spacing: 0; font-weight: 400; }
-
-/* ---- Related tasks ---- */
-.syl-task-list { display: flex; flex-direction: column; gap: 5px; }
-.syl-task-item {
-  display: flex; align-items: center; gap: 7px;
-  font-size: .82rem; color: var(--text); padding: 5px 9px;
-  border-radius: var(--radius-sm); background: var(--surface);
-  border: 1px solid var(--border); transition: border-color .2s;
-}
-.syl-task-item.completed .syl-task-title { text-decoration: line-through; color: var(--text-faint); }
-.syl-task-icon { font-size: .82rem; flex-shrink: 0; color: var(--text-faint); }
-.syl-task-item.completed .syl-task-icon { color: #34d399; }
-.syl-task-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-
-/* Create task button — 30px */
-.syl-create-task-btn {
-  height: 30px !important; font-size: .74rem !important;
-  border-radius: 8px !important; padding: 0 10px !important;
-}
-
-/* ---- Mark complete row — 30px buttons ---- */
-.syl-week-complete-row {
-  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
-}
-.syl-week-complete-row .btn {
-  height: 30px !important; font-size: .76rem !important;
-  border-radius: 8px !important; padding: 0 12px !important;
-}
-.syl-btn-undo { opacity: .65; }
-
-/* ---- Learning Outcomes card ---- */
-.syl-course-outcomes {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.syl-course-outcomes li {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: .86rem; color: var(--text-soft); line-height: 1.45;
-}
-.syl-outcome-icon { color: #34d399; font-size: .86rem; margin-top: 2px; flex-shrink: 0; }
-
-/* ---- Grading card ---- */
-.syl-grading-list { display: flex; flex-direction: column; gap: 8px; }
-.syl-grading-row { display: flex; align-items: center; gap: 10px; }
-.syl-grading-name { font-size: .84rem; font-weight: 600; color: var(--text); width: 150px; flex-shrink: 0; }
-.syl-grading-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 20px; overflow: hidden; }
-.syl-grading-bar {
-  height: 100%;
-  background: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent-2)));
-  border-radius: 20px; transition: width .5s var(--ease);
-}
-.syl-grading-pct {
-  font-family: var(--font-mono); font-size: .78rem; font-weight: 700;
-  color: rgb(var(--accent)); width: 32px; text-align: right; flex-shrink: 0;
-}
-.syl-grading-total {
-  margin-top: 8px; font-size: .74rem; font-weight: 600;
-  padding: 4px 9px; border-radius: var(--radius-sm);
-}
-.syl-grading-total.warn { background: rgba(251,191,36,.1); color: #fbbf24; border: 1px solid rgba(251,191,36,.25); }
-.syl-grading-total.ok  { background: rgba(52,211,153,.1);  color: #34d399; border: 1px solid rgba(52,211,153,.25); }
-
-/* References expand/collapse button — 30px */
-#svRefsCard .btn { height: 30px !important; font-size: .74rem !important; border-radius: 8px !important; padding: 0 10px !important; }
-
-/* ---- Requirements / Policies ---- */
-.syl-policy-text { font-size: .84rem; color: var(--text-soft); line-height: 1.65; }
-
-/* ---- References ---- */
-.syl-refs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
-.syl-refs-list li {
-  font-size: .84rem; color: var(--text-soft);
-  padding: 4px 0 4px 11px;
-  border-left: 2px solid rgba(var(--accent),.35);
-}
-
-/* ---- Course modal section labels ---- */
-.syl-modal-section-label {
-  font-size: .68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .09em; color: rgb(var(--accent)); margin-bottom: 7px; margin-top: 4px;
-}
-
-/* ---- Empty state ---- */
-.syl-empty-state { text-align: center; padding: 32px 20px; color: var(--text-faint); }
-
-/* ---- Syllabus list page: search + sort bar buttons — 30px ---- */
-#syllabusSearch, #syllabusSort { height: 30px; font-size: .8rem; }
-
-/* ---- Responsive ---- */
-@media (max-width: 575px) {
-  .syl-week-header { padding: 9px 11px; }
-  .syl-week-body-inner { padding: 11px 12px 14px; }
-  .syl-grading-name { width: 100px; font-size: .78rem; }
-  .syl-week-badge { width: 28px; height: 28px; }
-  .syl-week-title { font-size: .83rem; }
-  .syl-header-meta-row { font-size: .77rem; }
-  .syl-week-tool-btn { display: none !important; }
-}
-@media (max-width: 400px) {
-  .syl-grading-row { flex-wrap: wrap; gap: 5px; }
-  .syl-grading-name { width: 100%; }
-}
-
-/* ---- Reduced motion ---- */
-@media (prefers-reduced-motion: reduce) {
-  .syl-week-chevron { transition: none !important; }
-  .syl-progress-fill { transition: none !important; }
-  .syl-week-body { animation: none !important; }
-  .syl-grading-bar { transition: none !important; }
-}
 
 /* ============================================================
    SCHEDULE PAGE — Daily Command Center

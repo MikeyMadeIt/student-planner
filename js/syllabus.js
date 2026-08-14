@@ -1,9 +1,5 @@
 /* ============================================================
-   SYLLABUS.JS
-   Course Syllabus module — subject list, interactive course roadmap
-   (weeks accordion with completion, task integration, grading,
-   learning outcomes, requirements, policies, references),
-   export/import.
+   SYLLABUS.JS  —  Compact Academic Planner Edition
    ============================================================ */
 
 const sylQs = new URLSearchParams(location.search);
@@ -11,24 +7,17 @@ function currentCourseId(){ return sylQs.get('id'); }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
 function timeAgo(ts){
   if(!ts) return 'Never';
-  const s = Math.floor((Date.now()-ts)/1000);
+  const s=Math.floor((Date.now()-ts)/1000);
   if(s<60) return 'Just now';
   if(s<3600) return Math.floor(s/60)+'m ago';
   if(s<86400) return Math.floor(s/3600)+'h ago';
   if(s<86400*30) return Math.floor(s/86400)+'d ago';
-  return new Date(ts).toLocaleDateString([], {month:'short', day:'numeric'});
-}
-function fmtDate(ts){
-  if(!ts) return '—';
-  return new Date(ts).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+  return new Date(ts).toLocaleDateString([],{month:'short',day:'numeric'});
 }
 function fmtTime(t){
   if(!t) return '';
-  const [h,m] = t.split(':');
-  const hr = parseInt(h,10);
-  const suffix = hr>=12?'PM':'AM';
-  const hr12 = hr%12||12;
-  return `${hr12}:${m} ${suffix}`;
+  const [h,m]=t.split(':'); const hr=parseInt(h,10);
+  return `${hr%12||12}:${m} ${hr>=12?'PM':'AM'}`;
 }
 function fmtDays(days){
   if(!days||!days.length) return '';
@@ -36,287 +25,251 @@ function fmtDays(days){
   return days.map(d=>map[d]||d).join('');
 }
 
-/* ============================================================
-   PROGRESS HELPERS
-   ============================================================ */
-function computeProgress(course){
-  const weeks = course.weeks||[];
-  if(!weeks.length) return { pct:0, completed:0, total:0 };
-  const completed = weeks.filter(w=>w.completed).length;
-  const total = weeks.length;
-  const pct = Math.round((completed/total)*100);
-  return { pct, completed, total };
+/* ── Progress ── */
+function computeProgress(c){
+  const w=c.weeks||[];
+  if(!w.length) return {pct:0,completed:0,total:0};
+  const completed=w.filter(x=>x.completed).length;
+  const total=w.length;
+  return {pct:Math.round(completed/total*100),completed,total};
 }
 
 /* ============================================================
-   SYLLABUS.HTML — Subject List
+   SYLLABUS LIST PAGE
    ============================================================ */
-function initSyllabusList(){
-  renderSyllabusGrid();
-}
+function initSyllabusList(){ renderSyllabusGrid(); }
 
 function renderSyllabusGrid(){
-  const grid = document.getElementById('syllabusGrid');
-  if(!grid) return;
-  const semId = DB.getActiveSemesterId();
-  const sem = DB.getActiveSemester();
-  const allCourses = DB.getSyllabusCourses();
-  const courses = allCourses.filter(c=>c.semesterId===semId);
-  const q = (document.getElementById('syllabusSearch').value||'').toLowerCase().trim();
-  const sortBy = document.getElementById('syllabusSort').value;
+  const grid=document.getElementById('syllabusGrid'); if(!grid) return;
+  const semId=DB.getActiveSemesterId();
+  const sem=DB.getActiveSemester();
+  const allCourses=DB.getSyllabusCourses();
+  const courses=allCourses.filter(c=>c.semesterId===semId);
+  const q=(document.getElementById('syllabusSearch').value||'').toLowerCase().trim();
+  const sortBy=document.getElementById('syllabusSort').value;
 
-  let list = courses.filter(c=> !q || c.courseTitle.toLowerCase().includes(q) || c.courseCode.toLowerCase().includes(q));
-  if(sortBy==='az') list.sort((a,b)=> a.courseTitle.localeCompare(b.courseTitle));
-  else if(sortBy==='recent') list.sort((a,b)=> b.createdAt-a.createdAt);
-  else list.sort((a,b)=> b.updatedAt-a.updatedAt);
+  let list=courses.filter(c=>!q||c.courseTitle.toLowerCase().includes(q)||c.courseCode.toLowerCase().includes(q));
+  if(sortBy==='az') list.sort((a,b)=>a.courseTitle.localeCompare(b.courseTitle));
+  else if(sortBy==='recent') list.sort((a,b)=>b.createdAt-a.createdAt);
+  else list.sort((a,b)=>b.updatedAt-a.updatedAt);
 
   if(!list.length){
-    grid.innerHTML = `<div class="col-12"><div class="glass card-pad text-center py-5 text-faint fade-in">
-      <i class="bi bi-journal-bookmark" style="font-size:1.8rem;opacity:.5"></i>
-      <div class="mt-2 fw-bold" style="color:var(--text)">${courses.length? 'No subjects match your search' : 'No syllabi yet'}</div>
-      <div style="font-size:.85rem">${courses.length? 'Try a different course title or code.' : (sem ? `Tap "Add Subject" to add your first syllabus for ${sem.schoolYear} • ${sem.name}.` : 'Tap "Add Subject" to encode your first course syllabus.')}</div>
-    </div></div>`;
+    grid.innerHTML=`<div class="glass card-pad text-center py-5 text-faint fade-in" style="grid-column:1/-1">
+      <i class="bi bi-journal-bookmark" style="font-size:1.6rem;opacity:.4"></i>
+      <div class="mt-2 fw-bold" style="color:var(--text)">${courses.length?'No subjects match your search':'No syllabi yet'}</div>
+      <div style="font-size:.82rem">${courses.length?'Try a different title or code.':(sem?`Add your first syllabus for ${sem.schoolYear} · ${sem.name}.`:'Add your first course syllabus.')}</div>
+    </div>`;
     return;
   }
 
-  grid.innerHTML = list.map(c=>{
-    const weeks = c.weeks||[];
-    const { pct, completed, total } = computeProgress(c);
-    return `
-    <div class="col-sm-6 col-lg-4">
-      <div class="glass syllabus-card fade-in">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="chip code-chip">${escapeHtml(c.courseCode)}</span>
-          <div class="dropdown">
-            <button class="btn-icon" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="syllabus-view.html?id=${c.id}"><i class="bi bi-eye me-2"></i>View Syllabus</a></li>
-              <li><a class="dropdown-item" href="#" onclick="openCourseModal('${c.id}');return false;"><i class="bi bi-pencil me-2"></i>Edit</a></li>
-              <li><a class="dropdown-item" href="#" onclick="exportSyllabus('${c.id}');return false;"><i class="bi bi-download me-2"></i>Export JSON</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="#" onclick="deleteCourse('${c.id}');return false;"><i class="bi bi-trash3 me-2"></i>Delete</a></li>
-            </ul>
-          </div>
+  grid.innerHTML=list.map(c=>{
+    const {pct,completed,total}=computeProgress(c);
+    const yearSem=[c.academicYear,c.semester].filter(Boolean).join(' · ');
+    return `<div class="syl-list-card glass fade-in">
+      <div class="syl-lc-top">
+        <div class="syl-lc-code"><i class="bi bi-hash"></i>${escapeHtml(c.courseCode)}</div>
+        <div class="dropdown">
+          <button class="btn-icon syl-lc-menu" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="syllabus-view.html?id=${c.id}"><i class="bi bi-eye me-2"></i>View</a></li>
+            <li><a class="dropdown-item" href="#" onclick="openCourseModal('${c.id}');return false"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportSyllabus('${c.id}');return false"><i class="bi bi-download me-2"></i>Export</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" onclick="deleteCourse('${c.id}');return false"><i class="bi bi-trash3 me-2"></i>Delete</a></li>
+          </ul>
         </div>
-        <div class="fw-bold mb-1" style="font-size:1.02rem">${escapeHtml(c.courseTitle)}</div>
-        <div class="text-faint mb-3" style="font-size:.78rem">${escapeHtml(c.instructor||'No instructor set')}</div>
-        ${total>0?`
-        <div class="mb-3">
-          <div class="d-flex justify-content-between mb-1" style="font-size:.72rem;color:var(--text-faint)">
-            <span>${completed}/${total} topics</span><span>${pct}%</span>
-          </div>
-          <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
-        </div>`:''}
-        <div class="d-flex gap-3 mb-3" style="font-size:.78rem">
-          <span class="text-soft"><i class="bi bi-award me-1"></i>${c.creditUnits} unit${c.creditUnits==1?'':'s'}</span>
-          <span class="text-soft"><i class="bi bi-calendar3-week me-1"></i>${weeks.length} week${weeks.length===1?'':'s'}</span>
+      </div>
+      <div class="syl-lc-title">${escapeHtml(c.courseTitle)}</div>
+      <div class="syl-lc-meta">
+        ${c.creditUnits?`<div class="syl-lc-meta-row"><i class="bi bi-layers"></i>${c.creditUnits} unit${c.creditUnits===1?'':'s'}</div>`:''}
+        ${c.instructor?`<div class="syl-lc-meta-row"><i class="bi bi-person"></i>${escapeHtml(c.instructor)}</div>`:''}
+        ${yearSem?`<div class="syl-lc-meta-row"><i class="bi bi-calendar3"></i>${escapeHtml(yearSem)}</div>`:''}
+      </div>
+      ${total>0?`<div class="syl-lc-prog">
+        <div class="syl-lc-prog-header">
+          <span><i class="bi bi-bar-chart-line"></i> Progress</span>
+          <span>${completed}/${total} · ${pct}%</span>
         </div>
-        <div class="text-faint mb-3" style="font-size:.72rem"><i class="bi bi-clock-history me-1"></i>Updated ${timeAgo(c.updatedAt)}</div>
-        <div class="d-flex gap-2">
-          <a href="syllabus-view.html?id=${c.id}" class="btn btn-accent btn-sm flex-grow-1"><i class="bi bi-journal-text me-1"></i>View Syllabus</a>
-          <button class="btn-icon" onclick="openCourseModal('${c.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
-          <button class="btn-icon" onclick="deleteCourse('${c.id}')" title="Delete"><i class="bi bi-trash3"></i></button>
-        </div>
+        <div class="syl-lc-track"><div class="syl-lc-bar" style="width:${pct}%"></div></div>
+      </div>`:`<div class="syl-lc-prog-empty">No weeks added yet</div>`}
+      <div class="syl-lc-actions">
+        <a href="syllabus-view.html?id=${c.id}" class="btn btn-accent btn-sm sv-btn">
+          <i class="bi bi-journal-text me-1"></i>View Syllabus
+        </a>
       </div>
     </div>`;
   }).join('');
 }
 
 /* ============================================================
-   ADD / EDIT SUBJECT MODAL (shared by list + detail pages)
+   ADD / EDIT COURSE MODAL  (list + view pages share this)
    ============================================================ */
 function openCourseModal(id){
-  const c = id ? DB.getSyllabusCourse(id) : null;
-  const activeSem = DB.getActiveSemester();
-  const defaultSemName = activeSem ? activeSem.name : '1st Semester';
-  const defaultYear = activeSem ? activeSem.schoolYear : '2026-2027';
-  const body = document.getElementById('courseModalBody');
-  body.innerHTML = `
-    <div class="modal-header" style="border:none;padding:0 0 12px 0">
-      <h5 class="modal-title"><i class="bi bi-journal-bookmark-fill me-2"></i>${c?'Edit':'Add'} Subject</h5>
+  const c=id?DB.getSyllabusCourse(id):null;
+  const sem=DB.getActiveSemester();
+  const defSem=sem?sem.name:'1st Semester';
+  const defYear=sem?sem.schoolYear:'2026-2027';
+  document.getElementById('courseModalBody').innerHTML=`
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="modal-title mb-0"><i class="bi bi-journal-bookmark-fill me-2"></i>${c?'Edit':'Add'} Subject</h5>
       <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
     </div>
     <input type="hidden" id="cId" value="${c?c.id:''}">
 
     <div class="syl-modal-section-label">Course Information</div>
     <div class="row g-2">
-      <div class="col-md-8"><label>Course Title *</label><input class="form-control" id="cTitle" placeholder="Data Structures" value="${c?escapeHtml(c.courseTitle):''}"></div>
-      <div class="col-md-4"><label>Course Code *</label><input class="form-control" id="cCode" placeholder="CS211" value="${c?escapeHtml(c.courseCode):''}"></div>
-      <div class="col-md-4"><label>Credit Units *</label><input type="number" min="0" step="0.5" class="form-control" id="cUnits" placeholder="3" value="${c?c.creditUnits:''}"></div>
-      <div class="col-md-8"><label>Instructor</label><input class="form-control" id="cInstructor" placeholder="Optional" value="${c?escapeHtml(c.instructor||''):''}"></div>
-      <div class="col-md-6"><label>Schedule</label><input class="form-control" id="cSchedule" placeholder="MWF 9:00 AM – 10:30 AM" value="${c?escapeHtml(c.schedule||''):''}"></div>
-      <div class="col-md-6"><label>Room</label><input class="form-control" id="cRoom" placeholder="Room 304" value="${c?escapeHtml(c.room||''):''}"></div>
-      <div class="col-12"><label>Course Description *</label><textarea class="form-control" id="cDesc" rows="3" placeholder="Introduction to fundamental concepts…">${c?escapeHtml(c.courseDescription):''}</textarea></div>
-      <div class="col-md-6"><label>Semester</label><input class="form-control" id="cSemester" placeholder="1st Semester" value="${c?escapeHtml(c.semester||''):defaultSemName}"></div>
-      <div class="col-md-6"><label>Academic Year</label><input class="form-control" id="cYear" placeholder="2026-2027" value="${c?escapeHtml(c.academicYear||''):defaultYear}"></div>
+      <div class="col-8"><label class="syl-field-label">Course Title *</label>
+        <input class="form-control" id="cTitle" placeholder="Data Structures" value="${c?escapeHtml(c.courseTitle):''}"></div>
+      <div class="col-4"><label class="syl-field-label">Code *</label>
+        <input class="form-control" id="cCode" placeholder="CS211" value="${c?escapeHtml(c.courseCode):''}"></div>
+      <div class="col-4"><label class="syl-field-label">Units *</label>
+        <input type="number" min="0" step="0.5" class="form-control" id="cUnits" value="${c?c.creditUnits:''}"></div>
+      <div class="col-8"><label class="syl-field-label">Instructor</label>
+        <input class="form-control" id="cInstructor" value="${c?escapeHtml(c.instructor||''):''}"></div>
+      <div class="col-6"><label class="syl-field-label">Schedule</label>
+        <input class="form-control" id="cSchedule" placeholder="MWF 9:00–10:30 AM" value="${c?escapeHtml(c.schedule||''):''}"></div>
+      <div class="col-6"><label class="syl-field-label">Room</label>
+        <input class="form-control" id="cRoom" placeholder="Room 304" value="${c?escapeHtml(c.room||''):''}"></div>
+      <div class="col-6"><label class="syl-field-label">Semester</label>
+        <input class="form-control" id="cSemester" value="${c?escapeHtml(c.semester||''):defSem}"></div>
+      <div class="col-6"><label class="syl-field-label">Academic Year</label>
+        <input class="form-control" id="cYear" value="${c?escapeHtml(c.academicYear||''):defYear}"></div>
+      <div class="col-12"><label class="syl-field-label">Course Description</label>
+        <textarea class="form-control" id="cDesc" rows="3">${c?escapeHtml(c.courseDescription||''):''}</textarea></div>
     </div>
 
-    <div class="syl-modal-section-label mt-3">Learning Outcomes <span class="text-faint fw-normal" style="font-size:.75rem">(course-level)</span></div>
+    <div class="syl-modal-section-label mt-3">Course Learning Outcomes</div>
     <div id="cOutcomesWrap">
       ${(c&&c.courseOutcomes&&c.courseOutcomes.length?c.courseOutcomes:[''])
-        .map((o,i)=>`<div class="syl-edit-row" id="cOutcomeRow${i}">
-          <span class="text-faint mono" style="width:22px;flex-shrink:0;font-size:.78rem">${i+1}.</span>
-          <input class="form-control" id="cOutcome${i}" value="${escapeHtml(o)}" placeholder="Understand fundamental concepts">
-          <button type="button" class="btn-icon" onclick="removeCourseOutcome(${i})"><i class="bi bi-x-lg"></i></button>
-        </div>`).join('')}
+        .map((o,i)=>cloRowHtml(o,i)).join('')}
     </div>
-    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addCourseOutcome()"><i class="bi bi-plus-lg me-1"></i>Add Learning Outcome</button>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addCourseOutcome()">
+      <i class="bi bi-plus-lg me-1"></i>Add Outcome</button>
 
-    <div class="syl-modal-section-label">Grading Components</div>
+    <div class="syl-modal-section-label">Grading System</div>
     <div id="cGradingWrap">
       ${(c&&c.gradingComponents&&c.gradingComponents.length?c.gradingComponents:[{name:'',weight:''}])
-        .map((g,i)=>`<div class="syl-edit-row" id="cGradingRow${i}">
-          <input class="form-control" id="cGradingName${i}" placeholder="Quizzes" value="${escapeHtml(g.name||'')}">
-          <input class="form-control" type="number" min="0" max="100" step="1" id="cGradingWt${i}" placeholder="%" value="${g.weight||''}" style="width:80px;flex:0 0 80px">
-          <span class="text-faint" style="font-size:.82rem">%</span>
-          <button type="button" class="btn-icon" onclick="removeCourseGrading(${i})"><i class="bi bi-x-lg"></i></button>
-        </div>`).join('')}
+        .map((g,i)=>cgRowHtml(g,i)).join('')}
     </div>
-    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addCourseGrading()"><i class="bi bi-plus-lg me-1"></i>Add Component</button>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addCourseGrading()">
+      <i class="bi bi-plus-lg me-1"></i>Add Component</button>
 
-    <div class="syl-modal-section-label">Requirements</div>
-    <textarea class="form-control mb-3" id="cRequirements" rows="3" placeholder="• Regular attendance&#10;• Completion of activities&#10;• Submission of requirements">${c?escapeHtml(c.requirements||''):''}</textarea>
+    <div class="syl-modal-section-label">Course Requirements</div>
+    <textarea class="form-control mb-3" id="cRequirements" rows="3"
+      placeholder="• Regular attendance&#10;• Completion of activities">${c?escapeHtml(c.requirements||''):''}</textarea>
 
-    <div class="syl-modal-section-label">Important Policies</div>
-    <textarea class="form-control mb-3" id="cPolicies" rows="3" placeholder="Attendance: Regular attendance required.&#10;Late Submission: Deductions may apply.">${c?escapeHtml(c.policies||''):''}</textarea>
+    <div class="syl-modal-section-label">Course Policies</div>
+    <textarea class="form-control mb-3" id="cPolicies" rows="3"
+      placeholder="Attendance: Regular attendance required.">${c?escapeHtml(c.policies||''):''}</textarea>
 
     <div class="syl-modal-section-label">References</div>
-    <textarea class="form-control mb-3" id="cReferences" rows="3" placeholder="Introduction to Algorithms, Cormen et al.&#10;Data Structures, Robert Lafore">${c?escapeHtml(c.references||''):''}</textarea>
+    <textarea class="form-control mb-3" id="cReferences" rows="3"
+      placeholder="Author. Title. Publisher.">${c?escapeHtml(c.references||''):''}</textarea>
 
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-accent flex-grow-1" onclick="saveCourse()"><i class="bi bi-check2 me-1"></i>${c?'Update':'Save'} Subject</button>
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-accent flex-grow-1" onclick="saveCourse()">
+        <i class="bi bi-check2 me-1"></i>${c?'Update':'Save'}</button>
       ${c?`<button class="btn btn-ghost" onclick="deleteCourse('${c.id}')"><i class="bi bi-trash3"></i></button>`:''}
     </div>`;
   new bootstrap.Modal(document.getElementById('courseModal')).show();
 }
 
-/* Course-level outcomes helpers */
-let _cOutcomeCount = 0;
-function _getCourseOutcomeCount(){
-  let i=0; while(document.getElementById('cOutcomeRow'+i)) i++;
-  return i;
+function cloRowHtml(v,i){
+  return `<div class="syl-edit-row" id="cOutcomeRow${i}">
+    <span class="syl-row-num">${i+1}.</span>
+    <input class="form-control" id="cOutcome${i}" value="${escapeHtml(v)}" placeholder="Learning outcome">
+    <button type="button" class="btn-icon" onclick="removeCourseOutcome(${i})"><i class="bi bi-x-lg"></i></button>
+  </div>`;
 }
+function cgRowHtml(g,i){
+  return `<div class="syl-edit-row" id="cGradingRow${i}">
+    <input class="form-control" id="cGradingName${i}" placeholder="Component" value="${escapeHtml(g.name||'')}">
+    <input class="form-control" type="number" min="0" max="100" id="cGradingWt${i}"
+      placeholder="%" value="${g.weight||''}" style="width:72px;flex:0 0 72px">
+    <span class="text-faint" style="font-size:.78rem">%</span>
+    <button type="button" class="btn-icon" onclick="removeCourseGrading(${i})"><i class="bi bi-x-lg"></i></button>
+  </div>`;
+}
+function _getCourseOutcomeCount(){ let i=0; while(document.getElementById('cOutcomeRow'+i)) i++; return i; }
 function addCourseOutcome(){
-  const wrap = document.getElementById('cOutcomesWrap');
-  const i = _getCourseOutcomeCount();
-  const div = document.createElement('div');
-  div.className = 'syl-edit-row';
-  div.id = 'cOutcomeRow'+i;
-  div.innerHTML = `<span class="text-faint mono" style="width:22px;flex-shrink:0;font-size:.78rem">${i+1}.</span>
-    <input class="form-control" id="cOutcome${i}" placeholder="Learning outcome">
-    <button type="button" class="btn-icon" onclick="removeCourseOutcome(${i})"><i class="bi bi-x-lg"></i></button>`;
-  wrap.appendChild(div);
+  const i=_getCourseOutcomeCount();
+  const div=document.createElement('div'); div.className='syl-edit-row'; div.id='cOutcomeRow'+i;
+  div.innerHTML=cloRowHtml('',i);
+  document.getElementById('cOutcomesWrap').appendChild(div);
 }
 function removeCourseOutcome(i){
-  const el = document.getElementById('cOutcomeRow'+i);
-  if(el) el.remove();
-  // Renumber
+  document.getElementById('cOutcomeRow'+i)?.remove();
   let idx=0;
-  document.querySelectorAll('#cOutcomesWrap .syl-edit-row').forEach(row=>{
-    const span = row.querySelector('span.mono');
-    if(span) span.textContent=(idx+1)+'.';
-    idx++;
+  document.querySelectorAll('#cOutcomesWrap .syl-edit-row').forEach(r=>{
+    const s=r.querySelector('.syl-row-num'); if(s) s.textContent=(++idx)+'.';
   });
 }
 function _readCourseOutcomes(){
-  const outcomes=[];
-  document.querySelectorAll('#cOutcomesWrap .syl-edit-row').forEach(row=>{
-    const inp = row.querySelector('input.form-control');
-    if(inp&&inp.value.trim()) outcomes.push(inp.value.trim());
+  const out=[];
+  document.querySelectorAll('#cOutcomesWrap .syl-edit-row input.form-control').forEach(el=>{
+    if(el.value.trim()) out.push(el.value.trim());
   });
-  return outcomes;
+  return out;
 }
-
-/* Grading helpers */
-function _getGradingCount(){
-  let i=0; while(document.getElementById('cGradingRow'+i)) i++;
-  return i;
-}
+function _getGradingCount(){ let i=0; while(document.getElementById('cGradingRow'+i)) i++; return i; }
 function addCourseGrading(){
-  const wrap = document.getElementById('cGradingWrap');
-  const i = _getGradingCount();
-  const div = document.createElement('div');
-  div.className = 'syl-edit-row';
-  div.id = 'cGradingRow'+i;
-  div.innerHTML = `<input class="form-control" id="cGradingName${i}" placeholder="Component">
-    <input class="form-control" type="number" min="0" max="100" step="1" id="cGradingWt${i}" placeholder="%" style="width:80px;flex:0 0 80px">
-    <span class="text-faint" style="font-size:.82rem">%</span>
-    <button type="button" class="btn-icon" onclick="removeCourseGrading(${i})"><i class="bi bi-x-lg"></i></button>`;
-  wrap.appendChild(div);
+  const i=_getGradingCount();
+  const div=document.createElement('div'); div.className='syl-edit-row'; div.id='cGradingRow'+i;
+  div.innerHTML=cgRowHtml({name:'',weight:''},i);
+  document.getElementById('cGradingWrap').appendChild(div);
 }
-function removeCourseGrading(i){
-  const el = document.getElementById('cGradingRow'+i);
-  if(el) el.remove();
-}
+function removeCourseGrading(i){ document.getElementById('cGradingRow'+i)?.remove(); }
 function _readGradingComponents(){
-  const comps=[];
-  document.querySelectorAll('#cGradingWrap .syl-edit-row').forEach(row=>{
-    const nameEl = row.querySelector('input[id^="cGradingName"]');
-    const wtEl = row.querySelector('input[type="number"]');
-    const name = nameEl?nameEl.value.trim():'';
-    const weight = wtEl?parseFloat(wtEl.value):0;
-    if(name) comps.push({ name, weight: isNaN(weight)?0:weight });
+  const out=[];
+  document.querySelectorAll('#cGradingWrap .syl-edit-row').forEach(r=>{
+    const n=r.querySelector('input[id^="cGradingName"]');
+    const w=r.querySelector('input[type="number"]');
+    if(n&&n.value.trim()) out.push({name:n.value.trim(),weight:parseFloat(w?.value)||0});
   });
-  return comps;
+  return out;
 }
 
 function saveCourse(){
-  const courseTitle = document.getElementById('cTitle').value.trim();
-  const courseCode = document.getElementById('cCode').value.trim();
-  const unitsRaw = document.getElementById('cUnits').value.trim();
-  const courseDescription = document.getElementById('cDesc').value.trim();
-
-  if(!courseTitle || !courseCode || !courseDescription){
-    Toast.show('Course Title, Code, and Description are required','high','bi-exclamation-triangle'); return;
-  }
-  if(unitsRaw==='' || isNaN(Number(unitsRaw))){
-    Toast.show('Credit Units must be numeric','high','bi-exclamation-triangle'); return;
-  }
-
-  const semId = DB.getActiveSemesterId();
-  const data = {
-    courseTitle, courseCode, creditUnits:Number(unitsRaw), courseDescription,
-    instructor: document.getElementById('cInstructor').value.trim(),
-    schedule: document.getElementById('cSchedule').value.trim(),
-    room: document.getElementById('cRoom').value.trim(),
-    semester: document.getElementById('cSemester').value.trim(),
-    academicYear: document.getElementById('cYear').value.trim(),
-    semesterId: semId,
-    courseOutcomes: _readCourseOutcomes(),
-    gradingComponents: _readGradingComponents(),
-    requirements: document.getElementById('cRequirements').value.trim(),
-    policies: document.getElementById('cPolicies').value.trim(),
-    references: document.getElementById('cReferences').value.trim(),
+  const courseTitle=document.getElementById('cTitle').value.trim();
+  const courseCode=document.getElementById('cCode').value.trim();
+  const unitsRaw=document.getElementById('cUnits').value.trim();
+  if(!courseTitle||!courseCode){ Toast.show('Course Title and Code are required','high','bi-exclamation-triangle'); return; }
+  if(unitsRaw===''||isNaN(Number(unitsRaw))){ Toast.show('Units must be a number','high','bi-exclamation-triangle'); return; }
+  const semId=DB.getActiveSemesterId();
+  const data={
+    courseTitle, courseCode, creditUnits:Number(unitsRaw),
+    courseDescription:document.getElementById('cDesc').value.trim(),
+    instructor:document.getElementById('cInstructor').value.trim(),
+    schedule:document.getElementById('cSchedule').value.trim(),
+    room:document.getElementById('cRoom').value.trim(),
+    semester:document.getElementById('cSemester').value.trim(),
+    academicYear:document.getElementById('cYear').value.trim(),
+    semesterId:semId,
+    courseOutcomes:_readCourseOutcomes(),
+    gradingComponents:_readGradingComponents(),
+    requirements:document.getElementById('cRequirements').value.trim(),
+    policies:document.getElementById('cPolicies').value.trim(),
+    references:document.getElementById('cReferences').value.trim(),
   };
-  const id = document.getElementById('cId').value;
-  const courses = DB.getSyllabusCourses();
-  if(id){
-    const idx = courses.findIndex(c=>c.id===id);
-    courses[idx] = { ...courses[idx], ...data, updatedAt:Date.now() };
-  } else {
-    courses.push({ id:DB.uid(), ...data, weeks:[], createdAt:Date.now(), updatedAt:Date.now() });
-  }
+  const id=document.getElementById('cId').value;
+  const courses=DB.getSyllabusCourses();
+  if(id){ const idx=courses.findIndex(c=>c.id===id); if(idx!==-1) courses[idx]={...courses[idx],...data,updatedAt:Date.now()}; }
+  else courses.push({id:DB.uid(),...data,weeks:[],createdAt:Date.now(),updatedAt:Date.now()});
   DB.saveSyllabusCourses(courses);
-  const inst = bootstrap.Modal.getInstance(document.getElementById('courseModal')); if(inst) inst.hide();
+  bootstrap.Modal.getInstance(document.getElementById('courseModal'))?.hide();
   Toast.show(id?'Subject updated':'Subject added');
   if(document.getElementById('syllabusGrid')) renderSyllabusGrid();
-  if(document.getElementById('courseHeader')) renderCourseHeader();
-  if(document.getElementById('svDescCard')) renderDescriptionCard();
-  if(document.getElementById('svOutcomesCard')) renderOutcomesCard();
-  if(document.getElementById('svGradingCard')) renderGradingCard();
-  if(document.getElementById('svReqCard')) renderRequirementsCard();
-  if(document.getElementById('svPoliciesCard')) renderPoliciesCard();
-  if(document.getElementById('svRefsCard')) renderReferencesCard();
+  if(document.getElementById('svInfoCard')) renderViewPage();
 }
 
 function deleteCourse(id){
   confirmAction({
     title:'Delete this subject?', danger:true, icon:'bi-trash3', confirmLabel:'Delete Subject',
-    message:'This permanently removes the subject and its entire syllabus (all weeks, outcomes, and topics). This cannot be undone.',
+    message:'This permanently removes the subject and all its weeks, outcomes, and topics.',
     onConfirm(){
       DB.saveSyllabusCourses(DB.getSyllabusCourses().filter(c=>c.id!==id));
       Toast.show('Subject deleted');
-      const inst = bootstrap.Modal.getInstance(document.getElementById('courseModal')); if(inst) inst.hide();
+      bootstrap.Modal.getInstance(document.getElementById('courseModal'))?.hide();
       if(document.getElementById('syllabusGrid')) renderSyllabusGrid();
       else location.href='syllabus.html';
     }
@@ -324,579 +277,620 @@ function deleteCourse(id){
 }
 
 /* ============================================================
-   SYLLABUS-VIEW.HTML — interactive course roadmap
+   SYLLABUS VIEW PAGE
    ============================================================ */
 function initSyllabusView(){
   if(!currentCourseId()){ location.href='syllabus.html'; return; }
-  renderCourseHeader();
+  renderViewPage();
+}
+
+function renderViewPage(){
+  renderInfoCard();
   renderDescriptionCard();
-  renderWeeksAccordion();
   renderOutcomesCard();
+  renderWeeksAccordion();
   renderGradingCard();
   renderRequirementsCard();
   renderPoliciesCard();
   renderReferencesCard();
+  renderTopActions();
 }
 
-/* ---- Course Header with progress ---- */
-function renderCourseHeader(){
-  const host = document.getElementById('courseHeader');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
+/* ── Top action buttons ── */
+function renderTopActions(){
+  const host=document.getElementById('svTopActions'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  host.innerHTML=`
+    <button class="btn btn-ghost btn-sm sv-btn" onclick="exportSyllabus('${c.id}')">
+      <i class="bi bi-download me-1"></i>Export</button>
+    <button class="btn btn-ghost btn-sm sv-btn" onclick="openCourseModal('${c.id}')">
+      <i class="bi bi-pencil me-1"></i>Edit</button>`;
+}
+
+/* ── Course Info card ── */
+function renderInfoCard(){
+  const host=document.getElementById('svInfoCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId());
   if(!c){
-    host.innerHTML = `<div class="glass card-pad text-center py-5"><i class="bi bi-emoji-frown" style="font-size:1.6rem"></i><div class="mt-2 fw-bold">Subject not found</div><a href="syllabus.html" class="btn btn-ghost btn-sm mt-2">Back to Subjects</a></div>`;
-    document.getElementById('addWeekFab')?.remove();
+    host.innerHTML=`<div class="glass card-pad text-center py-5">
+      <i class="bi bi-emoji-frown" style="font-size:1.6rem"></i>
+      <div class="mt-2 fw-bold">Subject not found</div>
+      <a href="syllabus.html" class="btn btn-ghost btn-sm mt-2">Back to Subjects</a></div>`;
     return;
   }
+  const {pct,completed,total}=computeProgress(c);
+  const subjects=DB.getSubjects();
+  const linked=subjects.find(s=>s.code===c.courseCode&&s.semesterId===c.semesterId);
+  const schedule=c.schedule||(linked?buildScheduleStr(linked):'');
+  const room=c.room||(linked?linked.room||'':'');
 
-  const { pct, completed, total } = computeProgress(c);
+  document.title=`${c.courseCode} · Syllabus · Student Planner`;
 
-  // Try to find linked subject for schedule/room
-  const subjects = DB.getSubjects();
-  const linkedSubject = subjects.find(s=>s.code===c.courseCode && s.semesterId===c.semesterId);
-  const schedule = c.schedule || (linkedSubject ? buildScheduleStr(linkedSubject) : '');
-  const room = c.room || (linkedSubject ? (linkedSubject.room||'') : '');
-
-  let schedRoomHtml = '';
-  if(schedule || room){
-    schedRoomHtml = `<div class="syl-header-meta-row"><i class="bi bi-clock text-soft"></i><span class="text-soft">${escapeHtml(schedule)}${schedule&&room?' · ':''}${escapeHtml(room)}</span></div>`;
-  }
-
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in syl-course-header-card">
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
-        <div class="min-width-0">
-          <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-            <span class="chip code-chip">${escapeHtml(c.courseCode)}</span>
-            <span class="text-faint" style="font-size:.78rem">${c.creditUnits} Unit${c.creditUnits===1?'':'s'}</span>
-          </div>
-          <h1 class="page-title mb-0">${escapeHtml(c.courseTitle)}</h1>
-        </div>
-        <div class="d-flex gap-2 flex-shrink-0">
-          <button class="btn btn-ghost btn-sm" onclick="exportSyllabus('${c.id}')"><i class="bi bi-download me-1"></i>Export</button>
-          <button class="btn btn-ghost btn-sm" onclick="openCourseModal('${c.id}')"><i class="bi bi-pencil me-1"></i>Edit</button>
-        </div>
+  host.innerHTML=`<div class="glass card-pad mb-0 fade-in sv-info-card">
+    <div class="sv-info-header">
+      <div class="min-width-0">
+        <div class="sv-info-code">${escapeHtml(c.courseCode)}</div>
+        <div class="sv-info-title">${escapeHtml(c.courseTitle)}</div>
       </div>
-
-      <div class="syl-header-meta">
-        ${c.instructor?`<div class="syl-header-meta-row"><i class="bi bi-person text-soft"></i><span class="text-soft">${escapeHtml(c.instructor)}</span></div>`:''}
-        ${schedRoomHtml}
-        <div class="syl-header-meta-row"><i class="bi bi-calendar3 text-soft"></i><span class="text-soft">${escapeHtml(c.academicYear||'—')} · ${escapeHtml(c.semester||'—')}</span></div>
+    </div>
+    <div class="sv-info-grid">
+      ${c.creditUnits?`<div class="sv-info-item"><span class="sv-info-lbl">Units</span><span class="sv-info-val">${c.creditUnits}</span></div>`:''}
+      ${c.instructor?`<div class="sv-info-item"><span class="sv-info-lbl">Instructor</span><span class="sv-info-val">${escapeHtml(c.instructor)}</span></div>`:''}
+      ${schedule?`<div class="sv-info-item"><span class="sv-info-lbl">Schedule</span><span class="sv-info-val">${escapeHtml(schedule)}</span></div>`:''}
+      ${room?`<div class="sv-info-item"><span class="sv-info-lbl">Room</span><span class="sv-info-val">${escapeHtml(room)}</span></div>`:''}
+      ${c.semester?`<div class="sv-info-item"><span class="sv-info-lbl">Semester</span><span class="sv-info-val">${escapeHtml(c.semester)}</span></div>`:''}
+      ${c.academicYear?`<div class="sv-info-item"><span class="sv-info-lbl">Academic Year</span><span class="sv-info-val">${escapeHtml(c.academicYear)}</span></div>`:''}
+    </div>
+    ${total>0?`<div class="sv-progress-wrap">
+      <div class="d-flex justify-content-between align-items-baseline mb-1">
+        <span class="sv-prog-label">Course Progress</span>
+        <span class="sv-prog-pct">${completed}/${total} weeks · ${pct}%</span>
       </div>
-
-      <div class="syl-progress-block mt-3">
-        <div class="d-flex justify-content-between align-items-baseline mb-1">
-          <span class="syl-progress-label">Course Progress</span>
-          <span class="syl-progress-pct">${pct}%</span>
-        </div>
-        <div class="syl-progress-track">
-          <div class="syl-progress-fill" style="width:${pct}%" id="sylProgressFill"></div>
-        </div>
-        <div class="syl-progress-sub">${completed} / ${total} topic${total===1?'':'s'} completed</div>
-      </div>
-    </div>`;
-
-  document.title = `${c.courseCode} · Syllabus · Student Planner`;
+      <div class="sv-prog-track"><div class="sv-prog-fill" style="width:${pct}%"></div></div>
+    </div>`:''}
+  </div>`;
 }
 
 function buildScheduleStr(s){
-  if(!s) return '';
-  const days = fmtDays(s.days||[]);
-  const start = fmtTime(s.start);
-  const end = fmtTime(s.end);
-  if(start&&end) return `${days} ${start} – ${end}`.trim();
-  return days;
+  const days=fmtDays(s.days||[]);
+  const start=fmtTime(s.start), end=fmtTime(s.end);
+  return start&&end?`${days} ${start}–${end}`.trim():days;
 }
 
-/* ---- Description card ---- */
+/* ── Description card ── */
+let _descExpanded=false;
 function renderDescriptionCard(){
-  const host = document.getElementById('svDescCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const desc = c.courseDescription||'';
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-file-text"></i>Course Description</div>
-      ${desc
-        ? `<p class="syl-desc-text">${escapeHtml(desc)}</p>`
-        : `<p class="text-faint" style="font-size:.88rem;margin:0">No course description available.</p>`}
-    </div>`;
+  const host=document.getElementById('svDescCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const desc=(c.courseDescription||'').trim();
+  if(!desc){ host.innerHTML=''; return; }
+  const TRUNC=220;
+  const long=desc.length>TRUNC;
+  const shown=_descExpanded||!long?desc:desc.slice(0,TRUNC)+'…';
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-file-text"></i>Course Description</div>
+    <p class="sv-body-text mb-0">${escapeHtml(shown).replace(/\n/g,'<br>')}</p>
+    ${long?`<button class="btn btn-ghost btn-sm sv-btn mt-2" onclick="_descExpanded=!_descExpanded;renderDescriptionCard()">
+      ${_descExpanded?'<i class="bi bi-chevron-up me-1"></i>Show less':'<i class="bi bi-chevron-down me-1"></i>Show more'}
+    </button>`:''}
+  </div>`;
 }
 
-/* ---- Search filter helper ---- */
-function weekMatchesSearch(course, week, q){
+/* ── Course Outcomes card ── */
+function renderOutcomesCard(){
+  const host=document.getElementById('svOutcomesCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const outcomes=c.courseOutcomes||[];
+  if(!outcomes.length){ host.innerHTML=''; return; }
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-bullseye"></i>Course Outcomes</div>
+    <ul class="sv-outcome-list">
+      ${outcomes.map(o=>`<li>
+        <span class="sv-outcome-icon"><i class="bi bi-check-lg"></i></span>
+        <span>${escapeHtml(o)}</span>
+      </li>`).join('')}
+    </ul>
+  </div>`;
+}
+
+/* ── Weeks accordion (Course Outline) ── */
+function weekMatchesSearch(c,w,q){
   if(!q) return true;
-  const weekNum = (course.weeks.indexOf(week)+1);
-  if(String(weekNum).includes(q) || `week ${weekNum}`.includes(q)) return true;
-  if(course.courseTitle.toLowerCase().includes(q) || course.courseCode.toLowerCase().includes(q)) return true;
-  if((week.learningOutcomes||[]).some(o=>o.toLowerCase().includes(q))) return true;
-  if((week.title||'').toLowerCase().includes(q)) return true;
-  if((week.dateRange||'').toLowerCase().includes(q)) return true;
-  for(const t of (week.topics||[])){
+  const i=c.weeks.indexOf(w)+1;
+  if(String(i).includes(q)||`week ${i}`.includes(q)) return true;
+  if((w.title||'').toLowerCase().includes(q)) return true;
+  if((w.dateRange||'').toLowerCase().includes(q)) return true;
+  for(const t of(w.topics||[])){
     if(t.title.toLowerCase().includes(q)) return true;
     if((t.subtopics||[]).some(s=>s.toLowerCase().includes(q))) return true;
   }
+  if((w.learningOutcomes||[]).some(o=>o.toLowerCase().includes(q))) return true;
+  if((w.resources||[]).some(r=>r.toLowerCase().includes(q))) return true;
+  if((w.assessments||[]).some(a=>a.toLowerCase().includes(q))) return true;
   return false;
 }
 
-/* ---- Course Outline (Weeks) ---- */
+let _openWeeks=[];
 function renderWeeksAccordion(){
-  const host = document.getElementById('weeksAccordion');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const q = ((document.getElementById('weekSearch')||{}).value||'').toLowerCase().trim();
-  const weeks = c.weeks||[];
+  const host=document.getElementById('weeksAccordion'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const q=((document.getElementById('weekSearch')||{}).value||'').toLowerCase().trim();
+  const weeks=c.weeks||[];
 
   if(!weeks.length){
-    host.innerHTML = `<div class="syl-empty-state fade-in">
-      <i class="bi bi-calendar3-week" style="font-size:1.8rem;opacity:.5"></i>
-      <div class="mt-2 fw-bold" style="color:var(--text)">No topics added yet</div>
-      <div style="font-size:.85rem">Tap "Add Week" to start building this course outline.</div>
+    host.innerHTML=`<div class="syl-empty-state fade-in">
+      <i class="bi bi-calendar3-week" style="font-size:1.5rem;opacity:.4"></i>
+      <div class="mt-2 fw-bold" style="color:var(--text)">No weeks added yet</div>
+      <div class="text-faint" style="font-size:.82rem">Click "Add Week" to build this course outline.</div>
     </div>`;
     return;
   }
 
-  const matches = weeks.map(w=> weekMatchesSearch(c, w, q));
-  const anyMatch = matches.some(Boolean);
-
-  if(q && !anyMatch){
-    host.innerHTML = `<div class="syl-empty-state fade-in"><i class="bi bi-search" style="font-size:1.6rem;opacity:.5"></i><div class="mt-2 fw-bold" style="color:var(--text)">No matches in this syllabus</div></div>`;
+  const matches=weeks.map(w=>weekMatchesSearch(c,w,q));
+  if(q&&!matches.some(Boolean)){
+    host.innerHTML=`<div class="syl-empty-state fade-in">
+      <i class="bi bi-search" style="font-size:1.4rem;opacity:.4"></i>
+      <div class="mt-2 text-faint">No matches found.</div>
+    </div>`;
     return;
   }
 
-  const semId = c.semesterId;
-  const allTasks = DB.getTasks().filter(t=>t.semesterId===semId);
+  const semId=c.semesterId;
+  const allTasks=DB.getTasks().filter(t=>t.semesterId===semId);
 
-  host.innerHTML = weeks.map((w,i)=>{
-    if(q && !matches[i]) return '';
-    const weekNum = String(i+1).padStart(2,'0');
-    const accId = `wk-${w.id}`;
-    const isCompleted = !!w.completed;
-    const topicCount = (w.topics||[]).length;
-    const outcomeCount = (w.learningOutcomes||[]).length;
+  host.innerHTML=weeks.map((w,i)=>{
+    if(q&&!matches[i]) return '';
+    const num=i+1;
+    const numStr=String(num).padStart(2,'0');
+    const isDone=!!w.completed;
+    const relTasks=allTasks.filter(t=>t.syllabusWeekId===w.id);
 
-    // Related tasks: tasks linked to this week via syllabusWeekId or matching by subject
-    const relatedTasks = allTasks.filter(t=> t.syllabusWeekId===w.id);
+    /* ── Expanded body sections ── */
+    // Topics
+    const topicsHtml=(w.topics||[]).filter(t=>t.title).map(t=>`
+      <div class="sv-topic-row">
+        <div class="sv-topic-main"><i class="bi bi-chevron-right sv-topic-icon"></i>${escapeHtml(t.title)}</div>
+        ${(t.subtopics||[]).filter(Boolean).map(s=>`
+          <div class="sv-subtopic-row"><i class="bi bi-dot sv-subtopic-icon"></i>${escapeHtml(s)}</div>`).join('')}
+      </div>`).join('');
 
-    const outcomeTag = w.learningType==='numbered' ? 'ol' : 'ul';
-    const outcomesHtml = (w.learningOutcomes||[]).length
-      ? `<${outcomeTag} class="syl-outcome-list">${w.learningOutcomes.map(o=>`<li>${escapeHtml(o)}</li>`).join('')}</${outcomeTag}>`
-      : `<div class="text-faint" style="font-size:.82rem">No learning outcomes added.</div>`;
+    // Learning outcomes
+    const outcomesHtml=(w.learningOutcomes||[]).filter(Boolean).map((o,oi)=>
+      `<div class="sv-compact-item"><span class="sv-item-num">${oi+1}.</span>${escapeHtml(o)}</div>`).join('');
 
-    const topicsHtml = (w.topics||[]).length
-      ? w.topics.map(t=>`
-        <div class="syl-main-topic">
-          <div class="syl-main-topic-title"><i class="bi bi-bookmark-fill"></i>${escapeHtml(t.title)}</div>
-          ${(t.subtopics||[]).length ? `<ul class="syl-subtopic-list">${t.subtopics.map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ul>` : ''}
-        </div>`).join('')
-      : `<div class="text-faint" style="font-size:.82rem">No topics added.</div>`;
+    // Activities / methodology
+    const activitiesHtml=(w.activities||[]).filter(Boolean).map(a=>
+      `<div class="sv-compact-item"><i class="bi bi-circle-fill sv-bullet"></i>${escapeHtml(a)}</div>`).join('');
 
-    const activitiesHtml = (w.activities||[]).length
-      ? `<div class="syl-body-section">
-          <div class="syl-body-section-title"><i class="bi bi-lightning-charge"></i>Activities</div>
-          <ul class="syl-outcome-list">${w.activities.map(a=>`<li>${escapeHtml(a)}</li>`).join('')}</ul>
-        </div>` : '';
+    // Resources
+    const resourcesHtml=(w.resources||[]).filter(Boolean).map(r=>
+      `<div class="sv-compact-item"><i class="bi bi-circle-fill sv-bullet"></i>${escapeHtml(r)}</div>`).join('');
 
-    const tasksHtml = `<div class="syl-body-section">
-      <div class="syl-body-section-title"><i class="bi bi-check2-square"></i>Related Tasks
-        <span class="text-faint fw-normal" style="font-size:.75rem">${relatedTasks.length} task${relatedTasks.length===1?'':'s'}</span>
-      </div>
-      ${relatedTasks.length
-        ? `<div class="syl-task-list">${relatedTasks.map(t=>`
-            <div class="syl-task-item ${t.status==='completed'?'completed':''}">
-              <i class="bi ${t.status==='completed'?'bi-check-circle-fill':'bi-circle'} syl-task-icon"></i>
-              <span class="syl-task-title">${escapeHtml(t.title)}</span>
-              ${t.dueDate?`<span class="text-faint" style="font-size:.72rem;flex-shrink:0">${t.dueDate}</span>`:''}
-            </div>`).join('')}
-          </div>`
-        : `<div class="text-faint" style="font-size:.82rem">No tasks linked to this topic.</div>`}
-      <button class="btn btn-ghost btn-sm mt-2 syl-create-task-btn" onclick="createTaskForWeek('${c.id}','${w.id}')">
-        <i class="bi bi-plus-lg me-1"></i>Create Task
-      </button>
-    </div>`;
+    // Assessments
+    const assessmentsHtml=(w.assessments||[]).filter(Boolean).map(a=>
+      `<div class="sv-compact-item"><i class="bi bi-circle-fill sv-bullet"></i>${escapeHtml(a)}</div>`).join('');
 
-    return `
-    <div class="syl-week-item ${isCompleted?'completed':''}" id="weekItem-${w.id}">
-      <div class="syl-week-header" onclick="toggleWeek('${w.id}')">
-        <div class="syl-week-left">
-          <div class="syl-week-badge ${isCompleted?'done':''}">
-            ${isCompleted?'<i class="bi bi-check-lg"></i>':'<span>'+weekNum+'</span>'}
-          </div>
-          <div class="syl-week-info">
-            <div class="syl-week-label">WEEK ${weekNum}</div>
-            <div class="syl-week-title">${escapeHtml(w.title||'(Untitled)')}</div>
-            ${w.dateRange?`<div class="syl-week-date">${escapeHtml(w.dateRange)}</div>`:''}
-            <div class="syl-week-meta">
-              ${outcomeCount?`<span>${outcomeCount} outcome${outcomeCount===1?'':'s'}</span>`:''}
-              ${topicCount?`<span>${topicCount} topic${topicCount===1?'':'s'}</span>`:''}
-              ${relatedTasks.length?`<span>${relatedTasks.length} task${relatedTasks.length===1?'':'s'}</span>`:''}
-            </div>
-          </div>
+    // Related tasks
+    const tasksHtml=relTasks.map(t=>`
+      <div class="sv-task-row ${t.status==='completed'?'done':''}">
+        <i class="bi ${t.status==='completed'?'bi-check-circle-fill':'bi-circle'} sv-task-icon"></i>
+        <span>${escapeHtml(t.title)}</span>
+        ${t.dueDate?`<span class="sv-task-due">${t.dueDate}</span>`:''}
+      </div>`).join('');
+
+    const hasBody=topicsHtml||outcomesHtml||activitiesHtml||resourcesHtml||assessmentsHtml||relTasks.length||w.description;
+    const isOpen=_openWeeks.includes(w.id);
+    // Embed date range directly in the week label
+    const weekLabel = w.dateRange
+      ? `WEEK ${numStr} · ${w.dateRange}`
+      : `WEEK ${numStr}`;
+
+    return `<div class="sv-week-row ${isDone?'done':''}" id="svWeek-${w.id}">
+      <div class="sv-week-head">
+        <div class="sv-week-badge ${isDone?'done':''}">
+          ${isDone?'<i class="bi bi-check-lg"></i>':numStr}
         </div>
-        <div class="syl-week-actions" onclick="event.stopPropagation()">
-          <button class="btn-icon syl-week-tool-btn" onclick="openWeekModal(currentCourseId(),'${w.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
-          <button class="btn-icon syl-week-tool-btn btn-icon-danger" onclick="deleteWeek('${w.id}')" title="Delete"><i class="bi bi-trash3"></i></button>
-          <i class="bi bi-chevron-right syl-week-chevron" id="chevron-${w.id}"></i>
+        <div class="sv-week-info">
+          <div class="sv-week-label">${escapeHtml(weekLabel)}</div>
+          <div class="sv-week-title">${escapeHtml(w.title||'(Untitled)')}</div>
+        </div>
+        <div class="sv-week-controls">
+          <button class="btn btn-ghost btn-sm sv-btn sv-week-edit-btn"
+            onclick="openWeekModal(currentCourseId(),'${w.id}')" title="Edit week">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+          <button class="btn-icon sv-week-tool"
+            onclick="deleteWeek('${w.id}')" title="Delete">
+            <i class="bi bi-trash3"></i>
+          </button>
+          ${hasBody?`<button class="btn-icon sv-week-chevron-btn ${isOpen?'open':''}" id="chevron-${w.id}"
+            onclick="toggleWeek('${w.id}')" title="Expand / Collapse">
+            <i class="bi bi-chevron-right"></i>
+          </button>`:'<span style="width:26px"></span>'}
         </div>
       </div>
-      <div class="syl-week-body" id="wkBody-${w.id}" style="display:none">
-        <div class="syl-week-body-inner">
-          ${w.title?`<div class="syl-body-section-title" style="font-size:1rem;font-weight:700;margin-bottom:12px">${escapeHtml(w.title)}</div>`:''}
-          ${w.description?`<p class="syl-desc-text" style="margin-bottom:12px">${escapeHtml(w.description)}</p>`:''}
+      ${hasBody?`<div class="sv-week-body" id="wkBody-${w.id}" style="display:${isOpen?'block':'none'}">
+        <div class="sv-week-body-inner">
+          ${w.description?`<p class="sv-body-text mb-3">${escapeHtml(w.description)}</p>`:''}
 
-          <div class="syl-body-section">
-            <div class="syl-body-section-title"><i class="bi bi-diagram-3"></i>Topics</div>
-            ${topicsHtml}
-          </div>
+          ${topicsHtml?`<div class="sv-body-block">
+            <div class="sv-body-block-title"><i class="bi bi-diagram-3"></i>Topics</div>
+            <div class="sv-topics-list">${topicsHtml}</div>
+          </div>`:''}
 
-          <div class="syl-body-section">
-            <div class="syl-body-section-title"><i class="bi bi-check2-square"></i>Learning Outcomes</div>
+          ${outcomesHtml?`<div class="sv-body-block">
+            <div class="sv-body-block-title"><i class="bi bi-check2-all"></i>Learning Outcomes</div>
             ${outcomesHtml}
-          </div>
+          </div>`:''}
 
-          ${activitiesHtml}
-          ${tasksHtml}
+          ${activitiesHtml?`<div class="sv-body-block">
+            <div class="sv-body-block-title"><i class="bi bi-lightning-charge"></i>Learning Activities / Methodology</div>
+            ${activitiesHtml}
+          </div>`:''}
 
-          <div class="syl-week-complete-row">
-            <button class="btn ${isCompleted?'btn-ghost syl-btn-undo':'btn-accent'} btn-sm" onclick="toggleWeekComplete('${w.id}')">
-              ${isCompleted
-                ? '<i class="bi bi-arrow-counterclockwise me-1"></i>Mark as Incomplete'
-                : '<i class="bi bi-check-lg me-1"></i>Mark as Completed'}
+          ${resourcesHtml?`<div class="sv-body-block">
+            <div class="sv-body-block-title"><i class="bi bi-book"></i>Learning and Teaching Resources</div>
+            ${resourcesHtml}
+          </div>`:''}
+
+          ${assessmentsHtml?`<div class="sv-body-block">
+            <div class="sv-body-block-title"><i class="bi bi-clipboard-check"></i>Assessment and Tasks</div>
+            ${assessmentsHtml}
+          </div>`:''}
+
+          ${relTasks.length||true?`<div class="sv-body-block sv-tasks-block">
+            <div class="sv-body-block-title">
+              <i class="bi bi-check2-square"></i>Related Tasks
+              ${relTasks.length?`<span class="sv-task-count">${relTasks.length}</span>`:''}
+            </div>
+            ${tasksHtml||'<div class="text-faint" style="font-size:.78rem">No tasks linked yet.</div>'}
+            <button class="btn btn-ghost btn-sm sv-btn mt-2"
+              onclick="createTaskForWeek('${c.id}','${w.id}')">
+              <i class="bi bi-plus-lg me-1"></i>Create Task
+            </button>
+          </div>`:''}
+
+          <div class="sv-complete-row">
+            <button class="btn ${isDone?'btn-ghost':'btn-accent'} btn-sm sv-btn"
+              onclick="toggleWeekComplete('${w.id}')">
+              ${isDone
+                ?'<i class="bi bi-arrow-counterclockwise me-1"></i>Mark Incomplete'
+                :'<i class="bi bi-check-lg me-1"></i>Mark Completed'}
             </button>
           </div>
         </div>
-      </div>
+      </div>`:''}
     </div>`;
   }).join('');
 
-  // Restore open states
-  (_openWeeks||[]).forEach(wid=>{
-    const body = document.getElementById('wkBody-'+wid);
-    const chev = document.getElementById('chevron-'+wid);
-    if(body){ body.style.display='block'; }
-    if(chev){ chev.classList.add('open'); }
+  // Re-apply open states
+  _openWeeks.forEach(wid=>{
+    const body=document.getElementById('wkBody-'+wid);
+    if(body) body.style.display='block';
+    const btn=document.getElementById('chevron-'+wid);
+    if(btn) btn.classList.add('open');
   });
 }
 
-let _openWeeks = [];
 function toggleWeek(wid){
-  const body = document.getElementById('wkBody-'+wid);
-  const chev = document.getElementById('chevron-'+wid);
+  const body=document.getElementById('wkBody-'+wid);
+  const btn=document.getElementById('chevron-'+wid);
   if(!body) return;
-  const isOpen = body.style.display==='block';
-  if(isOpen){
-    body.style.display='none';
-    chev && chev.classList.remove('open');
-    _openWeeks = _openWeeks.filter(id=>id!==wid);
-  } else {
-    body.style.display='block';
-    chev && chev.classList.add('open');
-    if(!_openWeeks.includes(wid)) _openWeeks.push(wid);
-  }
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  btn&&btn.classList.toggle('open',!open);
+  _openWeeks=open?_openWeeks.filter(id=>id!==wid):[..._openWeeks,wid];
 }
 
 function toggleWeekComplete(weekId){
-  const c = DB.getSyllabusCourse(currentCourseId()); if(!c) return;
-  const wIdx = c.weeks.findIndex(w=>w.id===weekId); if(wIdx===-1) return;
-  c.weeks[wIdx].completed = !c.weeks[wIdx].completed;
-  c.updatedAt = Date.now();
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const wIdx=c.weeks.findIndex(w=>w.id===weekId); if(wIdx===-1) return;
+  c.weeks[wIdx].completed=!c.weeks[wIdx].completed;
+  c.updatedAt=Date.now();
   DB.saveSyllabusCourses(DB.getSyllabusCourses().map(x=>x.id===c.id?c:x));
-  renderCourseHeader();
+  renderInfoCard();
   renderWeeksAccordion();
 }
 
 function deleteWeek(weekId){
   confirmAction({
-    title:'Delete this topic?', danger:true, icon:'bi-trash3', confirmLabel:'Delete Topic',
-    message:'This removes the topic along with its learning outcomes and subtopics. Remaining topics will renumber automatically.',
+    title:'Delete this week?', danger:true, icon:'bi-trash3', confirmLabel:'Delete Week',
+    message:'This removes the week and all its topics and outcomes.',
     onConfirm(){
-      const c = DB.getSyllabusCourse(currentCourseId()); if(!c) return;
-      c.weeks = c.weeks.filter(w=>w.id!==weekId);
-      c.updatedAt = Date.now();
+      const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+      c.weeks=c.weeks.filter(w=>w.id!==weekId);
+      c.updatedAt=Date.now();
       DB.saveSyllabusCourses(DB.getSyllabusCourses().map(x=>x.id===c.id?c:x));
-      Toast.show('Topic deleted');
-      renderCourseHeader();
+      Toast.show('Week deleted');
+      renderInfoCard();
       renderWeeksAccordion();
     }
   });
 }
 
-/* ---- Task creation from syllabus topic ---- */
-function createTaskForWeek(courseId, weekId){
-  const c = DB.getSyllabusCourse(courseId); if(!c) return;
-  const w = (c.weeks||[]).find(x=>x.id===weekId);
-  // Navigate to tasks page with pre-fill context
-  const semId = c.semesterId;
-  const params = new URLSearchParams({new:1, syllabusWeekId:weekId, semesterId:semId, title: w?w.title:''});
-  location.href = `tasks.html?${params}`;
+function createTaskForWeek(courseId,weekId){
+  const c=DB.getSyllabusCourse(courseId); if(!c) return;
+  const w=(c.weeks||[]).find(x=>x.id===weekId);
+  location.href=`tasks.html?new=1&syllabusWeekId=${weekId}&semesterId=${c.semesterId}&title=${encodeURIComponent(w?w.title:'')}`;
 }
 
-/* ---- Learning Outcomes card ---- */
-function renderOutcomesCard(){
-  const host = document.getElementById('svOutcomesCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const outcomes = c.courseOutcomes||[];
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-bullseye"></i>Learning Outcomes</div>
-      ${outcomes.length
-        ? `<ul class="syl-course-outcomes">${outcomes.map(o=>`<li><i class="bi bi-check2-circle syl-outcome-icon"></i><span>${escapeHtml(o)}</span></li>`).join('')}</ul>`
-        : `<p class="text-faint" style="font-size:.88rem;margin:0">No course learning outcomes added yet.</p>`}
-    </div>`;
-}
-
-/* ---- Grading card ---- */
+/* ── Grading card ── */
 function renderGradingCard(){
-  const host = document.getElementById('svGradingCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const comps = c.gradingComponents||[];
+  const host=document.getElementById('svGradingCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const comps=c.gradingComponents||[];
   if(!comps.length){ host.innerHTML=''; return; }
-
-  const totalWeight = comps.reduce((acc,g)=>acc+(g.weight||0),0);
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-bar-chart-line"></i>Grading</div>
-      <div class="syl-grading-list">
-        ${comps.map(g=>`
-        <div class="syl-grading-row">
-          <span class="syl-grading-name">${escapeHtml(g.name)}</span>
-          <div class="syl-grading-bar-wrap">
-            <div class="syl-grading-bar" style="width:${Math.min(100,g.weight||0)}%"></div>
+  const total=comps.reduce((a,g)=>a+(g.weight||0),0);
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-bar-chart-line"></i>Grading System</div>
+    <div class="d-flex flex-column" style="gap:4px">
+      ${comps.map(g=>`<div class="sv-grade-row">
+        <div class="sv-grade-name">${escapeHtml(g.name)}</div>
+        <div class="sv-grade-bar-cell">
+          <div class="sv-grade-bar-track">
+            <div class="sv-grade-bar-fill" style="width:${Math.min(100,g.weight||0)}%"></div>
           </div>
-          <span class="syl-grading-pct">${g.weight||0}%</span>
-        </div>`).join('')}
-      </div>
-      ${Math.abs(totalWeight-100)>0.1
-        ? `<div class="syl-grading-total ${totalWeight===100?'ok':'warn'}">Total: ${totalWeight}%${totalWeight!==100?' (should equal 100%)':''}</div>`
-        : ''}
-    </div>`;
+        </div>
+        <div class="sv-grade-pct">${g.weight||0}%</div>
+      </div>`).join('')}
+    </div>
+    ${Math.abs(total-100)>0.1?`<hr class="sv-grade-divider">
+      <div class="sv-grade-total ${total===100?'ok':'warn'}">
+        <span>Total</span><span>${total}%${total!==100?' — should equal 100%':''}</span>
+      </div>`:''}
+  </div>`;
 }
 
-/* ---- Requirements card ---- */
+/* ── Requirements card ── */
 function renderRequirementsCard(){
-  const host = document.getElementById('svReqCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const reqs = (c.requirements||'').trim();
-  if(!reqs){ host.innerHTML=''; return; }
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-clipboard-check"></i>Requirements</div>
-      <div class="syl-policy-text">${escapeHtml(reqs).replace(/\n/g,'<br>')}</div>
-    </div>`;
+  const host=document.getElementById('svReqCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const t=(c.requirements||'').trim();
+  if(!t){ host.innerHTML=''; return; }
+  // Split on newlines; lines starting with • or - become separate items
+  const lines=t.split('\n').map(l=>l.replace(/^[\u2022\-]\s*/,'')).filter(Boolean);
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-clipboard-check"></i>Course Requirements</div>
+    <ul class="sv-req-list">
+      ${lines.map(l=>`<li>
+        <span class="sv-req-icon"><i class="bi bi-check2"></i></span>
+        <span>${escapeHtml(l)}</span>
+      </li>`).join('')}
+    </ul>
+  </div>`;
 }
 
-/* ---- Policies card ---- */
+/* ── Policies card ── */
+let _polExpanded=false;
 function renderPoliciesCard(){
-  const host = document.getElementById('svPoliciesCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const pol = (c.policies||'').trim();
-  if(!pol){ host.innerHTML=''; return; }
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-shield-check"></i>Important Policies</div>
-      <div class="syl-policy-text">${escapeHtml(pol).replace(/\n/g,'<br>')}</div>
-    </div>`;
+  const host=document.getElementById('svPoliciesCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const t=(c.policies||'').trim();
+  if(!t){ host.innerHTML=''; return; }
+  const lines=t.split('\n').map(l=>l.trim()).filter(Boolean);
+  const SHOW=4;
+  const shown=_polExpanded?lines:lines.slice(0,SHOW);
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-shield-check"></i>Course Policies</div>
+    <div class="sv-body-text">${shown.map(l=>escapeHtml(l)).join('<br>')}</div>
+    ${lines.length>SHOW?`<button class="btn btn-ghost btn-sm sv-btn mt-2"
+      onclick="_polExpanded=!_polExpanded;renderPoliciesCard()">
+      ${_polExpanded?'<i class="bi bi-chevron-up me-1"></i>Show less':'<i class="bi bi-chevron-down me-1"></i>Show all'}
+    </button>`:''}
+  </div>`;
 }
 
-/* ---- References card ---- */
-let _refsExpanded = false;
+/* ── References card ── */
+let _refsExpanded=false;
 function renderReferencesCard(){
-  const host = document.getElementById('svRefsCard');
-  if(!host) return;
-  const c = DB.getSyllabusCourse(currentCourseId());
-  if(!c) return;
-  const refs = (c.references||'').trim();
-  if(!refs){ host.innerHTML=''; return; }
-  const lines = refs.split('\n').map(l=>l.trim()).filter(Boolean);
-  const SHOW = 4;
-  const hasMore = lines.length>SHOW;
-  const visible = _refsExpanded ? lines : lines.slice(0,SHOW);
-  host.innerHTML = `
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-book"></i>References</div>
-      <ul class="syl-refs-list">${visible.map(l=>`<li>${escapeHtml(l)}</li>`).join('')}</ul>
-      ${hasMore?`<button class="btn btn-ghost btn-sm mt-1" onclick="_refsExpanded=!_refsExpanded;renderReferencesCard()">
-        ${_refsExpanded?'<i class="bi bi-chevron-up me-1"></i>Show less':'<i class="bi bi-chevron-down me-1"></i>Show all '+lines.length+' references'}
-      </button>`:''}
-    </div>`;
+  const host=document.getElementById('svRefsCard'); if(!host) return;
+  const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;
+  const t=(c.references||'').trim();
+  if(!t){ host.innerHTML=''; return; }
+  const lines=t.split('\n').map(l=>l.trim()).filter(Boolean);
+  const SHOW=4;
+  const shown=_refsExpanded?lines:lines.slice(0,SHOW);
+  host.innerHTML=`<div class="glass card-pad fade-in">
+    <div class="sv-section-title"><i class="bi bi-book"></i>References</div>
+    <ul class="sv-refs-list">${shown.map(l=>`<li>${escapeHtml(l)}</li>`).join('')}</ul>
+    ${lines.length>SHOW?`<button class="btn btn-ghost btn-sm sv-btn mt-2"
+      onclick="_refsExpanded=!_refsExpanded;renderReferencesCard()">
+      ${_refsExpanded?'<i class="bi bi-chevron-up me-1"></i>Show less':'<i class="bi bi-chevron-down me-1"></i>Show all '+lines.length}
+    </button>`:''}
+  </div>`;
 }
 
 /* ============================================================
-   ADD / EDIT WEEK MODAL (enhanced with title, dateRange, activities)
+   WEEK MODAL  — full edit with resources + assessments
    ============================================================ */
-let weekDraft = null;
-let weekEditingId = null;
-let weekEditingCourseId = null;
+let weekDraft=null, weekEditingId=null, weekEditingCourseId=null;
 
-function openWeekModal(courseId, weekId){
-  weekEditingCourseId = courseId;
-  weekEditingId = weekId || null;
-  const c = DB.getSyllabusCourse(courseId);
-  const existing = weekId ? c.weeks.find(w=>w.id===weekId) : null;
-  weekDraft = existing
-    ? JSON.parse(JSON.stringify(existing))
-    : { title:'', dateRange:'', description:'', learningType:'unordered', learningOutcomes:[''],
-        topics:[{ id:DB.uid(), title:'', subtopics:[''] }], activities:[''] };
+function openWeekModal(courseId,weekId){
+  weekEditingCourseId=courseId;
+  weekEditingId=weekId||null;
+  const c=DB.getSyllabusCourse(courseId);
+  const ex=weekId?c.weeks.find(w=>w.id===weekId):null;
+  weekDraft=ex?JSON.parse(JSON.stringify(ex)):{
+    title:'',dateRange:'',description:'',
+    learningType:'unordered',learningOutcomes:[''],
+    topics:[{id:DB.uid(),title:'',subtopics:['']}],
+    activities:[''],resources:[''],assessments:['']
+  };
   if(!weekDraft.activities) weekDraft.activities=[''];
-  if(!weekDraft.title) weekDraft.title='';
-  if(!weekDraft.dateRange) weekDraft.dateRange='';
-  if(!weekDraft.description) weekDraft.description='';
+  if(!weekDraft.resources) weekDraft.resources=[''];
+  if(!weekDraft.assessments) weekDraft.assessments=[''];
 
-  const weekNum = existing ? c.weeks.indexOf(existing)+1 : c.weeks.length+1;
-  renderWeekModalBody(weekNum, !!existing);
+  const weekNum=ex?c.weeks.indexOf(ex)+1:c.weeks.length+1;
+  renderWeekModalBody(weekNum,!!ex);
   new bootstrap.Modal(document.getElementById('weekModal')).show();
 }
 
-function renderWeekModalBody(weekNum, isEdit){
-  const body = document.getElementById('weekModalBody');
-  body.innerHTML = `
-    <h5 class="mb-3"><i class="bi bi-calendar3-week me-2"></i>${isEdit?'Edit':'Add'} Topic <span class="chip ms-1">Week ${weekNum}</span></h5>
+function renderWeekModalBody(weekNum,isEdit){
+  document.getElementById('weekModalBody').innerHTML=`
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="modal-title mb-0">
+        <i class="bi bi-calendar3-week me-2"></i>${isEdit?'Edit':'Add'} Week
+        <span class="chip ms-2">Week ${weekNum}</span>
+      </h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
 
     <div class="row g-2 mb-3">
-      <div class="col-12"><label>Topic Title</label><input class="form-control" id="wkTitle" placeholder="Arrays and Linked Lists" value="${escapeHtml(weekDraft.title||'')}"></div>
-      <div class="col-md-6"><label>Date Range</label><input class="form-control" id="wkDateRange" placeholder="Aug 17 – Aug 21" value="${escapeHtml(weekDraft.dateRange||'')}"></div>
-      <div class="col-md-6"><label>Description <span class="text-faint fw-normal">(optional)</span></label><input class="form-control" id="wkDesc" placeholder="Brief description" value="${escapeHtml(weekDraft.description||'')}"></div>
+      <div class="col-12"><label class="syl-field-label">Week Title</label>
+        <input class="form-control" id="wkTitle" placeholder="Course Orientation"
+          value="${escapeHtml(weekDraft.title||'')}"></div>
+      <div class="col-md-6"><label class="syl-field-label">Date Range</label>
+        <input class="form-control" id="wkDateRange" placeholder="Aug 17 – Aug 21"
+          value="${escapeHtml(weekDraft.dateRange||'')}"></div>
+      <div class="col-md-6"><label class="syl-field-label">Description</label>
+        <input class="form-control" id="wkDesc" placeholder="Brief overview"
+          value="${escapeHtml(weekDraft.description||'')}"></div>
     </div>
 
-    <div class="mb-3">
-      <label>Learning Outcome List Type</label>
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-ghost btn-sm ${weekDraft.learningType==='unordered'?'active':''}" id="ltBulletBtn" onclick="setLearningType('unordered')"><i class="bi bi-list-ul me-1"></i>Bulleted</button>
-        <button type="button" class="btn btn-ghost btn-sm ${weekDraft.learningType==='numbered'?'active':''}" id="ltNumberBtn" onclick="setLearningType('numbered')"><i class="bi bi-list-ol me-1"></i>Numbered</button>
-      </div>
+    <div class="syl-modal-section-label">Learning Outcomes</div>
+    <div class="d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-ghost btn-sm ${weekDraft.learningType==='unordered'?'active':''}"
+        id="ltBulletBtn" onclick="setLearningType('unordered')"><i class="bi bi-list-ul me-1"></i>Bulleted</button>
+      <button type="button" class="btn btn-ghost btn-sm ${weekDraft.learningType==='numbered'?'active':''}"
+        id="ltNumberBtn" onclick="setLearningType('numbered')"><i class="bi bi-list-ol me-1"></i>Numbered</button>
     </div>
+    <div id="outcomeRows">${weekDraft.learningOutcomes.map((o,i)=>outcomeRowHtml(o,i)).join('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addOutcome()">
+      <i class="bi bi-plus-lg me-1"></i>Add Outcome</button>
 
-    <div class="mb-3">
-      <label>Learning Outcomes</label>
-      <div id="outcomeRows">${weekDraft.learningOutcomes.map((o,i)=>outcomeRowHtml(o,i)).join('')}</div>
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addOutcome()"><i class="bi bi-plus-lg me-1"></i>Add Learning Outcome</button>
-    </div>
+    <div class="syl-modal-section-label">Topics</div>
+    <div id="topicBlocks">${weekDraft.topics.map((t,ti)=>topicBlockHtml(t,ti)).join('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addMainTopic()">
+      <i class="bi bi-plus-lg me-1"></i>Add Main Topic</button>
 
-    <div class="mb-2">
-      <label>Topics</label>
-      <div id="topicBlocks">${weekDraft.topics.map((t,ti)=>topicBlockHtml(t,ti)).join('')}</div>
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addMainTopic()"><i class="bi bi-plus-lg me-1"></i>Add Main Topic</button>
-    </div>
+    <div class="syl-modal-section-label">Learning Activities / Methodology</div>
+    <div id="activityRows">${weekDraft.activities.map((a,i)=>activityRowHtml(a,i)).join('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addActivity()">
+      <i class="bi bi-plus-lg me-1"></i>Add Activity</button>
 
-    <div class="mb-3 mt-3">
-      <label>Activities <span class="text-faint fw-normal">(optional)</span></label>
-      <div id="activityRows">${weekDraft.activities.map((a,i)=>activityRowHtml(a,i)).join('')}</div>
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addActivity()"><i class="bi bi-plus-lg me-1"></i>Add Activity</button>
-    </div>
+    <div class="syl-modal-section-label">Learning and Teaching Resources</div>
+    <div id="resourceRows">${weekDraft.resources.map((r,i)=>resourceRowHtml(r,i)).join('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addResource()">
+      <i class="bi bi-plus-lg me-1"></i>Add Resource</button>
 
-    <div class="d-flex gap-2 mt-3">
+    <div class="syl-modal-section-label">Assessment and Tasks</div>
+    <div id="assessmentRows">${weekDraft.assessments.map((a,i)=>assessmentRowHtml(a,i)).join('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm mb-3" onclick="addAssessment()">
+      <i class="bi bi-plus-lg me-1"></i>Add Assessment</button>
+
+    <div class="d-flex gap-2 mt-2">
       <button class="btn btn-ghost flex-grow-1" data-bs-dismiss="modal">Cancel</button>
-      <button class="btn btn-accent flex-grow-1" onclick="saveWeek()"><i class="bi bi-check2 me-1"></i>Save</button>
+      <button class="btn btn-accent flex-grow-1" onclick="saveWeek()">
+        <i class="bi bi-check2 me-1"></i>${isEdit?'Update':'Save'}</button>
     </div>`;
 }
 
-function activityRowHtml(value, i){
+/* Row generators */
+function outcomeRowHtml(v,i){
   return `<div class="syl-edit-row">
-    <i class="bi bi-lightning-charge text-faint"></i>
-    <input class="form-control" value="${escapeHtml(value)}" placeholder="Lecture / Laboratory / Quiz" oninput="weekDraft.activities[${i}]=this.value">
-    <button type="button" class="btn-icon" onclick="removeActivity(${i})"><i class="bi bi-x-lg"></i></button>
-  </div>`;
-}
-function addActivity(){ weekDraft.activities.push(''); rerenderActivities(); }
-function removeActivity(i){ weekDraft.activities.splice(i,1); if(!weekDraft.activities.length) weekDraft.activities.push(''); rerenderActivities(); }
-function rerenderActivities(){ document.getElementById('activityRows').innerHTML = weekDraft.activities.map((a,i)=>activityRowHtml(a,i)).join(''); }
-
-function outcomeRowHtml(value, i){
-  return `<div class="syl-edit-row">
-    <span class="text-faint mono" style="width:22px;flex-shrink:0;font-size:.78rem">${i+1}.</span>
-    <input class="form-control" value="${escapeHtml(value)}" oninput="weekDraft.learningOutcomes[${i}]=this.value">
+    <span class="syl-row-num">${i+1}.</span>
+    <input class="form-control" value="${escapeHtml(v)}" oninput="weekDraft.learningOutcomes[${i}]=this.value">
     <button type="button" class="btn-icon" onclick="removeOutcome(${i})"><i class="bi bi-x-lg"></i></button>
   </div>`;
 }
-function addOutcome(){ weekDraft.learningOutcomes.push(''); rerenderOutcomes(); }
-function removeOutcome(i){ weekDraft.learningOutcomes.splice(i,1); if(!weekDraft.learningOutcomes.length) weekDraft.learningOutcomes.push(''); rerenderOutcomes(); }
-function rerenderOutcomes(){ document.getElementById('outcomeRows').innerHTML = weekDraft.learningOutcomes.map((o,i)=>outcomeRowHtml(o,i)).join(''); }
-
-function setLearningType(type){
-  weekDraft.learningType = type;
-  document.getElementById('ltBulletBtn').classList.toggle('active', type==='unordered');
-  document.getElementById('ltNumberBtn').classList.toggle('active', type==='numbered');
+function activityRowHtml(v,i){
+  return `<div class="syl-edit-row">
+    <i class="bi bi-lightning-charge text-faint"></i>
+    <input class="form-control" value="${escapeHtml(v)}"
+      placeholder="Lecture / Lab / Discussion" oninput="weekDraft.activities[${i}]=this.value">
+    <button type="button" class="btn-icon" onclick="removeActivity(${i})"><i class="bi bi-x-lg"></i></button>
+  </div>`;
 }
-
-function topicBlockHtml(topic, ti){
+function resourceRowHtml(v,i){
+  return `<div class="syl-edit-row">
+    <i class="bi bi-book text-faint"></i>
+    <input class="form-control" value="${escapeHtml(v)}"
+      placeholder="Textbook / URL / Material" oninput="weekDraft.resources[${i}]=this.value">
+    <button type="button" class="btn-icon" onclick="removeResource(${i})"><i class="bi bi-x-lg"></i></button>
+  </div>`;
+}
+function assessmentRowHtml(v,i){
+  return `<div class="syl-edit-row">
+    <i class="bi bi-clipboard-check text-faint"></i>
+    <input class="form-control" value="${escapeHtml(v)}"
+      placeholder="Quiz / Assignment / Output" oninput="weekDraft.assessments[${i}]=this.value">
+    <button type="button" class="btn-icon" onclick="removeAssessment(${i})"><i class="bi bi-x-lg"></i></button>
+  </div>`;
+}
+function topicBlockHtml(t,ti){
   return `<div class="syl-topic-block">
     <div class="syl-edit-row mb-0">
-      <input class="form-control" placeholder="Main Topic" value="${escapeHtml(topic.title)}" oninput="weekDraft.topics[${ti}].title=this.value">
-      <button type="button" class="btn-icon" onclick="removeMainTopic(${ti})" title="Delete main topic"><i class="bi bi-trash3"></i></button>
+      <input class="form-control" placeholder="Main Topic" value="${escapeHtml(t.title)}"
+        oninput="weekDraft.topics[${ti}].title=this.value">
+      <button type="button" class="btn-icon" onclick="removeMainTopic(${ti})"><i class="bi bi-trash3"></i></button>
     </div>
     <div class="syl-subtopics">
-      ${(topic.subtopics||[]).map((s,si)=>`
-        <div class="syl-edit-row">
-          <i class="bi bi-dash text-faint"></i>
-          <input class="form-control form-control-sm" placeholder="Subtopic" value="${escapeHtml(s)}" oninput="weekDraft.topics[${ti}].subtopics[${si}]=this.value">
-          <button type="button" class="btn-icon" onclick="removeSubtopic(${ti},${si})"><i class="bi bi-x-lg"></i></button>
-        </div>`).join('')}
-      <button type="button" class="btn btn-ghost btn-sm mt-1" onclick="addSubtopic(${ti})"><i class="bi bi-plus-lg me-1"></i>Add Subtopic</button>
+      ${(t.subtopics||[]).map((s,si)=>`<div class="syl-edit-row">
+        <i class="bi bi-dash text-faint"></i>
+        <input class="form-control form-control-sm" placeholder="Subtopic" value="${escapeHtml(s)}"
+          oninput="weekDraft.topics[${ti}].subtopics[${si}]=this.value">
+        <button type="button" class="btn-icon" onclick="removeSubtopic(${ti},${si})"><i class="bi bi-x-lg"></i></button>
+      </div>`).join('')}
+      <button type="button" class="btn btn-ghost btn-sm" onclick="addSubtopic(${ti})">
+        <i class="bi bi-plus-lg me-1"></i>Add Subtopic</button>
     </div>
   </div>`;
 }
-function addMainTopic(){ weekDraft.topics.push({ id:DB.uid(), title:'', subtopics:[''] }); rerenderTopics(); }
-function removeMainTopic(ti){
-  weekDraft.topics.splice(ti,1);
-  if(!weekDraft.topics.length) weekDraft.topics.push({ id:DB.uid(), title:'', subtopics:[''] });
-  rerenderTopics();
-}
+
+/* Rerender helpers */
+function addOutcome(){ weekDraft.learningOutcomes.push(''); rerenderOutcomes(); }
+function removeOutcome(i){ weekDraft.learningOutcomes.splice(i,1); if(!weekDraft.learningOutcomes.length) weekDraft.learningOutcomes.push(''); rerenderOutcomes(); }
+function rerenderOutcomes(){ document.getElementById('outcomeRows').innerHTML=weekDraft.learningOutcomes.map((o,i)=>outcomeRowHtml(o,i)).join(''); }
+
+function addActivity(){ weekDraft.activities.push(''); rerenderActivities(); }
+function removeActivity(i){ weekDraft.activities.splice(i,1); if(!weekDraft.activities.length) weekDraft.activities.push(''); rerenderActivities(); }
+function rerenderActivities(){ document.getElementById('activityRows').innerHTML=weekDraft.activities.map((a,i)=>activityRowHtml(a,i)).join(''); }
+
+function addResource(){ weekDraft.resources.push(''); rerenderResources(); }
+function removeResource(i){ weekDraft.resources.splice(i,1); if(!weekDraft.resources.length) weekDraft.resources.push(''); rerenderResources(); }
+function rerenderResources(){ document.getElementById('resourceRows').innerHTML=weekDraft.resources.map((r,i)=>resourceRowHtml(r,i)).join(''); }
+
+function addAssessment(){ weekDraft.assessments.push(''); rerenderAssessments(); }
+function removeAssessment(i){ weekDraft.assessments.splice(i,1); if(!weekDraft.assessments.length) weekDraft.assessments.push(''); rerenderAssessments(); }
+function rerenderAssessments(){ document.getElementById('assessmentRows').innerHTML=weekDraft.assessments.map((a,i)=>assessmentRowHtml(a,i)).join(''); }
+
+function addMainTopic(){ weekDraft.topics.push({id:DB.uid(),title:'',subtopics:['']}); rerenderTopics(); }
+function removeMainTopic(ti){ weekDraft.topics.splice(ti,1); if(!weekDraft.topics.length) weekDraft.topics.push({id:DB.uid(),title:'',subtopics:['']}); rerenderTopics(); }
 function addSubtopic(ti){ weekDraft.topics[ti].subtopics.push(''); rerenderTopics(); }
-function removeSubtopic(ti,si){
-  weekDraft.topics[ti].subtopics.splice(si,1);
-  if(!weekDraft.topics[ti].subtopics.length) weekDraft.topics[ti].subtopics.push('');
-  rerenderTopics();
+function removeSubtopic(ti,si){ weekDraft.topics[ti].subtopics.splice(si,1); if(!weekDraft.topics[ti].subtopics.length) weekDraft.topics[ti].subtopics.push(''); rerenderTopics(); }
+function rerenderTopics(){ document.getElementById('topicBlocks').innerHTML=weekDraft.topics.map((t,ti)=>topicBlockHtml(t,ti)).join(''); }
+
+function setLearningType(type){
+  weekDraft.learningType=type;
+  document.getElementById('ltBulletBtn').classList.toggle('active',type==='unordered');
+  document.getElementById('ltNumberBtn').classList.toggle('active',type==='numbered');
 }
-function rerenderTopics(){ document.getElementById('topicBlocks').innerHTML = weekDraft.topics.map((t,ti)=>topicBlockHtml(t,ti)).join(''); }
 
 function saveWeek(){
-  const title = (document.getElementById('wkTitle').value||'').trim();
-  const dateRange = (document.getElementById('wkDateRange').value||'').trim();
-  const description = (document.getElementById('wkDesc').value||'').trim();
-  const cleanOutcomes = weekDraft.learningOutcomes.map(o=>o.trim()).filter(Boolean);
-  const cleanTopics = weekDraft.topics
-    .map(t=>({ id:t.id||DB.uid(), title:(t.title||'').trim(), subtopics:(t.subtopics||[]).map(s=>s.trim()).filter(Boolean) }))
-    .filter(t=>t.title);
-  const cleanActivities = weekDraft.activities.map(a=>a.trim()).filter(Boolean);
-
-  const week = {
-    id: weekEditingId || DB.uid(),
-    title, dateRange, description,
-    learningType: weekDraft.learningType,
-    learningOutcomes: cleanOutcomes,
-    topics: cleanTopics,
-    activities: cleanActivities,
-    completed: weekDraft.completed || false,
+  const week={
+    id:weekEditingId||DB.uid(),
+    title:(document.getElementById('wkTitle').value||'').trim(),
+    dateRange:(document.getElementById('wkDateRange').value||'').trim(),
+    description:(document.getElementById('wkDesc').value||'').trim(),
+    learningType:weekDraft.learningType,
+    learningOutcomes:weekDraft.learningOutcomes.map(o=>o.trim()).filter(Boolean),
+    topics:weekDraft.topics.map(t=>({id:t.id||DB.uid(),title:(t.title||'').trim(),subtopics:(t.subtopics||[]).map(s=>s.trim()).filter(Boolean)})).filter(t=>t.title),
+    activities:weekDraft.activities.map(a=>a.trim()).filter(Boolean),
+    resources:weekDraft.resources.map(r=>r.trim()).filter(Boolean),
+    assessments:weekDraft.assessments.map(a=>a.trim()).filter(Boolean),
+    completed:weekDraft.completed||false,
   };
-
-  const courses = DB.getSyllabusCourses();
-  const cIdx = courses.findIndex(c=>c.id===weekEditingCourseId);
-  if(cIdx===-1) return;
-  const c = courses[cIdx];
-  c.weeks = c.weeks || [];
-  if(weekEditingId){
-    const wIdx = c.weeks.findIndex(w=>w.id===weekEditingId);
-    if(wIdx!==-1) c.weeks[wIdx] = week;
-  } else {
-    c.weeks.push(week);
-  }
-  c.updatedAt = Date.now();
+  const courses=DB.getSyllabusCourses();
+  const cIdx=courses.findIndex(c=>c.id===weekEditingCourseId); if(cIdx===-1) return;
+  const c=courses[cIdx]; c.weeks=c.weeks||[];
+  if(weekEditingId){ const wi=c.weeks.findIndex(w=>w.id===weekEditingId); if(wi!==-1) c.weeks[wi]=week; }
+  else c.weeks.push(week);
+  c.updatedAt=Date.now();
   DB.saveSyllabusCourses(courses);
-
-  const inst = bootstrap.Modal.getInstance(document.getElementById('weekModal')); if(inst) inst.hide();
-  Toast.show(weekEditingId?'Topic updated':'Topic added');
-  weekDraft = null; weekEditingId = null;
-  renderCourseHeader();
+  bootstrap.Modal.getInstance(document.getElementById('weekModal'))?.hide();
+  Toast.show(weekEditingId?'Week updated':'Week added');
+  weekDraft=null; weekEditingId=null;
+  renderInfoCard();
   renderWeeksAccordion();
 }
 
@@ -904,131 +898,124 @@ function saveWeek(){
    EXPORT / IMPORT
    ============================================================ */
 function exportSyllabus(courseId){
-  const c = DB.getSyllabusCourse(courseId);
+  const c=DB.getSyllabusCourse(courseId);
   if(!c){ Toast.show('Subject not found','high'); return; }
-  const data = {
+  const data={
     courseTitle:c.courseTitle, courseCode:c.courseCode, creditUnits:c.creditUnits,
-    courseDescription:c.courseDescription, instructor:c.instructor||'',
+    courseDescription:c.courseDescription||'', instructor:c.instructor||'',
     schedule:c.schedule||'', room:c.room||'',
     semester:c.semester||'', academicYear:c.academicYear||'',
-    courseOutcomes:c.courseOutcomes||[],
-    gradingComponents:c.gradingComponents||[],
-    requirements:c.requirements||'',
-    policies:c.policies||'',
-    references:c.references||'',
+    courseOutcomes:c.courseOutcomes||[], gradingComponents:c.gradingComponents||[],
+    requirements:c.requirements||'', policies:c.policies||'', references:c.references||'',
     weeks:(c.weeks||[]).map((w,i)=>({
       week:i+1, title:w.title||'', dateRange:w.dateRange||'', description:w.description||'',
       learningType:w.learningType, learningOutcomes:w.learningOutcomes||[],
-      topics:(w.topics||[]).map(t=>({ title:t.title, subtopics:t.subtopics||[] })),
-      activities:w.activities||[],
+      topics:(w.topics||[]).map(t=>({title:t.title,subtopics:t.subtopics||[]})),
+      activities:w.activities||[], resources:w.resources||[], assessments:w.assessments||[],
     })),
   };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `${slugifySyllabus(c.courseCode)}-${slugifySyllabus(c.courseTitle)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const slug=s=>(s||'').trim().replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`${slug(c.courseCode)}-${slug(c.courseTitle)}.json`;
+  a.click(); URL.revokeObjectURL(url);
   Toast.show(`Exported "${c.courseTitle}"`);
 }
-function slugifySyllabus(s){ return (s||'untitled').trim().replace(/\s+/g,'-').replace(/[^a-zA-Z0-9\-]/g,''); }
 
-let pendingSyllabusImport = null;
+let pendingSyllabusImport=null;
 function handleSyllabusImportFile(input){
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (e)=>{
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
     let data;
-    try{ data = JSON.parse(e.target.result); }
-    catch(err){ Toast.show('That file is not valid JSON','high','bi-exclamation-triangle'); return; }
-    if(!data || !data.courseTitle || !data.courseCode || !Array.isArray(data.weeks)){
-      Toast.show('This doesn\'t look like a syllabus export','high','bi-exclamation-triangle'); return;
+    try{ data=JSON.parse(e.target.result); }
+    catch{ Toast.show('Invalid JSON file','high','bi-exclamation-triangle'); return; }
+    if(!data||!data.courseTitle||!data.courseCode||!Array.isArray(data.weeks)){
+      Toast.show('Not a valid syllabus export','high','bi-exclamation-triangle'); return;
     }
     showSyllabusImportPreview(data);
   };
-  reader.readAsText(file);
-  input.value = '';
+  reader.readAsText(file); input.value='';
 }
+
 function showSyllabusImportPreview(data){
-  pendingSyllabusImport = data;
-  const existing = DB.getSyllabusCourses().find(c=> c.courseCode.trim().toLowerCase()===data.courseCode.trim().toLowerCase());
-  const body = document.getElementById('syllabusImportModalBody');
-  body.innerHTML = `
-    <div class="modal-header" style="border:none;padding:0 0 12px 0">
-      <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Import Syllabus</h5>
+  pendingSyllabusImport=data;
+  const existing=DB.getSyllabusCourses().find(c=>c.courseCode.trim().toLowerCase()===data.courseCode.trim().toLowerCase());
+  document.getElementById('syllabusImportModalBody').innerHTML=`
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="modal-title mb-0"><i class="bi bi-upload me-2"></i>Import Syllabus</h5>
       <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
     </div>
-    <div class="list-row"><i class="bi bi-journal-bookmark text-soft"></i><div class="flex-grow-1"><b>${escapeHtml(data.courseTitle)}</b><div class="text-faint" style="font-size:.76rem">Course Title</div></div></div>
-    <div class="list-row"><i class="bi bi-hash text-soft"></i><div class="flex-grow-1">${escapeHtml(data.courseCode)}<div class="text-faint" style="font-size:.76rem">Course Code</div></div></div>
-    <div class="list-row"><i class="bi bi-calendar3-week text-soft"></i><div class="flex-grow-1">${data.weeks.length} weeks<div class="text-faint" style="font-size:.76rem">Weeks Included</div></div></div>
-
-    ${existing ? `
-      <div class="mt-3 p-3" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-md)">
-        <div class="fw-bold mb-2" style="font-size:.85rem"><i class="bi bi-exclamation-triangle me-1" style="color:#fbbf24"></i>A subject with code "${escapeHtml(data.courseCode)}" already exists</div>
-        <div class="d-grid gap-2">
-          <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('merge')">Merge Weeks into Existing Syllabus</button>
-          <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('replace')">Replace Existing Syllabus</button>
-          <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('duplicate')">Create as Duplicate Subject</button>
-        </div>
+    <div class="list-row mb-1"><i class="bi bi-journal-bookmark text-soft"></i>
+      <div><div class="fw-bold">${escapeHtml(data.courseTitle)}</div>
+      <div class="text-faint" style="font-size:.74rem">${escapeHtml(data.courseCode)} · ${data.weeks.length} weeks</div></div>
+    </div>
+    ${existing?`<div class="mt-3 p-3 rounded" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)">
+      <div class="fw-bold mb-2" style="font-size:.84rem;color:#fbbf24">
+        <i class="bi bi-exclamation-triangle me-1"></i>"${escapeHtml(data.courseCode)}" already exists
       </div>
-      <button class="btn btn-ghost w-100 mt-2" data-bs-dismiss="modal">Cancel</button>
-    ` : `
-      <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-ghost flex-grow-1" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn btn-accent flex-grow-1" onclick="doSyllabusImport('new')"><i class="bi bi-check2 me-1"></i>Import</button>
+      <div class="d-grid gap-2">
+        <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('merge')">Merge weeks into existing</button>
+        <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('replace')">Replace existing</button>
+        <button class="btn btn-ghost btn-sm" onclick="doSyllabusImport('duplicate')">Create as duplicate</button>
       </div>
-    `}`;
+    </div>
+    <button class="btn btn-ghost w-100 mt-2" data-bs-dismiss="modal">Cancel</button>`
+    :`<div class="d-flex gap-2 mt-3">
+      <button class="btn btn-ghost flex-grow-1" data-bs-dismiss="modal">Cancel</button>
+      <button class="btn btn-accent flex-grow-1" onclick="doSyllabusImport('new')">
+        <i class="bi bi-check2 me-1"></i>Import</button>
+    </div>`}`;
   new bootstrap.Modal(document.getElementById('syllabusImportModal')).show();
 }
+
 function doSyllabusImport(mode){
-  const data = pendingSyllabusImport; if(!data) return;
-  const courses = DB.getSyllabusCourses();
-  const existing = courses.find(c=> c.courseCode.trim().toLowerCase()===data.courseCode.trim().toLowerCase());
-
-  const makeWeeks = ()=> data.weeks.map(w=>({
-    id: DB.uid(), title:w.title||'', dateRange:w.dateRange||'', description:w.description||'',
-    learningType: w.learningType==='numbered'?'numbered':'unordered',
-    learningOutcomes: w.learningOutcomes||[],
-    topics: (w.topics||[]).map(t=>({ id:DB.uid(), title:t.title||'', subtopics:t.subtopics||[] })),
-    activities: w.activities||[],
-    completed: false,
+  const data=pendingSyllabusImport; if(!data) return;
+  const courses=DB.getSyllabusCourses();
+  const existing=courses.find(c=>c.courseCode.trim().toLowerCase()===data.courseCode.trim().toLowerCase());
+  const makeWeeks=()=>data.weeks.map(w=>({
+    id:DB.uid(), title:w.title||'', dateRange:w.dateRange||'', description:w.description||'',
+    learningType:w.learningType==='numbered'?'numbered':'unordered',
+    learningOutcomes:w.learningOutcomes||[],
+    topics:(w.topics||[]).map(t=>({id:DB.uid(),title:t.title||'',subtopics:t.subtopics||[]})),
+    activities:w.activities||[], resources:w.resources||[], assessments:w.assessments||[],
+    completed:false,
   }));
-
-  if(mode==='merge' && existing){
-    existing.weeks = [...(existing.weeks||[]), ...makeWeeks()];
-    existing.updatedAt = Date.now();
+  if(mode==='merge'&&existing){
+    existing.weeks=[...(existing.weeks||[]),...makeWeeks()]; existing.updatedAt=Date.now();
     DB.saveSyllabusCourses(courses);
-  } else if(mode==='replace' && existing){
-    existing.courseTitle = data.courseTitle; existing.courseDescription = data.courseDescription||existing.courseDescription;
-    existing.creditUnits = data.creditUnits ?? existing.creditUnits;
-    existing.instructor = data.instructor||existing.instructor;
-    existing.schedule = data.schedule||existing.schedule||'';
-    existing.room = data.room||existing.room||'';
-    existing.semester = data.semester||existing.semester; existing.academicYear = data.academicYear||existing.academicYear;
-    existing.courseOutcomes = data.courseOutcomes||existing.courseOutcomes||[];
-    existing.gradingComponents = data.gradingComponents||existing.gradingComponents||[];
-    existing.requirements = data.requirements||existing.requirements||'';
-    existing.policies = data.policies||existing.policies||'';
-    existing.references = data.references||existing.references||'';
-    existing.weeks = makeWeeks();
-    existing.updatedAt = Date.now();
+  } else if(mode==='replace'&&existing){
+    Object.assign(existing,{
+      courseTitle:data.courseTitle, courseDescription:data.courseDescription||existing.courseDescription,
+      creditUnits:data.creditUnits??existing.creditUnits, instructor:data.instructor||existing.instructor,
+      schedule:data.schedule||existing.schedule||'', room:data.room||existing.room||'',
+      semester:data.semester||existing.semester, academicYear:data.academicYear||existing.academicYear,
+      courseOutcomes:data.courseOutcomes||existing.courseOutcomes||[],
+      gradingComponents:data.gradingComponents||existing.gradingComponents||[],
+      requirements:data.requirements||existing.requirements||'',
+      policies:data.policies||existing.policies||'',
+      references:data.references||existing.references||'',
+      weeks:makeWeeks(), updatedAt:Date.now(),
+    });
     DB.saveSyllabusCourses(courses);
   } else {
     courses.push({
-      id:DB.uid(), courseTitle: mode==='duplicate' ? `${data.courseTitle} (Imported)` : data.courseTitle,
-      courseCode: data.courseCode, creditUnits: data.creditUnits||0, courseDescription: data.courseDescription||'',
-      instructor: data.instructor||'', schedule: data.schedule||'', room: data.room||'',
-      semester: data.semester||'', academicYear: data.academicYear||'',
-      courseOutcomes: data.courseOutcomes||[], gradingComponents: data.gradingComponents||[],
-      requirements: data.requirements||'', policies: data.policies||'', references: data.references||'',
-      weeks: makeWeeks(), createdAt:Date.now(), updatedAt:Date.now(),
-      semesterId: DB.getActiveSemesterId(),
+      id:DB.uid(),
+      courseTitle:mode==='duplicate'?`${data.courseTitle} (Imported)`:data.courseTitle,
+      courseCode:data.courseCode, creditUnits:data.creditUnits||0,
+      courseDescription:data.courseDescription||'', instructor:data.instructor||'',
+      schedule:data.schedule||'', room:data.room||'',
+      semester:data.semester||'', academicYear:data.academicYear||'',
+      courseOutcomes:data.courseOutcomes||[], gradingComponents:data.gradingComponents||[],
+      requirements:data.requirements||'', policies:data.policies||'', references:data.references||'',
+      weeks:makeWeeks(), createdAt:Date.now(), updatedAt:Date.now(),
+      semesterId:DB.getActiveSemesterId(),
     });
     DB.saveSyllabusCourses(courses);
   }
-
-  const inst = bootstrap.Modal.getInstance(document.getElementById('syllabusImportModal')); if(inst) inst.hide();
-  Toast.show('Syllabus imported successfully');
-  pendingSyllabusImport = null;
+  bootstrap.Modal.getInstance(document.getElementById('syllabusImportModal'))?.hide();
+  Toast.show('Syllabus imported');
+  pendingSyllabusImport=null;
   if(document.getElementById('syllabusGrid')) renderSyllabusGrid();
 }

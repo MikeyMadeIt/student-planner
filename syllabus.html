@@ -18,43 +18,39 @@
     <div class="mobile-topbar">
       <div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div>
     </div>
+
     <div class="topbar">
-      <div><h1 class="page-title">Course Syllabus</h1><p class="page-sub">Your subjects and their syllabi, all in one place</p></div>
+      <div>
+        <h1 class="page-title">Course Syllabus</h1>
+        <p class="page-sub">Your subjects and their syllabi, all in one place.</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('syllabusImportFile').click()"><i class="bi bi-upload me-1"></i>Import</button>
+        <button class="btn btn-accent btn-sm" onclick="openCourseModal()"><i class="bi bi-plus-lg me-1"></i>Add Subject</button>
+      </div>
     </div>
+
     <input type="file" accept="application/json" id="syllabusImportFile" hidden onchange="handleSyllabusImportFile(this)">
 
-    <!-- Controls -->
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="row g-2 align-items-center">
-        <div class="col-md-8">
-          <input class="form-control" id="syllabusSearch" placeholder="Search by course title or code…" oninput="renderSyllabusGrid()">
-        </div>
-        <div class="col-md-4">
-          <select class="form-select" id="syllabusSort" onchange="renderSyllabusGrid()">
-            <option value="az">Sort: A–Z</option>
-            <option value="recent">Sort: Recently Added</option>
-            <option value="updated">Sort: Recently Updated</option>
-          </select>
-        </div>
-      </div>
+    <!-- Search + Sort bar -->
+    <div class="d-flex gap-2 mb-3 align-items-center">
+      <input class="form-control" id="syllabusSearch" placeholder="Search course title or code…"
+        oninput="renderSyllabusGrid()" style="height:30px;font-size:.8rem;flex:1;min-width:0">
+      <select class="form-select" id="syllabusSort" onchange="renderSyllabusGrid()"
+        style="height:30px;font-size:.8rem;width:130px;flex-shrink:0">
+        <option value="az">A – Z</option>
+        <option value="recent">Recently Added</option>
+        <option value="updated">Recently Updated</option>
+      </select>
     </div>
 
-    <div class="glass card-pad fade-in">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="section-title mb-0"><i class="bi bi-journal-bookmark-fill"></i>Your Subjects</div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('syllabusImportFile').click()"><i class="bi bi-upload me-1"></i>Import</button>
-          <button class="btn btn-accent btn-sm" onclick="openCourseModal()"><i class="bi bi-plus-lg me-1"></i>Add Subject</button>
-        </div>
-      </div>
-      <div id="syllabusGrid" class="row g-3 stagger"></div>
-    </div>
+    <!-- Card grid -->
+    <div id="syllabusGrid" class="syl-list-grid stagger"></div>
 
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
 
-<!-- FAB -->
 <button class="fab-btn" onclick="openCourseModal()" title="Add Subject"><i class="bi bi-plus-lg"></i></button>
 
 <!-- Add/Edit Subject Modal -->
