@@ -946,9 +946,4 @@ function computeProgressFromChecklist(cl, fallback) {
   return Math.round((done / cl.length) * 100);
 }
 
-/* ── Utility ── */
-function escHtml(s) {
-  var d = document.createElement('div');
-  d.textContent = s || '';
-  return d.innerHTML;
-}
+/* escHtml is defined in app.js — available globally */

@@ -326,7 +326,7 @@ function hexWithAlpha(hex, alpha){
     return `rgba(${r},${g},${b},${alpha})`;
   } catch(e){ return hex; }
 }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+// escapeHtml provided by app.js (escHtml)
 
 /* ============================================================
    SCHEDULE MODAL (add/edit class)

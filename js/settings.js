@@ -39,7 +39,6 @@ function renderSemesterManager(){
   const semesters = DB.getSemesters();
   const activeId = DB.getActiveSemesterId();
 
-  // Group by school year
   const byYear = {};
   semesters.forEach(sem => {
     if(!byYear[sem.schoolYear]) byYear[sem.schoolYear] = [];
@@ -59,15 +58,15 @@ function renderSemesterManager(){
           <div class="sem-item-left">
             <span class="sem-dot ${isActive?'active':''}"></span>
             <div>
-              <div class="sem-item-name">${escapeSettingsHtml(sem.name)}</div>
+              <div class="sem-item-name">${escHtml(sem.name)}</div>
               <div class="sem-item-dates">${sem.startDate} – ${sem.endDate}</div>
             </div>
           </div>
           <div class="sem-item-actions">
-            ${isActive ? '<span class="chip sem-active-chip"><i class="bi bi-check2"></i> Active</span>' :
-              `<button class="btn btn-ghost btn-sm" onclick="switchActiveSemester('${sem.id}')"><i class="bi bi-toggle-off me-1"></i>Switch</button>`}
-            <button class="btn btn-ghost btn-sm" onclick="openEditSemesterModal('${sem.id}')"><i class="bi bi-pencil"></i></button>
-            ${semesters.length > 1 ? `<button class="btn btn-ghost btn-sm text-danger" onclick="confirmDeleteSemester('${sem.id}')"><i class="bi bi-trash"></i></button>` : ''}
+            ${isActive ? '<span class="chip sem-active-chip"><i class="bi bi-check2" aria-hidden="true"></i> Active</span>' :
+              `<button class="btn btn-ghost btn-sm" onclick="switchActiveSemester('${sem.id}')" aria-label="Switch to ${escHtml(sem.name)}"><i class="bi bi-toggle-off me-1" aria-hidden="true"></i>Switch</button>`}
+            <button class="btn btn-ghost btn-sm" onclick="openEditSemesterModal('${sem.id}')" aria-label="Edit ${escHtml(sem.name)}"><i class="bi bi-pencil" aria-hidden="true"></i></button>
+            ${semesters.length > 1 ? `<button class="btn btn-ghost btn-sm text-danger" onclick="confirmDeleteSemester('${sem.id}')" aria-label="Delete ${escHtml(sem.name)}"><i class="bi bi-trash" aria-hidden="true"></i></button>` : ''}
           </div>
         </div>`;
       }).join('')}
@@ -75,7 +74,7 @@ function renderSemesterManager(){
   });
 
   html += `<div class="d-flex gap-2 mt-2">
-    <button class="btn btn-accent btn-sm flex-grow-1" onclick="openAddSemesterModal()"><i class="bi bi-plus me-1"></i>Add Semester</button>
+    <button class="btn btn-accent btn-sm flex-grow-1" onclick="openAddSemesterModal()"><i class="bi bi-plus me-1" aria-hidden="true"></i>Add Semester</button>
   </div>`;
 
   wrap.innerHTML = html;
@@ -85,7 +84,7 @@ function switchActiveSemester(id){
   DB.setActiveSemester(id);
   renderSemesterManager();
   const sem = DB.getActiveSemester();
-  Toast.show(`Switched to ${sem.schoolYear} • ${sem.name}`);
+  Toast.show(`Switched to ${sem.schoolYear} \u2022 ${sem.name}`);
 }
 
 function openAddSemesterModal(){
@@ -94,22 +93,22 @@ function openAddSemesterModal(){
     <input type="hidden" id="editSemId" value="">
     <div class="row g-2">
       <div class="col-md-6">
-        <label>School Year</label>
-        <input class="form-control" id="semYearInput" placeholder="e.g. 2026-2027" value="${new Date().getFullYear()}-${new Date().getFullYear()+1}">
+        <label for="semYearInput">School Year</label>
+        <input class="form-control" id="semYearInput" placeholder="e.g. 2026-2027" value="${new Date().getFullYear()}-${new Date().getFullYear()+1}" autocomplete="off">
       </div>
       <div class="col-md-6">
-        <label>Semester</label>
+        <label for="semNameInput">Semester</label>
         <select class="form-select" id="semNameInput">
           <option value="1st Semester">1st Semester</option>
           <option value="2nd Semester">2nd Semester</option>
         </select>
       </div>
-      <div class="col-md-6"><label>Start Date</label><input type="date" class="form-control" id="semStartInput" value="${ymdLocalNow()}"></div>
-      <div class="col-md-6"><label>End Date</label><input type="date" class="form-control" id="semEndInput" value="${ymdLocalFuture(105)}"></div>
-      <div class="col-md-6"><label>Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${ymdLocalFuture(100)}"></div>
-      <div class="col-md-6"><label>Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="15"></div>
+      <div class="col-md-6"><label for="semStartInput">Start Date</label><input type="date" class="form-control" id="semStartInput" value="${ymdLocalNow()}"></div>
+      <div class="col-md-6"><label for="semEndInput">End Date</label><input type="date" class="form-control" id="semEndInput" value="${ymdLocalFuture(105)}"></div>
+      <div class="col-md-6"><label for="semFinalsInput">Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${ymdLocalFuture(100)}"></div>
+      <div class="col-md-6"><label for="semWeeksInput">Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="15" min="1" max="52"></div>
     </div>
-    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1"></i>Add Semester</button>`;
+    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Add Semester</button>`;
   document.getElementById('semModalTitle').textContent = 'Add Semester';
   new bootstrap.Modal(document.getElementById('semModal')).show();
 }
@@ -123,20 +122,20 @@ function openEditSemesterModal(id){
     <div class="row g-2">
       <div class="col-md-6">
         <label>School Year</label>
-        <input class="form-control" id="semYearInput" value="${sem.schoolYear}" readonly style="opacity:.7">
-        <div class="text-faint mt-1" style="font-size:.75rem">School year cannot be changed (affects ID)</div>
+        <input class="form-control" id="semYearInput" value="${escHtml(sem.schoolYear)}" readonly class="sem-readonly-field">
+        <div class="text-faint mt-1 sem-readonly-hint">School year cannot be changed</div>
       </div>
       <div class="col-md-6">
         <label>Semester</label>
-        <input class="form-control" id="semNameInput" value="${sem.name}" readonly style="opacity:.7">
-        <div class="text-faint mt-1" style="font-size:.75rem">Name cannot be changed (affects ID)</div>
+        <input class="form-control" id="semNameInput" value="${escHtml(sem.name)}" readonly class="sem-readonly-field">
+        <div class="text-faint mt-1 sem-readonly-hint">Name cannot be changed</div>
       </div>
-      <div class="col-md-6"><label>Start Date</label><input type="date" class="form-control" id="semStartInput" value="${sem.startDate}"></div>
-      <div class="col-md-6"><label>End Date</label><input type="date" class="form-control" id="semEndInput" value="${sem.endDate}"></div>
-      <div class="col-md-6"><label>Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${sem.finalsDate}"></div>
-      <div class="col-md-6"><label>Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="${sem.totalWeeks}"></div>
+      <div class="col-md-6"><label for="semStartInput">Start Date</label><input type="date" class="form-control" id="semStartInput" value="${sem.startDate}"></div>
+      <div class="col-md-6"><label for="semEndInput">End Date</label><input type="date" class="form-control" id="semEndInput" value="${sem.endDate}"></div>
+      <div class="col-md-6"><label for="semFinalsInput">Finals Date</label><input type="date" class="form-control" id="semFinalsInput" value="${sem.finalsDate}"></div>
+      <div class="col-md-6"><label for="semWeeksInput">Total Weeks</label><input type="number" class="form-control" id="semWeeksInput" value="${sem.totalWeeks}" min="1" max="52"></div>
     </div>
-    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1"></i>Update Semester</button>`;
+    <button class="btn btn-accent w-100 mt-3" onclick="saveSemesterModal()"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Update Semester</button>`;
   document.getElementById('semModalTitle').textContent = 'Edit Semester';
   new bootstrap.Modal(document.getElementById('semModal')).show();
 }
@@ -178,10 +177,26 @@ function confirmDeleteSemester(id){
   const taskCount = DB.getTasksForSemester(id).length;
   const noteCount = DB.getNotesForSemester(id).length;
   const attCount = DB.getAttendanceForSemester(id).length;
+  const gradeCount = DB.getGradesForSemester(id).length;
+  const syllabusCount = DB.getSyllabusCoursesForSemester(id).length;
+
+  // Build a clear summary of what will be removed
+  const parts = [];
+  if(subCount) parts.push(`${subCount} subject${subCount!==1?'s':''}`);
+  if(taskCount) parts.push(`${taskCount} task${taskCount!==1?'s':''}`);
+  if(attCount) parts.push(`${attCount} attendance record${attCount!==1?'s':''}`);
+  if(gradeCount) parts.push(`${gradeCount} grade record${gradeCount!==1?'s':''}`);
+  if(noteCount) parts.push(`${noteCount} note${noteCount!==1?'s':''}`);
+  if(syllabusCount) parts.push(`${syllabusCount} syllabus course${syllabusCount!==1?'s':''}`);
+
+  const dataMsg = parts.length
+    ? `This will also permanently remove ${parts.join(', ')}.`
+    : 'No linked data will be affected.';
+
   confirmAction({
     title:`Delete ${sem.schoolYear} ${sem.name}?`,
-    message:`This will remove the semester record only. All linked data (${subCount} subjects, ${attCount} attendance, ${taskCount} tasks, ${noteCount} notes) will remain in storage but will no longer be associated with an active semester.`,
-    confirmLabel:'Delete Semester', danger:true, icon:'bi-trash-fill',
+    message:`${dataMsg} This cannot be undone.`,
+    confirmLabel:'Delete', danger:true, icon:'bi-trash-fill',
     onConfirm(){
       if(!DB.deleteSemester(id)){
         Toast.show('Cannot delete the only semester','high','bi-exclamation-triangle');
@@ -193,22 +208,13 @@ function confirmDeleteSemester(id){
   });
 }
 
-function ymdLocalNow(){
-  return ymdLocal(new Date());
-}
-function ymdLocalFuture(days){
-  return ymdLocal(new Date(Date.now()+ 1000*60*60*24*days));
-}
-function ymdLocal(d){
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function escapeSettingsHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function ymdLocalNow(){ return ymdLocal(new Date()); }
+function ymdLocalFuture(days){ return ymdLocal(new Date(Date.now()+ 1000*60*60*24*days)); }
+// ymdLocal defined in storage.js
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 /* ============================================================
-   THEME / ACCENT / NOTIF (unchanged)
+   THEME / ACCENT / NOTIF
    ============================================================ */
 function chooseTheme(theme){ setTheme(theme); highlightTheme(theme); }
 function highlightTheme(theme){
@@ -218,7 +224,7 @@ function renderAccentPicker(current){
   const accents = { violet:'#7C6CF6', blue:'#3B82F6', emerald:'#34D399', rose:'#FB7185', amber:'#FBBF24' };
   const wrap = document.getElementById('accentPicker');
   wrap.innerHTML = Object.entries(accents).map(([k,c])=>`
-    <div onclick="chooseAccent('${k}')" data-accent-swatch="${k}" style="width:38px;height:38px;border-radius:12px;background:${c};cursor:pointer;box-shadow:${k===current?'0 0 0 3px rgba(255,255,255,.5)':'none'}"></div>`).join('');
+    <button onclick="chooseAccent('${k}')" data-accent-swatch="${k}" aria-label="${k} accent color" class="accent-swatch-btn" style="background:${c};box-shadow:${k===current?'0 0 0 3px rgba(255,255,255,.5)':'none'}"></button>`).join('');
 }
 function chooseAccent(a){
   setAccent(a);
@@ -230,7 +236,7 @@ function renderNotifToggles(n){
   document.getElementById('notifToggles').innerHTML = Object.entries(labels).map(([k,label])=>`
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" role="switch" id="notif_${k}" ${n[k]?'checked':''} onchange="updateNotifSetting('${k}', this.checked)">
-      <label class="form-check-label">${label}</label>
+      <label class="form-check-label" for="notif_${k}">${label}</label>
     </div>`).join('');
 }
 function updateNotifSetting(key, val){
@@ -245,6 +251,9 @@ function requestNotifPermission(){
   });
 }
 
+/* ============================================================
+   EXPORT
+   ============================================================ */
 function exportData(){
   const data = DB.exportAll();
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -255,32 +264,70 @@ function exportData(){
   URL.revokeObjectURL(url);
   Toast.show('Data exported');
 }
+window.exportData = exportData;
+
+/* ============================================================
+   IMPORT — with validation, preview, and overwrite confirmation
+   ============================================================ */
 function importData(file){
   if(!file) return;
+  const inp = document.getElementById('importFile');
   const reader = new FileReader();
+  reader.onerror = ()=>{
+    Toast.show('Could not read file','high','bi-exclamation-triangle');
+    if(inp) inp.value = '';
+  };
   reader.onload = (e)=>{
-    let data;
-    try{ data = JSON.parse(e.target.result); }
-    catch(err){ Toast.show('Invalid file — could not read backup','high','bi-exclamation-triangle'); return; }
+    if(inp) inp.value = '';
+    let parsed;
+    try{ parsed = JSON.parse(e.target.result); }
+    catch(err){
+      Toast.show('Invalid file — could not parse JSON','high','bi-exclamation-triangle');
+      return;
+    }
+
+    // Validate structure before touching current data
+    const result = DB.validateImport(parsed);
+    if(!result.valid){
+      Toast.show(result.error, 'high', 'bi-exclamation-triangle');
+      return;
+    }
+
+    // Count existing records to warn user
+    const existingSubs = DB.getSubjects().length;
+    const existingTasks = DB.getTasks().length;
+    const hasData = existingSubs > 0 || existingTasks > 0;
+
+    const warningMsg = hasData
+      ? `Your current data (${existingSubs} subjects, ${existingTasks} tasks, and more) will be replaced with the imported backup.`
+      : 'Your planner data will be replaced with the imported backup.';
+
     confirmAction({
-      title:'Import this backup?',
-      message:'This will overwrite your current subjects, tasks, notes, grades, and settings with the data from this file.',
-      confirmLabel:'Import & Overwrite', danger:true, icon:'bi-upload',
+      title: 'Import backup?',
+      message: warningMsg,
+      confirmLabel: 'Import', danger: true, icon: 'bi-upload',
       onConfirm(){
-        DB.importAll(data);
-        Toast.show('Data imported — reloading…');
-        setTimeout(()=>location.reload(), 900);
+        try{
+          DB.importAll(parsed);
+          Toast.show('Data imported — reloading…');
+          setTimeout(()=>location.reload(), 900);
+        }catch(err){
+          Toast.show('Import failed: ' + err.message,'high','bi-exclamation-triangle');
+        }
       }
     });
   };
   reader.readAsText(file);
-  document.getElementById('importFile').value = '';
 }
+
+/* ============================================================
+   RESET — clears all planner data, no demo seeding
+   ============================================================ */
 function confirmReset(){
   confirmAction({
-    title:'Reset all data?',
-    message:'This permanently erases ALL your data — subjects, tasks, notes, grades, attendance, university calendar events, course syllabi — and restores the sample starter data. This cannot be undone.',
-    confirmLabel:'Erase Everything', danger:true, icon:'bi-exclamation-octagon-fill',
+    title: 'Reset all planner data?',
+    message: 'This will permanently remove your subjects, tasks, grades, attendance, notes, schedules, and other planner data from this device. This cannot be undone.',
+    confirmLabel: 'Reset', danger: true, icon: 'bi-exclamation-octagon-fill',
     onConfirm(){
       DB.resetAll();
       Toast.show('Data reset');
@@ -288,4 +335,3 @@ function confirmReset(){
     }
   });
 }
-window.exportData = exportData;

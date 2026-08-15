@@ -504,11 +504,7 @@ function dashEmpty(icon, title, sub){
     '</div>';
 }
 
-function escHtml(s){
-  var d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
-}
+// escHtml is defined in app.js — available globally
 
 /* ============================================================
    QUICK ADD MODALS

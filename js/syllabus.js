@@ -4,7 +4,7 @@
 
 const sylQs = new URLSearchParams(location.search);
 function currentCourseId(){ return sylQs.get('id'); }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+// escapeHtml provided by app.js (escHtml)
 function timeAgo(ts){
   if(!ts) return 'Never';
   const s=Math.floor((Date.now()-ts)/1000);
@@ -69,7 +69,7 @@ function renderSyllabusGrid(){
       <div class="syl-lc-top">
         <div class="syl-lc-code"><i class="bi bi-hash"></i>${escapeHtml(c.courseCode)}</div>
         <div class="dropdown">
-          <button class="btn-icon syl-lc-menu" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+          <button class="btn-icon syl-lc-menu" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-label="More options"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="syllabus-view.html?id=${c.id}"><i class="bi bi-eye me-2"></i>View</a></li>
             <li><a class="dropdown-item" href="#" onclick="openCourseModal('${c.id}');return false"><i class="bi bi-pencil me-2"></i>Edit</a></li>
@@ -264,7 +264,7 @@ function saveCourse(){
 
 function deleteCourse(id){
   confirmAction({
-    title:'Delete this subject?', danger:true, icon:'bi-trash3', confirmLabel:'Delete Subject',
+    title:'Delete this subject?', danger:true, icon:'bi-trash3', confirmLabel:'Delete',
     message:'This permanently removes the subject and all its weeks, outcomes, and topics.',
     onConfirm(){
       DB.saveSyllabusCourses(DB.getSyllabusCourses().filter(c=>c.id!==id));
@@ -594,7 +594,7 @@ function toggleWeekComplete(weekId){
 
 function deleteWeek(weekId){
   confirmAction({
-    title:'Delete this week?', danger:true, icon:'bi-trash3', confirmLabel:'Delete Week',
+    title:'Delete this week?', danger:true, icon:'bi-trash3', confirmLabel:'Delete',
     message:'This removes the week and all its topics and outcomes.',
     onConfirm(){
       const c=DB.getSyllabusCourse(currentCourseId()); if(!c) return;

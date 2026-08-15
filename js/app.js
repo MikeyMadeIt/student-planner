@@ -2,21 +2,68 @@
    APP.JS — shared shell: nav, theming, clock, toasts, confetti
    ============================================================ */
 
+/* ============================================================
+   CENTRALIZED UTILITIES
+   ============================================================ */
+
+/**
+ * Escape user-controlled text before inserting into HTML.
+ * Single authoritative implementation — use everywhere.
+ */
+function escHtml(s){
+  const d = document.createElement('div');
+  d.textContent = (s == null) ? '' : String(s);
+  return d.innerHTML;
+}
+/* Aliases used across different JS files */
+window.escapeHtml = escHtml;
+window.escHtml = escHtml;
+
+/**
+ * Format "14:30" -> "2:30 PM"
+ */
+function fmtTime(t){
+  if(!t) return '';
+  const [h,m] = t.split(':').map(Number);
+  const ap = h>=12?'PM':'AM';
+  const hh = h%12===0?12:h%12;
+  return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+function minutesUntil(dateStr, timeStr){
+  const target = new Date(`${dateStr}T${timeStr}:00`);
+  return Math.round((target - new Date())/60000);
+}
+function fmtDuration(mins){
+  if(mins < 0) return 'Overdue';
+  if(mins < 60) return `${mins}m`;
+  const h = Math.floor(mins/60), m = mins%60;
+  if(h < 24) return `${h}h ${m}m`;
+  const d = Math.floor(h/24);
+  return `${d}d ${h%24}h`;
+}
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function todayKey(){ return ymdLocal(new Date()); }
+
+function debounce(fn, wait=250){
+  let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+
 const NAV_ITEMS = [
-  // Primary
   { href:'index.html',      icon:'bi-grid-1x2-fill',        label:'Dashboard',  key:'dashboard'  },
   { href:'schedule.html',   icon:'bi-calendar2-week-fill',  label:'Schedule',   key:'schedule'   },
   { href:'tasks.html',      icon:'bi-check2-square',        label:'Tasks',      key:'tasks'      },
   { href:'calendar.html',   icon:'bi-calendar3',            label:'Calendar',   key:'calendar'   },
-  // Academics
   { href:'grades.html',     icon:'bi-mortarboard-fill',     label:'Grades',     key:'grades'     },
   { href:'attendance.html', icon:'bi-person-check-fill',    label:'Attendance', key:'attendance' },
   { href:'syllabus.html',   icon:'bi-journal-bookmark-fill',label:'Syllabus',   key:'syllabus'   },
   { href:'notes.html',      icon:'bi-journal-text',         label:'Notes',      key:'notes'      },
-  // University
   { href:'university.html', icon:'bi-building-fill',        label:'University', key:'university' },
   { href:'curriculum.html', icon:'bi-book-half',            label:'Curriculum', key:'curriculum' },
-  // Misc
   { href:'wallpaper.html',  icon:'bi-phone-fill',           label:'Wallpaper',  key:'wallpaper'  },
   { href:'settings.html',   icon:'bi-gear-fill',            label:'Settings',   key:'settings'   },
 ];
@@ -33,47 +80,50 @@ function renderShell(activeKey){
       { label: 'App',        keys: ['wallpaper','settings'] },
     ];
     const itemMap = Object.fromEntries(NAV_ITEMS.map(n=>[n.key,n]));
-    let sidebarHtml = `<div class="brand"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div><nav class="d-flex flex-column gap-0 flex-grow-1">`;
+    let sidebarHtml = `<div class="brand" role="banner"><span class="dot"><i class="bi bi-mortarboard" aria-hidden="true"></i></span> Planner</div><nav class="d-flex flex-column gap-0 flex-grow-1" aria-label="Main navigation">`;
     sidebarGroups.forEach(g => {
-      if(g.label) sidebarHtml += `<div class="nav-group-label">${g.label}</div>`;
+      if(g.label) sidebarHtml += `<div class="nav-group-label" role="heading" aria-level="2">${g.label}</div>`;
       g.keys.forEach(k => {
         const n = itemMap[k]; if(!n) return;
-        sidebarHtml += `<a class="nav-link ${n.key===activeKey?'active':''}" href="${n.href}"><i class="bi ${n.icon}"></i>${n.label}</a>`;
+        const isActive = n.key===activeKey;
+        sidebarHtml += `<a class="nav-link ${isActive?'active':''}" href="${n.href}" ${isActive?'aria-current="page"':''}><i class="bi ${n.icon}" aria-hidden="true"></i>${n.label}</a>`;
       });
     });
     const _sem = DB.getActiveSemester();
     const _semLabel = _sem ? `${_sem.schoolYear} &bull; ${_sem.name}` : '';
-    sidebarHtml += `</nav><div class="pt-2" style="border-top:1px solid var(--border);margin-top:8px">
-      <a class="nav-link" href="#" onclick="openQuickAdd('task');return false;"><i class="bi bi-plus-circle"></i>Add Task</a>
-      <a class="nav-link" href="#" onclick="Toast.confirmExport();return false;"><i class="bi bi-download"></i>Export</a>
-    </div>${_semLabel ? `<div style="padding:8px 14px 4px;font-size:.68rem;color:var(--text-faint);line-height:1.4"><i class="bi bi-calendar3" style="margin-right:4px"></i>${_semLabel}</div>` : ''}`;
+    sidebarHtml += `</nav><div class="sidebar-sep">
+      <a class="nav-link" href="#" onclick="openQuickAdd('task');return false;"><i class="bi bi-plus-circle" aria-hidden="true"></i>Add Task</a>
+      <a class="nav-link" href="#" onclick="Toast.confirmExport();return false;"><i class="bi bi-download" aria-hidden="true"></i>Export</a>
+    </div>${_semLabel ? `<div class="sem-banner-nav"><i class="bi bi-calendar3 me-1" aria-hidden="true"></i>${_semLabel}</div>` : ''}`;
     sidebar.innerHTML = sidebarHtml;
   }
-  // mobile bottom nav: 4 primary + "More" sheet covering every page (grades, attendance, notes, wallpaper, settings, etc.)
+  // mobile bottom nav
   const mnav = document.getElementById('mobileNav');
   if(mnav){
     const isMore = !MOBILE_NAV_KEYS.includes(activeKey);
-    mnav.innerHTML = `<div class="row text-center g-0">
+    mnav.setAttribute('aria-label', 'Mobile navigation');
+    mnav.innerHTML = `<div class="row text-center g-0" role="tablist">
       ${NAV_ITEMS.filter(n=>MOBILE_NAV_KEYS.includes(n.key)).map(n=>`
-        <div class="col"><a class="${n.key===activeKey?'active':''}" href="${n.href}"><i class="bi ${n.icon}"></i><span>${n.label}</span></a></div>
+        <div class="col" role="tab"><a class="${n.key===activeKey?'active':''}" href="${n.href}" ${n.key===activeKey?'aria-current="page"':''}><i class="bi ${n.icon}" aria-hidden="true"></i><span>${n.label}</span></a></div>
       `).join('')}
-      <div class="col"><a href="#" class="${isMore?'active':''}" onclick="openMoreMenu();return false;"><i class="bi bi-three-dots"></i><span>More</span></a></div>
+      <div class="col" role="tab"><a href="#" class="${isMore?'active':''}" onclick="openMoreMenu();return false;" aria-label="More pages" aria-expanded="false"><i class="bi bi-three-dots" aria-hidden="true"></i><span>More</span></a></div>
     </div>`;
   }
   ensureMoreMenu(activeKey);
-  // Inject semester banner — fixed strip just below the topbar/mobile-topbar
+  // Semester banner
   setTimeout(()=>{
     if(document.getElementById('semBanner')) return;
     const activeSem = DB.getActiveSemester();
     if(!activeSem) return;
     const banner = document.createElement('div');
     banner.id = 'semBanner';
-    banner.innerHTML = `<i class="bi bi-calendar3"></i><span>${activeSem.schoolYear} &bull; ${activeSem.name}</span>`;
+    banner.setAttribute('aria-label', `Active semester: ${activeSem.schoolYear} ${activeSem.name}`);
+    banner.innerHTML = `<i class="bi bi-calendar3" aria-hidden="true"></i><span>${activeSem.schoolYear} &bull; ${activeSem.name}</span>`;
     document.body.appendChild(banner);
   }, 0);
 }
 
-/* ---------- MOBILE "MORE" MENU (full site map) ---------- */
+/* ---------- MOBILE "MORE" MENU ---------- */
 function ensureMoreMenu(activeKey){
   if(document.getElementById('moreMenuModal')) { document.getElementById('moreMenuModal').remove(); }
   const groups = [
@@ -85,12 +135,12 @@ function ensureMoreMenu(activeKey){
   const itemMap = Object.fromEntries(NAV_ITEMS.map(n => [n.key, n]));
 
   const wrap = document.createElement('div');
-  wrap.innerHTML = `<div class="modal fade" id="moreMenuModal" tabindex="-1">
+  wrap.innerHTML = `<div class="modal fade" id="moreMenuModal" tabindex="-1" aria-label="All pages" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content more-menu-content">
         <div class="more-menu-header">
-          <span><i class="bi bi-grid-3x3-gap-fill me-2"></i>All Pages</span>
-          <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          <span><i class="bi bi-grid-3x3-gap-fill me-2" aria-hidden="true"></i>All Pages</span>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="more-menu-body">
           ${groups.map(g => `
@@ -99,8 +149,8 @@ function ensureMoreMenu(activeKey){
               ${g.keys.map(k => {
                 const n = itemMap[k]; if(!n) return '';
                 const isActive = n.key === activeKey;
-                return `<a href="${n.href}" class="more-menu-item${isActive?' more-menu-item-active':''}" style="text-decoration:none">
-                  <i class="bi ${n.icon}"></i>
+                return `<a href="${n.href}" class="more-menu-item more-menu-link${isActive?' more-menu-item-active':''}" ${isActive?'aria-current="page"':''}>
+                  <i class="bi ${n.icon}" aria-hidden="true"></i>
                   <span>${n.label}</span>
                 </a>`;
               }).join('')}
@@ -160,6 +210,8 @@ const Toast = {
       c = document.createElement('div');
       c.id = 'toastStack';
       c.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      c.setAttribute('aria-live', 'polite');
+      c.setAttribute('aria-atomic', 'false');
       document.body.appendChild(c);
     }
     return c;
@@ -169,7 +221,8 @@ const Toast = {
     const el = document.createElement('div');
     el.className = 'glass glass-tight card-pad fade-in mb-2 d-flex align-items-center gap-2';
     el.style.minWidth = '240px';
-    el.innerHTML = `<i class="bi ${icon}" style="color:rgb(var(--accent));font-size:1.1rem"></i><span style="font-size:.86rem;font-weight:600">${msg}</span>`;
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<i class="bi ${icon} toast-item-icon" aria-hidden="true"></i><span class="toast-item-msg">${escHtml(msg)}</span>`;
     c.appendChild(el);
     setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; setTimeout(()=>el.remove(), 300); }, 2600);
   },
@@ -182,6 +235,7 @@ function fireConfetti(){
   for(let i=0;i<40;i++){
     const p = document.createElement('div');
     p.className = 'confetti-piece';
+    p.setAttribute('aria-hidden', 'true');
     p.style.left = Math.random()*100+'vw';
     p.style.background = colors[Math.floor(Math.random()*colors.length)];
     p.style.transform = `rotate(${Math.random()*360}deg)`;
@@ -195,58 +249,36 @@ function fireConfetti(){
   }
 }
 
-/* ---------- HELPERS ---------- */
-function fmtTime(t){ // "14:30" -> "2:30 PM"
-  if(!t) return '';
-  const [h,m] = t.split(':').map(Number);
-  const ap = h>=12?'PM':'AM';
-  const hh = h%12===0?12:h%12;
-  return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
-}
-function minutesUntil(dateStr, timeStr){
-  const target = new Date(`${dateStr}T${timeStr}:00`);
-  return Math.round((target - new Date())/60000);
-}
-function fmtDuration(mins){
-  if(mins < 0) return 'Overdue';
-  if(mins < 60) return `${mins}m`;
-  const h = Math.floor(mins/60), m = mins%60;
-  if(h < 24) return `${h}h ${m}m`;
-  const d = Math.floor(h/24);
-  return `${d}d ${h%24}h`;
-}
-const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function todayKey(){ return ymdLocal(new Date()); }
-
-function debounce(fn, wait=250){
-  let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
-}
-
-/* ---------- CONFIRM ACTION MODAL (replaces native confirm()) ---------- */
+/* ---------- CONFIRM ACTION MODAL ---------- */
 function ensureConfirmModal(){
   if(document.getElementById('confirmActionModal')) return;
   const wrap = document.createElement('div');
-  wrap.innerHTML = `<div class="modal fade" id="confirmActionModal" tabindex="-1">
+  wrap.innerHTML = `<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-modal="true" role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content card-pad text-center">
-        <div class="mx-auto mb-2" id="confirmIconWrap" style="width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center">
-          <i id="confirmIcon" style="font-size:1.4rem"></i>
+        <div class="confirm-icon-wrap" id="confirmIconWrap">
+          <i id="confirmIcon" class="confirm-icon" aria-hidden="true"></i>
         </div>
         <h5 id="confirmTitle" class="mb-1">Are you sure?</h5>
-        <p class="text-soft mb-0" id="confirmMessage" style="font-size:.86rem"></p>
+        <p class="text-soft mb-0 confirm-message" id="confirmMessage"></p>
         <div class="d-flex gap-2 mt-3">
           <button class="btn btn-ghost flex-grow-1" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn flex-grow-1" id="confirmActionBtn" style="border:none;border-radius:12px;font-weight:700;color:#fff">Confirm</button>
+          <button class="btn flex-grow-1 confirm-action-btn" id="confirmActionBtn">Confirm</button>
         </div>
       </div>
     </div>
   </div>`;
   document.body.appendChild(wrap.firstElementChild);
+
+  // Close on Escape
+  document.getElementById('confirmActionModal').addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      const inst = bootstrap.Modal.getInstance(document.getElementById('confirmActionModal'));
+      if(inst) inst.hide();
+    }
+  });
 }
-/**
- * confirmAction({ title, message, confirmLabel, danger, icon, onConfirm })
- * Shows a themed confirmation modal instead of the native browser confirm().
- */
+
 function confirmAction(opts){
   const { title='Are you sure?', message='This action cannot be undone.', confirmLabel='Delete', danger=true, icon, onConfirm } = opts;
   ensureConfirmModal();
@@ -260,7 +292,6 @@ function confirmAction(opts){
   const btn = document.getElementById('confirmActionBtn');
   btn.textContent = confirmLabel;
   btn.style.background = danger ? '#fb7185' : 'linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-2)))';
-  // swap in a fresh button node so we never stack duplicate click handlers across calls
   const freshBtn = btn.cloneNode(true);
   btn.parentNode.replaceChild(freshBtn, btn);
   freshBtn.addEventListener('click', ()=>{
@@ -269,6 +300,7 @@ function confirmAction(opts){
   });
   new bootstrap.Modal(document.getElementById('confirmActionModal')).show();
 }
+
 function openQuickAdd(type){
   if(window.quickAddHandlers && window.quickAddHandlers[type]) window.quickAddHandlers[type]();
   else window.location.href = type==='task' ? 'tasks.html?new=1' : 'index.html';
@@ -297,7 +329,8 @@ function setupInstallPrompt(){
       fab = document.createElement('button');
       fab.id = 'installFab';
       fab.className = 'install-fab';
-      fab.innerHTML = '<i class="bi bi-download"></i> Install App';
+      fab.setAttribute('aria-label', 'Install app');
+      fab.innerHTML = '<i class="bi bi-download" aria-hidden="true"></i> Install App';
       fab.onclick = async ()=>{
         fab.style.display='none';
         if(deferredInstallPrompt){ deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; }

@@ -128,12 +128,12 @@
 <nav class="mobile-nav" id="mobileNav"></nav>
 
 <!-- Target Grade Info Modal -->
-<div class="modal fade" id="targetGradeInfoModal" tabindex="-1">
+<div class="modal fade" id="targetGradeInfoModal" tabindex="-1" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>How Target Grade Works</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
+        <button class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body tg-info-modal-body">
         <div class="tg-info-section">
@@ -184,10 +184,10 @@
 </div>
 
 <!-- Grade breakdown modal -->
-<div class="modal fade" id="gradeModal" tabindex="-1">
+<div class="modal fade" id="gradeModal" tabindex="-1" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Grading Breakdown</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title">Grading Breakdown</h5><button class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body" id="gradeModalBody"></div>
     </div>
   </div>

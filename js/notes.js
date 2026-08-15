@@ -446,7 +446,7 @@ function deleteNote(id) {
   confirmAction({
     title: 'Delete note?',
     message: '"' + n.title + '" will be permanently removed.',
-    confirmLabel: 'Delete Note', danger: true, icon: 'bi-trash-fill',
+    confirmLabel: 'Delete', danger: true, icon: 'bi-trash-fill',
     onConfirm: function () {
       DB.saveNotes(DB.getNotes().filter(function (x) { return x.id !== id; }));
       var modalEl = document.getElementById('noteModal');
@@ -458,4 +458,4 @@ function deleteNote(id) {
   });
 }
 
-function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+// escapeHtml provided by app.js (escHtml)

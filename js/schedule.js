@@ -11,7 +11,7 @@ let _weekOffset = 0;                   // weeks from the "real today"
 let _tickTimer = null;
 
 /* ── Helpers re-used from app.js ── */
-function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function esc(s){ return escHtml(s); }
 function toMins(t){ if(!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
 function fromMins(m){ const h=Math.floor(m/60),mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
 function minsDiff(a,b){ return toMins(b)-toMins(a); }
@@ -636,7 +636,7 @@ function deleteSubject(id){
   confirmAction({
     title:'Delete subject?',
     message:`"${s.code} — ${s.desc}" will be permanently removed.`,
-    confirmLabel:'Delete Subject', danger:true, icon:'bi-trash-fill',
+    confirmLabel:'Delete', danger:true, icon:'bi-trash-fill',
     onConfirm(){ DB.saveSubjects(DB.getSubjects().filter(x=>x.id!==id)); Toast.show('Subject deleted'); renderAllViews(); }
   });
 }
@@ -659,4 +659,4 @@ function archiveSubject(id){
   renderAllViews();
 }
 
-function escapeHtml(s){ return esc(s); }
+function escapeHtml(s){ return escHtml(s); }

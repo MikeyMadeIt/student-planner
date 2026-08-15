@@ -10,11 +10,7 @@
 const DEFAULT_ABSENCE_LIMIT = 3;
 
 /* ---- Helpers ---- */
-function escapeAttHtml(s){
-  const d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
-}
+function escapeAttHtml(s){ return escHtml(s); }
 
 function todayKey(){
   const d = new Date();

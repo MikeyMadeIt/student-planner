@@ -33,7 +33,7 @@ function gwaLabel(point){
   const row = GRADE_TABLE.slice().sort((a,b)=>Math.abs(a.point-point)-Math.abs(b.point-point))[0];
   return row ? row.label : '—';
 }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+// escapeHtml provided by app.js (escHtml)
 
 /* ---- Data normalization ---- */
 function normalizeGradeRecord(g){
