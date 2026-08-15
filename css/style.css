@@ -2888,3 +2888,1630 @@ td { vertical-align: middle; }
   .sch-next-badge.now, .sch-now-badge { animation: none !important; }
   .sch-now-fill, .sch-tl-now-fill, .sch-progress-fill { transition: none !important; }
 }
+
+/* ============================================================
+   DASHBOARD IMPROVEMENTS (v2)
+   ============================================================ */
+
+/* Contextual Summary Card */
+.ctx-summary-card {
+  padding: 10px 16px !important;
+}
+.ctx-summary-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  font-size: .78rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.ctx-neutral {
+  color: var(--text-faint);
+}
+
+/* Grade bar chart improvements */
+.grade-bar-val-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+.grade-bar-pct {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.grade-bar-gwa {
+  font-family: var(--font-mono);
+  font-size: .6rem;
+  color: var(--text-faint);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* ============================================================
+   CALENDAR IMPROVEMENTS (v2)
+   ============================================================ */
+
+/* Unified calendar filter toggles */
+.cal-filter-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cal-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-size: .68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, color .18s;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  user-select: none;
+}
+.cal-filter-btn .cal-filter-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cal-filter-btn.active {
+  border-color: rgba(var(--accent),.4);
+  color: var(--text);
+}
+.cal-filter-btn.active.f-class  { background: rgba(124,108,246,.15); border-color: rgba(124,108,246,.4); }
+.cal-filter-btn.active.f-task   { background: rgba(251,191,36,.12);  border-color: rgba(251,191,36,.4); }
+.cal-filter-btn.active.f-event  { background: rgba(52,211,153,.12);  border-color: rgba(52,211,153,.4); }
+.cal-filter-btn.active.f-univ   { background: rgba(79,140,255,.12);  border-color: rgba(79,140,255,.4); }
+
+/* Calendar view mode bar */
+.cal-view-bar {
+  display: flex;
+  gap: 4px;
+}
+.cal-view-btn {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, color .18s;
+}
+.cal-view-btn.active {
+  background: rgba(var(--accent),.18);
+  border-color: rgba(var(--accent),.4);
+  color: rgb(var(--accent));
+}
+
+/* Unified calendar cell event items */
+.uc-cell-events {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+.uc-event-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .57rem;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  cursor: pointer;
+}
+.uc-event-chip .chip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.uc-event-chip:hover { opacity: .85; }
+
+/* Day detail panel */
+.day-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 7px;
+  cursor: pointer;
+  transition: background .18s, border-color .18s;
+}
+.day-detail-item:hover { background: var(--surface-2); border-color: rgba(var(--accent),.25); }
+.day-detail-item:last-child { margin-bottom: 0; }
+.day-detail-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.day-detail-type-badge {
+  font-size: .58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 1px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.badge-class  { background: rgba(124,108,246,.18); color: #a78bfa; }
+.badge-task   { background: rgba(251,191,36,.15);  color: #fbbf24; }
+.badge-event  { background: rgba(52,211,153,.15);  color: #34d399; }
+.badge-univ   { background: rgba(79,140,255,.15);  color: #4f8cff; }
+
+/* One-off event modal */
+.cal-event-modal-body { padding: 20px; }
+
+/* Improved uc-cell for unified calendar */
+.uc-cell {
+  min-height: 70px;
+}
+@media (max-width: 575px) {
+  .uc-cell { min-height: 50px; }
+  .uc-event-chip { display: none; }
+  .uc-dots { display: flex !important; }
+}
+
+/* Event list sections in day modal */
+.day-modal-section-title {
+  font-size: .67rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  margin: 12px 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.day-modal-section-title i { color: rgb(var(--accent)); }
+
+/* ============================================================
+   GRADES PAGE — Enhanced v3
+   ============================================================ */
+
+/* ---- Current GWA Status Badges ---- */
+.grade-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: .03em;
+}
+.grade-status-badge.incomplete {
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.3);
+}
+.grade-status-badge.complete {
+  background: rgba(52,211,153,.12);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,.3);
+}
+
+/* ---- Passing/Failing Badges on cards ---- */
+.grade-pass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.grade-pass-badge.passing {
+  background: rgba(52,211,153,.12);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,.25);
+}
+.grade-pass-badge.failing {
+  background: rgba(251,113,133,.12);
+  color: #fb7185;
+  border: 1px solid rgba(251,113,133,.25);
+}
+.grade-pass-badge.no-data {
+  background: rgba(255,255,255,.06);
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+}
+
+/* ---- Warning box inside card detail ---- */
+.grade-warning-box {
+  background: rgba(251,113,133,.10);
+  border: 1px solid rgba(251,113,133,.25);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: .74rem;
+  color: #fb7185;
+  display: flex;
+  align-items: center;
+}
+
+/* ---- Grade Trend Chart ---- */
+.grade-trend-wrap {
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  padding: 8px 4px 4px;
+  overflow: hidden;
+}
+.grade-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* ---- Target Grade Calculator ---- */
+.tg-label {
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+  display: block;
+}
+.tg-info-box {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.tg-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: .82rem;
+  border-bottom: 1px solid var(--border);
+}
+.tg-info-row:last-child { border-bottom: none; }
+.tg-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .84rem;
+}
+.tg-result-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.tg-result-box.tg-pass {
+  background: rgba(52,211,153,.10);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,.25);
+}
+.tg-result-box.tg-fail {
+  background: rgba(251,113,133,.10);
+  color: #fb7185;
+  border: 1px solid rgba(251,113,133,.25);
+}
+.tg-result-box.tg-warn {
+  background: rgba(251,191,36,.10);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.25);
+}
+.tg-result-box.tg-info {
+  background: rgba(79,140,255,.10);
+  color: #60a5fa;
+  border: 1px solid rgba(79,140,255,.25);
+}
+
+/* Update grade card info to handle badge wrapping */
+.grade-card-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.grade-card-code {
+  font-weight: 700;
+  font-size: .88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+@media (max-width: 575.98px) {
+  .grade-card-code { max-width: 60px; }
+  .grade-card-actions { gap: 3px; }
+}
+
+/* ============================================================
+   ATTENDANCE PAGE — Enhanced v2
+   ============================================================ */
+
+/* ---- Stats Grid ---- */
+.att-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+@media (min-width: 576px) {
+  .att-stats-grid { grid-template-columns: repeat(6, 1fr); }
+}
+@media (max-width: 359.98px) {
+  .att-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.att-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  text-align: center;
+  min-height: 76px;
+}
+.att-stat-card .stat-value {
+  font-weight: 800;
+  font-size: 1.4rem;
+  font-family: var(--font-mono);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.att-stat-card .stat-label {
+  font-size: .6rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .04em;
+  margin-bottom: 3px;
+  line-height: 1.2;
+}
+.att-stat-card .stat-percent {
+  font-size: .68rem;
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+}
+.att-stat-card.present .stat-value { color: #34d399; }
+.att-stat-card.present-online .stat-value { color: #06b6d4; }
+.att-stat-card.late .stat-value { color: #fbbf24; }
+.att-stat-card.excused .stat-value { color: #60a5fa; }
+.att-stat-card.absent .stat-value { color: #fb7185; }
+.att-stat-card.noclasses .stat-value { color: #8b5cf6; }
+
+/* ---- Log Form ---- */
+.att-form-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+  display: block;
+}
+.att-online-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 31px;
+  padding: 0 4px;
+}
+.att-online-toggle label {
+  font-size: .84rem;
+  font-weight: 600;
+  margin: 0;
+  cursor: pointer;
+  color: var(--text);
+}
+
+/* ---- Absence Limit Rows ---- */
+.att-absence-row {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  margin-bottom: 8px;
+  transition: border-color .2s;
+}
+.att-absence-row:last-child { margin-bottom: 0; }
+.att-absence-row.att-absence-reached {
+  border-color: rgba(251,113,133,.35);
+  background: rgba(251,113,133,.04);
+}
+.att-absence-row.att-absence-near {
+  border-color: rgba(251,191,36,.3);
+  background: rgba(251,191,36,.04);
+}
+
+.att-limit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+.att-limit-badge.danger {
+  background: rgba(251,113,133,.15);
+  color: #fb7185;
+}
+.att-limit-badge.warn {
+  background: rgba(251,191,36,.15);
+  color: #fbbf24;
+}
+
+/* ---- Per-Subject Breakdown ---- */
+.att-subject-breakdown-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  margin-bottom: 8px;
+  transition: border-color .18s;
+}
+.att-subject-breakdown-card:last-child { margin-bottom: 0; }
+.att-subject-breakdown-card:hover { border-color: rgba(var(--accent),.2); }
+
+.att-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+  min-width: 0;
+}
+.att-breakdown-code {
+  font-weight: 700;
+  font-size: .84rem;
+  white-space: nowrap;
+}
+.att-breakdown-rate {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+
+.att-breakdown-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+.att-bd-stat {
+  text-align: center;
+  padding: 4px 2px;
+  border-radius: 7px;
+  background: rgba(255,255,255,.03);
+}
+.att-bd-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .88rem;
+  line-height: 1;
+}
+.att-bd-lbl {
+  font-size: .58rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.att-bd-stat.present .att-bd-val { color: #34d399; }
+.att-bd-stat.late .att-bd-val { color: #fbbf24; }
+.att-bd-stat.excused .att-bd-val { color: #60a5fa; }
+.att-bd-stat.absent .att-bd-val { color: #fb7185; }
+.att-bd-stat.noclasses .att-bd-val { color: #8b5cf6; }
+
+.att-online-sub {
+  display: block;
+  font-size: .55rem;
+  color: #06b6d4;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (max-width: 359.98px) {
+  .att-breakdown-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---- Attendance Log ---- */
+.att-log-header {
+  display: grid;
+  grid-template-columns: 8px 72px 1fr 90px 20px 28px;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.att-log-row {
+  display: grid;
+  grid-template-columns: 8px 72px 1fr 90px 20px 28px;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: .76rem;
+  transition: background .15s, border-color .15s;
+  margin-bottom: 4px;
+}
+.att-log-row:hover {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(var(--accent),.2);
+}
+.att-log-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-log-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .7rem;
+  white-space: nowrap;
+}
+.att-log-subject {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.att-log-status {
+  display: flex;
+  align-items: center;
+}
+.att-log-note {
+  color: var(--text-faint);
+  font-size: .7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+.att-log-delete {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: .7rem;
+  transition: all .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.att-log-delete:hover { color: #fb7185; background: rgba(251,113,133,.1); }
+
+/* ---- Status Badges ---- */
+.att-status-badge {
+  font-weight: 700;
+  font-size: .63rem;
+  padding: 2px 7px;
+  border-radius: 16px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.att-status-badge.present { background: rgba(52,211,153,.15); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+.att-status-badge.late { background: rgba(251,191,36,.15); color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+.att-status-badge.absent { background: rgba(251,113,133,.15); color: #fb7185; border: 1px solid rgba(251,113,133,.3); }
+.att-status-badge.excused { background: rgba(96,165,250,.15); color: #60a5fa; border: 1px solid rgba(96,165,250,.3); }
+.att-status-badge.noclasses { background: rgba(139,92,246,.15); color: #a78bfa; border: 1px solid rgba(139,92,246,.3); }
+
+/* Online chip inside status badge */
+.att-online-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(6,182,212,.2);
+  color: #06b6d4;
+  border-radius: 8px;
+  font-size: .58rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  margin-left: 3px;
+  letter-spacing: .02em;
+}
+
+/* ---- Responsive Attendance ---- */
+@media (max-width: 575.98px) {
+  .att-log-header,
+  .att-log-row {
+    grid-template-columns: 8px 62px 1fr 80px 16px 26px;
+    gap: 4px;
+    font-size: .7rem;
+  }
+  .att-log-date { font-size: .64rem; }
+  .att-status-badge { font-size: .58rem; padding: 2px 5px; }
+}
+@media (max-width: 359.98px) {
+  .att-log-header,
+  .att-log-row {
+    grid-template-columns: 6px 58px 1fr 74px 14px 24px;
+    gap: 3px;
+    font-size: .66rem;
+    padding: 5px 8px;
+  }
+}
+
+/* ============================================================
+   PREFERS-REDUCED-MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .grade-trend-svg,
+  .att-absence-row,
+  .att-subject-breakdown-card,
+  .att-log-row,
+  .grade-card,
+  .grade-pass-badge {
+    transition: none !important;
+    animation: none !important;
+  }
+  .progress-bar { transition: none !important; }
+}
+
+/* ============================================================
+   GRADES PAGE — v3 Refinements
+   ============================================================ */
+
+/* ---- Grade Card Top Row: full-width three-column layout ---- */
+.grade-card-top {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 7px;
+}
+
+.grade-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.grade-card-code {
+  font-weight: 800;
+  font-size: .86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.grade-card-center {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.grade-card-pct {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: .94rem;
+  color: rgb(var(--accent));
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.grade-card-gwa {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+
+.grade-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Smaller action buttons on grade cards */
+.btn-icon-xs {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: .7rem !important;
+  border-radius: 7px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.btn-icon-xs:hover {
+  background: rgba(var(--accent),.15);
+  color: rgb(var(--accent));
+  border-color: rgba(var(--accent),.3);
+}
+
+/* Tighten card vertical padding */
+.grade-card-detail {
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.grade-card-bar {
+  height: 3px;
+  border-radius: 0;
+  margin: 0;
+  background: var(--surface-2);
+}
+.grade-card-bar .progress-bar { border-radius: 0; }
+
+/* Pass badge smaller in card */
+.grade-card-left .grade-pass-badge {
+  font-size: .6rem;
+  padding: 1px 5px;
+  gap: 3px;
+}
+
+/* ---- GWA Calculator Header ---- */
+.gwa-calc-header {
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.gwa-calc-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+.gwa-calc-header-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.gwa-clear-btn {
+  color: #fb7185 !important;
+  border-color: rgba(251,113,133,.25) !important;
+}
+.gwa-calc-desc {
+  font-size: .76rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin: 0 0 10px;
+  padding-right: 4px;
+}
+
+/* ============================================================
+   ATTENDANCE PAGE — v3 Refinements
+   ============================================================ */
+
+/* ---- Online Pill (replaces checkbox toggle) ---- */
+.att-online-pill {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+}
+.att-online-check {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.att-online-pill-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 31px;
+  padding: 0 10px;
+  border-radius: var(--radius, 10px);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  transition: background .18s, border-color .18s, color .18s;
+  user-select: none;
+}
+.att-online-pill-inner i {
+  font-size: .82rem;
+  transition: color .18s;
+}
+.att-online-check:checked ~ .att-online-pill-inner {
+  background: rgba(6,182,212,.14);
+  border-color: rgba(6,182,212,.5);
+  color: #06b6d4;
+}
+.att-online-check:checked ~ .att-online-pill-inner i {
+  color: #06b6d4;
+}
+.att-online-pill:hover .att-online-pill-inner {
+  border-color: rgba(6,182,212,.35);
+  background: rgba(6,182,212,.07);
+}
+
+/* ---- Absence Limit — compact summary rows ---- */
+.att-limit-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  margin-bottom: 6px;
+  transition: border-color .18s, background .18s;
+}
+.att-limit-summary-row:last-child { margin-bottom: 0; }
+.att-limit-summary-row.att-absence-reached {
+  border-color: rgba(251,113,133,.4);
+  background: rgba(251,113,133,.04);
+}
+.att-limit-summary-row.att-absence-near {
+  border-color: rgba(251,191,36,.35);
+  background: rgba(251,191,36,.04);
+}
+
+.att-limit-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 90px;
+}
+.att-limit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-limit-code {
+  font-weight: 700;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+.att-limit-summary-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.att-limit-bar-wrap {
+  flex: 1;
+  min-width: 40px;
+}
+.att-limit-bar {
+  height: 6px !important;
+  border-radius: 4px;
+}
+.att-limit-count {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: .8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ---- Absence Limit Modal ---- */
+.al-modal-intro {
+  font-size: .82rem;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.al-modal-row {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  margin-bottom: 10px;
+  transition: border-color .18s;
+}
+.al-modal-row:last-child { margin-bottom: 0; }
+.al-modal-row.al-reached {
+  border-color: rgba(251,113,133,.35);
+  background: rgba(251,113,133,.04);
+}
+.al-modal-row.al-near {
+  border-color: rgba(251,191,36,.3);
+  background: rgba(251,191,36,.04);
+}
+.al-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.al-code {
+  font-weight: 700;
+  font-size: .9rem;
+}
+.al-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.al-status-badge.danger { background: rgba(251,113,133,.15); color: #fb7185; border: 1px solid rgba(251,113,133,.25); }
+.al-status-badge.warn   { background: rgba(251,191,36,.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,.25); }
+.al-status-badge.ok     { background: rgba(52,211,153,.10);  color: #34d399; border: 1px solid rgba(52,211,153,.2); }
+
+.al-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.al-stat { text-align: center; }
+.al-stat-val {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.al-stat-lbl {
+  font-size: .65rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.al-limit-input {
+  max-width: 70px;
+  text-align: center;
+}
+.al-save-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---- Attendance Log — Card Style ---- */
+.att-log-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  margin-bottom: 5px;
+  transition: background .14s, border-color .14s;
+}
+.att-log-card:last-child { margin-bottom: 0; }
+.att-log-card:hover {
+  background: rgba(255,255,255,.03);
+  border-color: rgba(var(--accent),.18);
+}
+
+.att-log-card-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+.att-log-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-log-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.att-log-card-row1 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.att-log-card-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .72rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.att-log-card-subject {
+  font-weight: 700;
+  font-size: .82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.att-log-card-row2 {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.att-log-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.att-action-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: .74rem;
+  transition: all .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.att-notes-btn {
+  color: rgb(var(--accent));
+  background: rgba(var(--accent),.08);
+  border-color: rgba(var(--accent),.2);
+}
+.att-notes-btn:hover {
+  background: rgba(var(--accent),.18);
+  border-color: rgba(var(--accent),.4);
+}
+.att-delete-btn:hover {
+  color: #fb7185;
+  background: rgba(251,113,133,.12);
+  border-color: rgba(251,113,133,.3);
+}
+.att-notes-btn-empty {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ---- Notes Modal ---- */
+.att-note-content {
+  font-size: .9rem;
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.att-note-meta {
+  font-size: .72rem;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+/* ---- Remove old log header/row rules that conflict ---- */
+/* These are overridden by att-log-card above */
+.att-log-header { display: none; }
+
+/* ============================================================
+   MOBILE OVERRIDES
+   ============================================================ */
+@media (max-width: 575.98px) {
+  /* Grade card */
+  .grade-card-top {
+    grid-template-columns: minmax(0,1fr) auto auto;
+    gap: 6px;
+    padding: 7px 8px 6px;
+  }
+  .grade-card-code { font-size: .8rem; }
+  .grade-card-pct  { font-size: .86rem; }
+  .grade-card-gwa  { font-size: .6rem; }
+  .btn-icon-xs { width: 24px !important; height: 24px !important; font-size: .66rem !important; }
+
+  /* GWA calc header stacks on mobile */
+  .gwa-calc-header-top { flex-direction: row; align-items: flex-start; }
+  .gwa-calc-header-btns { align-self: flex-end; }
+
+  /* Absence limit summary */
+  .att-limit-summary-left { min-width: 70px; }
+
+  /* Log card: slightly tighter on small screens */
+  .att-log-card { padding: 7px 8px; gap: 8px; }
+  .att-log-card-date { font-size: .67rem; }
+  .att-log-card-subject { font-size: .78rem; }
+  .att-action-btn { width: 28px; height: 28px; }
+}
+
+@media (max-width: 359.98px) {
+  .grade-card-top { padding: 6px 7px 5px; gap: 4px; }
+  .grade-card-code { font-size: .76rem; }
+  .grade-card-pct  { font-size: .8rem; }
+  .att-log-card { gap: 6px; padding: 6px 7px; }
+  .att-limit-summary-left { min-width: 60px; }
+  .al-limit-input { max-width: 58px; }
+}
+
+/* ---- Absence limit modal inline label ---- */
+.al-limit-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   GRADES — v4 Refinements (override earlier rules)
+   ============================================================ */
+
+/* ---- Grade Card: compact top, status pill below code ---- */
+.grade-card-top {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 6px;
+}
+
+.grade-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.grade-card-status-row {
+  display: flex;
+  align-items: center;
+}
+
+/* Status badge under code — micro size */
+.grade-card-status-row .grade-pass-badge {
+  font-size: .58rem;
+  padding: 1px 5px;
+  gap: 3px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+/* Only show At Risk and no-data under code; hide passing (too verbose) */
+.grade-card-status-row .grade-pass-badge.passing {
+  display: none;
+}
+
+.grade-card-code {
+  font-weight: 800;
+  font-size: .86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+.grade-card-center {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.grade-card-pct {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: .94rem;
+  color: rgb(var(--accent));
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.grade-card-gwa {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.grade-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.grade-card-detail {
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Target Grade section header ---- */
+.tg-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.tg-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tg-label-sub {
+  font-size: .65rem;
+  font-weight: 400;
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+/* ---- Target Grade form grid ---- */
+.tg-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tg-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tg-form-action {
+  display: flex;
+  align-items: flex-end;
+}
+@media (min-width: 576px) {
+  .tg-form-grid { grid-template-columns: 1fr 1fr 1fr auto; }
+  .tg-form-action { min-width: 160px; }
+}
+
+/* ---- Target Grade Info Modal ---- */
+.tg-info-modal-body { padding: 16px 20px 20px; }
+.tg-info-section {
+  margin-bottom: 18px;
+}
+.tg-info-section:last-child { margin-bottom: 0; }
+.tg-info-section-title {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: rgb(var(--accent));
+  margin-bottom: 7px;
+}
+.tg-info-section p {
+  font-size: .84rem;
+  color: var(--text-soft);
+  line-height: 1.55;
+  margin: 0;
+}
+.tg-info-example {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.tg-info-ex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .8rem;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.tg-info-ex-row:last-child { border-bottom: none; }
+.tg-info-ex-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .78rem;
+  color: rgb(var(--accent));
+  white-space: nowrap;
+  text-align: right;
+}
+.tg-info-ex-result {
+  background: rgba(var(--accent),.06);
+  margin: 4px -4px -4px;
+  padding: 5px 4px;
+  border-radius: 0 0 8px 8px;
+}
+.tg-info-clarify { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.tg-info-clarify-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: .82rem;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.tg-info-clarify-row i { font-size: .9rem; flex-shrink: 0; margin-top: 2px; }
+.tg-info-clarify-row.ok  { background: rgba(52,211,153,.08); color: var(--text-soft); }
+.tg-info-clarify-row.ok i { color: #34d399; }
+.tg-info-clarify-row.warn { background: rgba(251,113,133,.08); color: var(--text-soft); }
+.tg-info-clarify-row.warn i { color: #fb7185; }
+
+/* ---- GWA Calculator Header (override previous) ---- */
+.gwa-calc-header {
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.gwa-calc-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+.gwa-calc-header-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.gwa-clear-btn {
+  color: #fb7185 !important;
+  border-color: rgba(251,113,133,.25) !important;
+}
+.gwa-calc-desc {
+  font-size: .76rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+/* ============================================================
+   ATTENDANCE — v4 Refinements (override earlier rules)
+   ============================================================ */
+
+/* ---- Online Pill: fix hover vs active state + height match ---- */
+.att-online-pill {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+.att-online-check {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.att-online-pill-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  /* Match form-select-sm / form-control-sm height exactly */
+  height: 31px;
+  padding: 0 10px;
+  border-radius: var(--radius, 10px);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  /* No transition on hover — only on checked state change */
+  transition: background .18s, border-color .18s, color .18s;
+  user-select: none;
+  white-space: nowrap;
+}
+/* Hover: subtle only — must not look selected */
+.att-online-pill:hover .att-online-pill-inner {
+  border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.07);
+  color: var(--text);
+}
+/* Active/checked state — this is the selected look */
+.att-online-check:checked ~ .att-online-pill-inner {
+  background: rgba(6,182,212,.15);
+  border-color: rgba(6,182,212,.55);
+  color: #06b6d4;
+}
+.att-online-check:checked ~ .att-online-pill-inner i {
+  color: #06b6d4;
+}
+
+/* ---- Attendance Log: horizontal row layout ---- */
+.att-log-empty {
+  font-size: .84rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+}
+.att-log-empty i { font-size: 1.6rem; opacity: .25; }
+
+.att-log-row {
+  display: grid;
+  grid-template-columns: 14px 88px minmax(60px,1fr) minmax(80px,auto) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  font-size: .8rem;
+  transition: background .12s;
+}
+.att-log-row:last-child { border-bottom: none; }
+.att-log-row:hover { background: rgba(255,255,255,.03); }
+
+.att-log-header-row {
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+  padding: 4px 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.att-log-header-row:hover { background: transparent; }
+
+.att-log-col-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.att-log-dot-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: block;
+}
+.att-log-col-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .72rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.att-log-col-subject {
+  font-weight: 700;
+  font-size: .8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.att-log-col-status {
+  display: flex;
+  align-items: center;
+}
+.att-log-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.att-action-placeholder {
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ---- Responsive: attendance log on small screens ---- */
+@media (max-width: 575.98px) {
+  .att-log-row {
+    grid-template-columns: 10px 80px minmax(48px,1fr) auto auto;
+    gap: 7px;
+    padding: 6px 4px;
+  }
+  .att-log-col-date { font-size: .67rem; }
+  .att-log-col-subject { font-size: .74rem; }
+  .att-status-badge { font-size: .58rem; padding: 2px 5px; }
+  .att-online-chip { font-size: .54rem; padding: 1px 4px; }
+}
+@media (max-width: 399.98px) {
+  .att-log-row {
+    grid-template-columns: 8px 72px minmax(40px,1fr) auto auto;
+    gap: 5px;
+    font-size: .72rem;
+  }
+  .att-log-col-date { font-size: .63rem; }
+}
+
+/* ---- Grade card mobile override ---- */
+@media (max-width: 575.98px) {
+  .grade-card-top {
+    grid-template-columns: minmax(0,1fr) auto auto;
+    gap: 6px;
+    padding: 6px 8px 5px;
+  }
+  .grade-card-code { font-size: .8rem; }
+  .grade-card-pct  { font-size: .86rem; }
+  .btn-icon-xs { width: 24px !important; height: 24px !important; font-size: .65rem !important; }
+  .tg-form-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 359.98px) {
+  .grade-card-top { padding: 5px 7px 4px; gap: 4px; }
+  .grade-card-code { font-size: .75rem; }
+  .grade-card-pct  { font-size: .8rem; }
+}
+
+/* ---- Suppress old conflicting log styles ---- */
+.att-log-card,
+.att-log-card-main,
+.att-log-card-dot,
+.att-log-card-body,
+.att-log-card-row1,
+.att-log-card-row2,
+.att-log-card-actions,
+.att-log-card-date,
+.att-log-card-subject,
+.att-log-header { display: revert; }
+.att-log-header { display: none !important; }
+

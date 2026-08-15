@@ -165,6 +165,7 @@
   text-align: right;
   flex-shrink: 0;
 }
+/* grade-bar-val-wrap, .grade-bar-pct, .grade-bar-gwa defined in style.css */
 
 /* Donut chart */
 .donut-wrap {
@@ -505,6 +506,7 @@
     <div class="row g-2 mb-3 dash-card-anim" id="quickActionsRow">
       <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('task');return false;"><i class="bi bi-plus-square"></i><span>Add Task</span></a></div>
       <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('note');return false;"><i class="bi bi-sticky"></i><span>Add Note</span></a></div>
+      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('grade');return false;"><i class="bi bi-mortarboard"></i><span>Grade</span></a></div>
       <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('subject');return false;"><i class="bi bi-journal-plus"></i><span>Subject</span></a></div>
       <div class="col"><a class="qa-btn qa-btn-full" href="schedule.html"><i class="bi bi-calendar2-week"></i><span>Schedule</span></a></div>
       <div class="col"><a class="qa-btn qa-btn-full" href="grades.html"><i class="bi bi-mortarboard"></i><span>Grades</span></a></div>
@@ -585,23 +587,28 @@
       </div>
     </div>
 
+    <!-- CONTEXTUAL SUMMARY -->
+    <div class="glass card-pad mb-3 dash-card-anim ctx-summary-card">
+      <div id="dashContextSummary" class="ctx-summary-content"></div>
+    </div>
+
     <!-- ACADEMIC PROGRESS -->
     <div class="glass card-pad mb-3 dash-card-anim">
       <div class="dash-section-title"><i class="bi bi-graph-up-arrow"></i>Academic Progress</div>
       <div class="row g-3" id="acadProgressWrap">
         <div class="col-sm-6">
           <div class="acad-row">
-            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-journal-bookmark me-1"></i>Subjects</span><span class="acad-row-pct" id="acadSubPct">–</span></div>
-            <div class="acad-bar-track"><div class="acad-bar-fill c-subjects" id="acadSubBar"></div></div>
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-book me-1"></i>Syllabus Coverage</span><span class="acad-row-pct" id="acadSylPct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-syllabus" id="acadSylBar"></div></div>
           </div>
           <div class="acad-row">
-            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-book me-1"></i>Syllabus</span><span class="acad-row-pct" id="acadSylPct">–</span></div>
-            <div class="acad-bar-track"><div class="acad-bar-fill c-syllabus" id="acadSylBar"></div></div>
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-mortarboard me-1"></i>Grade Avg.</span><span class="acad-row-pct" id="acadGradePct">–</span></div>
+            <div class="acad-bar-track"><div class="acad-bar-fill c-subjects" id="acadGradeBar"></div></div>
           </div>
         </div>
         <div class="col-sm-6">
           <div class="acad-row">
-            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-check2-square me-1"></i>Tasks</span><span class="acad-row-pct" id="acadTaskPct">–</span></div>
+            <div class="acad-row-top"><span class="acad-row-label"><i class="bi bi-check2-square me-1"></i>Tasks Done</span><span class="acad-row-pct" id="acadTaskPct">–</span></div>
             <div class="acad-bar-track"><div class="acad-bar-fill c-tasks" id="acadTaskBar"></div></div>
           </div>
           <div class="acad-row">

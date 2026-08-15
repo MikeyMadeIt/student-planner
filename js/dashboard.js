@@ -10,6 +10,7 @@ function initDashboard(){
   renderAcademicProgress();
   renderTodaySchedule();
   renderUpcomingTasks();
+  renderContextSummary();
 
   // Refresh schedule every minute
   setInterval(renderTodaySchedule, 60000);
@@ -104,7 +105,7 @@ function animateCountUp(id, from, to, duration, fmt){
 }
 
 /* ============================================================
-   3. GRADE PERFORMANCE
+   3. GRADE PERFORMANCE — Performance % (Option 1)
    ============================================================ */
 var GRADE_TABLE_DASH = [
   { point:1.00, min:99 }, { point:1.25, min:96 }, { point:1.50, min:93 },
@@ -152,6 +153,14 @@ function computeDashGWA(semId, subjects){
   return rows.reduce(function(s,r){ return s + r.point * (+r.subject.units||0); }, 0) / tu;
 }
 
+// Convert GWA point (1.00–5.00) to performance percentage (higher = better)
+// GWA 1.00 → 100%, GWA 3.00 → 75%, GWA 5.00 → 0%
+function gwaToPerformancePct(gwaPoint){
+  if(gwaPoint === null) return null;
+  // Map 1.00–5.00 to 100%–0% linearly
+  return Math.max(0, Math.round(((5 - gwaPoint) / 4) * 100));
+}
+
 function renderGradePerformance(){
   var semId    = DB.getActiveSemesterId();
   var subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
@@ -164,7 +173,7 @@ function renderGradePerformance(){
   }
 
   var rows        = computeDashSubjectGrades(semId, subjects);
-  var withGrades  = rows.filter(function(r){ return r.point !== null; });
+  var withGrades  = rows.filter(function(r){ return r.pct !== null; });
 
   if(!withGrades.length){
     wrap.innerHTML = dashEmpty('bi-bar-chart','No grades yet','Enter grades on the Grades page.');
@@ -173,20 +182,30 @@ function renderGradePerformance(){
 
   var display = withGrades.slice(0, 7);
   var html = display.map(function(r, i){
+    var perfPct = gwaToPerformancePct(r.point);
+    // Color based on performance
+    var barColor = perfPct >= 90 ? 'linear-gradient(90deg,#34d399,#22d3ee)'
+                 : perfPct >= 80 ? 'linear-gradient(90deg,rgb(var(--accent)),rgb(var(--accent-2)))'
+                 : perfPct >= 75 ? 'linear-gradient(90deg,#fbbf24,#f472b6)'
+                 : 'linear-gradient(90deg,#fb7185,#f59e0b)';
     return '<div class="grade-bar-row">' +
       '<div class="grade-bar-label" title="' + escHtml(r.subject.desc) + '">' + escHtml(r.subject.code) + '</div>' +
-      '<div class="grade-bar-track"><div class="grade-bar-fill" id="gbar' + i + '" style="width:0%"></div></div>' +
-      '<div class="grade-bar-val">' + (r.point !== null ? r.point.toFixed(2) : '\u2013') + '</div>' +
+      '<div class="grade-bar-track"><div class="grade-bar-fill" id="gbar' + i + '" style="width:0%;background:' + barColor + '"></div></div>' +
+      '<div class="grade-bar-val-wrap">' +
+        '<span class="grade-bar-pct" id="gbarpct' + i + '">0%</span>' +
+        '<span class="grade-bar-gwa" title="GWA">(' + (r.point !== null ? r.point.toFixed(2) : '\u2013') + ')</span>' +
+      '</div>' +
     '</div>';
   }).join('');
   wrap.innerHTML = html;
 
   setTimeout(function(){
     display.forEach(function(r, i){
-      // 1.00 = 100%, 3.00 = 50%, 5.00 = 0% (lower grade = wider bar)
-      var pct = Math.round(((5 - r.point) / 4) * 100);
+      var perfPct = gwaToPerformancePct(r.point);
       var el = document.getElementById('gbar' + i);
-      if(el) el.style.width = pct + '%';
+      var pctEl = document.getElementById('gbarpct' + i);
+      if(el) el.style.width = perfPct + '%';
+      if(pctEl) pctEl.textContent = perfPct + '%';
     });
   }, 180);
 }
@@ -240,7 +259,6 @@ function renderAttendanceDonut(){
     return;
   }
 
-  // Build stacked donut: each circle has dasharray=slice gap, offset=start position
   var cumAngle = 0;
   order.forEach(function(seg){
     var el = document.getElementById(seg.id);
@@ -248,41 +266,78 @@ function renderAttendanceDonut(){
     var slice  = (seg.count / total) * circ;
     var gap    = circ - slice;
     el.setAttribute('stroke-dasharray', slice + ' ' + gap);
-    // stroke-dashoffset starts the arc. circ/4 rotates to top. Then subtract cumAngle.
     el.setAttribute('stroke-dashoffset', circ - cumAngle + '');
     cumAngle += slice;
   });
 }
 
 /* ============================================================
-   5. ACADEMIC PROGRESS BARS
+   5. ACADEMIC PROGRESS — Syllabus Coverage
    ============================================================ */
+function computeSyllabusCoverage(semId){
+  var courses = DB.getSyllabusCourses().filter(function(c){ return c.semesterId === semId; });
+  if(!courses.length) return null;
+
+  var sem = DB.getActiveSemester();
+  var totalWks = sem ? (sem.totalWeeks || 15) : 15;
+
+  // Each course has topics; each topic may have a `completed` boolean or tracked in weeks
+  // Use topic completion if available, else weeks coverage
+  var totalTopics = 0;
+  var coveredTopics = 0;
+  var hasTopicData = false;
+
+  courses.forEach(function(c){
+    if(Array.isArray(c.topics) && c.topics.length){
+      hasTopicData = true;
+      c.topics.forEach(function(t){
+        totalTopics++;
+        if(t.completed) coveredTopics++;
+      });
+    }
+  });
+
+  if(hasTopicData && totalTopics > 0){
+    return Math.round(coveredTopics / totalTopics * 100);
+  }
+
+  // Fallback: weeks coverage
+  var covered = courses.reduce(function(s,c){ return s + ((c.weeks||[]).length); }, 0);
+  var expected = courses.length * totalWks;
+  return expected > 0 ? Math.min(100, Math.round(covered / expected * 100)) : 0;
+}
+
 function renderAcademicProgress(){
   var semId    = DB.getActiveSemesterId();
-  var subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
   var tasks    = DB.getTasks().filter(function(t){ return t.semesterId === semId; });
 
-  var subPct = subjects.length > 0 ? 100 : 0;
-
-  // Syllabus coverage
-  var courses  = DB.getSyllabusCourses().filter(function(c){ return c.semesterId === semId; });
-  var sylPct   = 0;
-  if(courses.length){
-    var sem       = DB.getActiveSemester();
-    var totalWks  = sem ? (sem.totalWeeks || 15) : 15;
-    var covered   = courses.reduce(function(s,c){ return s + ((c.weeks||[]).length); }, 0);
-    var expected  = courses.length * totalWks;
-    sylPct = expected > 0 ? Math.min(100, Math.round(covered / expected * 100)) : 0;
-  }
+  // Syllabus Coverage (replaces misleading "subjects = 100%" bar)
+  var sylPct = computeSyllabusCoverage(semId);
+  if(sylPct === null) sylPct = 0;
 
   var done    = tasks.filter(function(t){ return t.status === 'completed'; }).length;
   var taskPct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
   var attPct  = computeAttendanceRate(semId) || 0;
 
-  setAcadBar('acadSubBar',  'acadSubPct',  subPct);
-  setAcadBar('acadSylBar',  'acadSylPct',  sylPct);
-  setAcadBar('acadTaskBar', 'acadTaskPct', taskPct);
-  setAcadBar('acadAttBar',  'acadAttPct',  attPct);
+  // Grade performance average
+  var subjects = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
+  var gradeRows = computeDashSubjectGrades(semId, subjects).filter(function(r){ return r.pct !== null; });
+  var gradePct = gradeRows.length
+    ? Math.round(gradeRows.reduce(function(s,r){ return s + r.pct; }, 0) / gradeRows.length)
+    : null;
+
+  setAcadBar('acadSylBar',   'acadSylPct',  sylPct);
+  setAcadBar('acadTaskBar',  'acadTaskPct', taskPct);
+  setAcadBar('acadAttBar',   'acadAttPct',  attPct);
+
+  var gradePctEl = document.getElementById('acadGradePct');
+  var gradeBarEl = document.getElementById('acadGradeBar');
+  if(gradePct !== null){
+    if(gradePctEl) gradePctEl.textContent = gradePct + '%';
+    setTimeout(function(){ if(gradeBarEl) gradeBarEl.style.width = Math.min(100, gradePct) + '%'; }, 200);
+  } else {
+    if(gradePctEl) gradePctEl.textContent = '–';
+  }
 }
 
 function setAcadBar(barId, pctId, val){
@@ -293,7 +348,61 @@ function setAcadBar(barId, pctId, val){
 }
 
 /* ============================================================
-   6. TODAY'S SCHEDULE
+   6. CONTEXTUAL SUMMARY
+   ============================================================ */
+function renderContextSummary(){
+  var wrap = document.getElementById('dashContextSummary');
+  if(!wrap) return;
+
+  var semId  = DB.getActiveSemesterId();
+  var sem    = DB.getActiveSemester();
+  var today  = todayKey();
+  var now    = new Date();
+  var msgs   = [];
+
+  // Tasks due this week
+  var weekEnd = new Date(now); weekEnd.setDate(now.getDate() + 7);
+  var weekEndStr = ymdLocal(weekEnd);
+  var tasks = DB.getTasks().filter(function(t){ return t.semesterId === semId && t.status !== 'completed'; });
+  var dueThisWeek = tasks.filter(function(t){ return t.dueDate >= today && t.dueDate <= weekEndStr; });
+  var overdue = tasks.filter(function(t){ return t.dueDate < today; });
+
+  if(overdue.length > 0){
+    msgs.push('<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>' +
+      overdue.length + ' assignment' + (overdue.length !== 1 ? 's are' : ' is') + ' overdue.');
+  }
+
+  if(dueThisWeek.length > 0){
+    msgs.push('<i class="bi bi-clock-fill me-1" style="color:rgb(var(--accent))"></i>' +
+      dueThisWeek.length + ' task' + (dueThisWeek.length !== 1 ? 's' : '') + ' due this week.');
+  }
+
+  // Days until finals
+  if(sem && sem.finalsDate){
+    var finals = new Date(sem.finalsDate + 'T00:00:00');
+    var daysToFinals = Math.ceil((finals - now) / (1000*60*60*24));
+    if(daysToFinals > 0 && daysToFinals <= 30){
+      msgs.push('<i class="bi bi-calendar-event me-1" style="color:#fbbf24"></i>' +
+        daysToFinals + ' day' + (daysToFinals !== 1 ? 's' : '') + ' until finals.');
+    }
+  }
+
+  // Syllabus coverage
+  var sylPct = computeSyllabusCoverage(semId);
+  if(sylPct !== null && sylPct > 0){
+    msgs.push('<i class="bi bi-book me-1" style="color:#34d399"></i>' +
+      'Covering ' + sylPct + '% of your syllabus.');
+  }
+
+  if(msgs.length === 0){
+    wrap.innerHTML = '<span class="ctx-neutral"><i class="bi bi-emoji-smile me-1"></i>You\'re all caught up for now.</span>';
+  } else {
+    wrap.innerHTML = msgs.map(function(m){ return '<span class="ctx-item">' + m + '</span>'; }).join('');
+  }
+}
+
+/* ============================================================
+   7. TODAY'S SCHEDULE
    ============================================================ */
 function renderTodaySchedule(){
   var wrap    = document.getElementById('dashTodaySchedule');
@@ -339,7 +448,7 @@ function renderTodaySchedule(){
 }
 
 /* ============================================================
-   7. UPCOMING TASKS (next 3)
+   8. UPCOMING TASKS (next 3)
    ============================================================ */
 function renderUpcomingTasks(){
   var wrap  = document.getElementById('dashUpcomingTasks');
@@ -431,6 +540,27 @@ function quickAddModal(type){
       '<div class="mb-2"><label>Title</label><input class="form-control" id="qaNTitle" placeholder="Note title"></div>' +
       '<div class="mb-3"><label>Content</label><textarea class="form-control" id="qaNContent" rows="4" placeholder="Write your note\u2026"></textarea></div>' +
       '<button class="btn btn-accent w-100" onclick="saveQuickNoteModal()">Save Note</button>';
+  } else if(type === 'grade'){
+    // Quick Grade: select subject then open grades page or show grade entry
+    var subs2 = DB.getSubjects().filter(function(s){ return s.semesterId === semId && !s.archived; });
+    if(!subs2.length){
+      body.innerHTML =
+        '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-mortarboard me-2"></i>Add Grade</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
+        '<p class="text-soft" style="font-size:.85rem">No subjects found for this semester. Add subjects first.</p>' +
+        '<a class="btn btn-accent w-100" href="schedule.html">Go to Schedule</a>';
+    } else {
+      body.innerHTML =
+        '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-mortarboard me-2"></i>Add Grade</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
+        '<p class="text-soft mb-2" style="font-size:.82rem">Select a subject to enter grades:</p>' +
+        '<div class="d-flex flex-column gap-2">' +
+        subs2.map(function(s){
+          return '<a class="btn btn-ghost text-start" href="grades.html" onclick="localStorage.setItem(\'sp_quick_grade_subject\',\'' + s.id + '\');return true;">' +
+            '<i class="bi bi-journal-text me-2" style="color:' + (s.color||'rgb(var(--accent))') + '"></i>' +
+            escHtml(s.code) + ' <span class="text-faint" style="font-size:.78rem">' + escHtml(s.desc||'') + '</span>' +
+            '</a>';
+        }).join('') +
+        '</div>';
+    }
   } else if(type === 'subject'){
     body.innerHTML =
       '<div class="modal-header" style="border:none;padding:0 0 12px 0"><h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>Add Subject</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>' +
@@ -462,6 +592,7 @@ function saveQuickTask(){
   renderUpcomingTasks();
   renderStatCards();
   renderAcademicProgress();
+  renderContextSummary();
 }
 
 function saveQuickNoteModal(){

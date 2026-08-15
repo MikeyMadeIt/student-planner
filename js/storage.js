@@ -20,6 +20,7 @@ const DB_KEYS = {
   semester: 'sp_semester',         // legacy single-semester (kept for migration)
   pomodoro: 'sp_pomodoro_stats',
   universityEvents: 'sp_university_events',
+  calendarEvents: 'sp_calendar_events',
   syllabusCourses: 'sp_syllabus_courses',
   semesters: 'sp_semesters',       // NEW: array of semester objects
   activeSemesterId: 'sp_active_semester_id', // NEW: active semester id
@@ -393,6 +394,10 @@ const DB = {
 
   getUniversityEvents(){ return readKey(DB_KEYS.universityEvents, []); },
   saveUniversityEvents(list){ return writeKey(DB_KEYS.universityEvents, list); },
+
+  getCalendarEvents(){ return readKey(DB_KEYS.calendarEvents, []); },
+  saveCalendarEvents(list){ return writeKey(DB_KEYS.calendarEvents, list); },
+  getCalendarEventsForSemester(semId){ return this.getCalendarEvents().filter(e=>e.semesterId===semId); },
 
   getSyllabusCourses(){ return readKey(DB_KEYS.syllabusCourses, []); },
   saveSyllabusCourses(list){ return writeKey(DB_KEYS.syllabusCourses, list); },

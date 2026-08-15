@@ -1,8 +1,11 @@
 /* ============================================================
-   GRADES.JS — Redesigned v2
-   1. Subject cards: compact collapsed view
-   2. Modal: wider assessment name, narrow score/total, live avg+weighted update
-   3. GWA Calculator: cleaner result area, total units + total courses
+   GRADES.JS — Enhanced v3
+   Features:
+   1. Grade Trend Chart (SVG line chart per subject)
+   2. Passing/Failing Alert on subject cards
+   3. Current GWA + Manual GWA Calculator (clearly separated)
+   4. Target Grade Calculator
+   5. Mobile-first responsive layout
    ============================================================ */
 
 const GRADE_TABLE = [
@@ -17,6 +20,9 @@ const GRADE_TABLE = [
   { point:3.00, min:75, max:77,  label:'Passing' },
   { point:5.00, min:0,  max:74,  label:'Failed' },
 ];
+
+const PASSING_PCT = 75; // Existing passing threshold
+
 function percentToGWA(pct){
   if(pct===null||pct===undefined||isNaN(pct)) return null;
   for(const row of GRADE_TABLE){ if(pct>=row.min) return row.point; }
@@ -52,17 +58,16 @@ function normalizeGradeRecord(g){
   });
   return g;
 }
+
 function syncGradesWithSubjects(){
   const semId = DB.getActiveSemesterId();
   const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   let allGrades = DB.getGrades().map(normalizeGradeRecord);
-  // Add missing grade records for subjects in this semester
   subjects.forEach(s=>{
     if(!allGrades.find(g=>g.subjectId===s.id)){
       allGrades.push({subjectId:s.id, semesterId:semId, components:[]});
     }
   });
-  // Ensure semesterId on existing grade records matches subject
   allGrades.forEach(g=>{
     if(!g.semesterId){
       const sub = DB.getSubject(g.subjectId);
@@ -70,7 +75,6 @@ function syncGradesWithSubjects(){
     }
   });
   DB.saveGrades(allGrades);
-  // Return only grades for active semester subjects
   return allGrades.filter(g=>subjects.some(s=>s.id===g.subjectId));
 }
 
@@ -97,6 +101,24 @@ function computeSubjectFinalPct(components){
 }
 function sumWeights(components){ return (components||[]).reduce((s,c)=>s+(+c.weight||0),0); }
 
+/* ---- Trend data extraction ---- */
+function getTrendDatapoints(components){
+  // Flatten all assessments with their component context, maintaining chronological order
+  const points = [];
+  components.forEach(c => {
+    (c.assessments||[]).forEach(a => {
+      const pct = assessmentPct(a);
+      if(pct !== null) {
+        points.push({
+          label: a.name || c.name,
+          pct: Math.round(pct * 10) / 10
+        });
+      }
+    });
+  });
+  return points;
+}
+
 /* ---- Init ---- */
 function initGrades(){
   syncGradesWithSubjects();
@@ -104,30 +126,62 @@ function initGrades(){
   renderGradeCards();
   renderGradeReferenceTable();
   renderGwaCalculator();
+  renderTargetGradeSection();
 }
 
-/* ---- Overview ---- */
+/* ---- Overview (Current GWA) ---- */
 function renderGradesOverview(){
   const semId = DB.getActiveSemesterId();
   const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   const grades = syncGradesWithSubjects();
+
   const rows = subjects.map(s=>{
     const g = grades.find(x=>x.subjectId===s.id)||{components:[]};
     const pct = computeSubjectFinalPct(g.components);
     const point = pct!==null ? percentToGWA(pct) : null;
     return {subject:s,pct,point};
-  }).filter(r=>r.pct!==null);
+  });
+
+  const scoredRows = rows.filter(r=>r.pct!==null);
+  const totalSubjects = subjects.length;
+  const scoredSubjects = scoredRows.length;
+
   let gwa=null;
-  if(rows.length){
-    const tu = rows.reduce((s,r)=>s+(+r.subject.units||0),0);
-    if(tu>0) gwa = rows.reduce((s,r)=>s+r.point*(+r.subject.units||0),0)/tu;
+  if(scoredRows.length){
+    const tu = scoredRows.reduce((s,r)=>s+(+r.subject.units||0),0);
+    if(tu>0) gwa = scoredRows.reduce((s,r)=>s+r.point*(+r.subject.units||0),0)/tu;
   }
-  document.getElementById('gGwa').textContent = gwa===null?'--':gwa.toFixed(2);
-  document.getElementById('gGwaSub').textContent = gwa===null?'1.00–5.00 scale':`${gwaLabel(gwa)} · 1.00–5.00 scale`;
+
+  const gwaEl = document.getElementById('gGwa');
+  const gwaSubEl = document.getElementById('gGwaSub');
+  const gwaStatusEl = document.getElementById('gGwaStatus');
+  const gwaStatusSubEl = document.getElementById('gGwaStatusSub');
+
+  if(gwaEl) gwaEl.textContent = gwa===null?'--':gwa.toFixed(2);
+  if(gwaSubEl){
+    if(gwa===null){
+      gwaSubEl.textContent = '1.00–5.00 scale';
+    } else {
+      gwaSubEl.textContent = `${gwaLabel(gwa)} · 1.00–5.00 scale`;
+    }
+  }
+
+  if(gwaStatusEl && gwaStatusSubEl){
+    if(scoredSubjects === 0){
+      gwaStatusEl.innerHTML = '';
+      gwaStatusSubEl.textContent = 'Add assessments to compute GWA';
+    } else if(scoredSubjects < totalSubjects){
+      gwaStatusEl.innerHTML = `<span class="grade-status-badge incomplete"><i class="bi bi-hourglass-split me-1"></i>Incomplete</span>`;
+      gwaStatusSubEl.textContent = `Based on ${scoredSubjects} of ${totalSubjects} subject${totalSubjects!==1?'s':''}`;
+    } else {
+      gwaStatusEl.innerHTML = `<span class="grade-status-badge complete"><i class="bi bi-check2-circle me-1"></i>All Subjects</span>`;
+      gwaStatusSubEl.textContent = `Based on ${scoredSubjects} subject${scoredSubjects!==1?'s':''}`;
+    }
+  }
 }
 
 /* ============================================================
-   SUBJECT CARDS — compact collapsed view
+   SUBJECT CARDS — with passing/failing alert + trend toggle
    ============================================================ */
 function renderGradeCards(){
   const wrap = document.getElementById('gradesWrap');
@@ -135,11 +189,13 @@ function renderGradeCards(){
   const sem = DB.getActiveSemester();
   const subs = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
   const grades = DB.getGrades().map(normalizeGradeRecord);
+
   if(!subs.length){
     const msg = sem ? `No subjects yet for ${sem.schoolYear} • ${sem.name}. Add subjects in Schedule.` : 'Add subjects in Schedule to start tracking grades.';
     wrap.innerHTML=`<div class="col-12"><div class="glass card-pad text-center py-5 text-faint">${msg}</div></div>`;
     return;
   }
+
   wrap.innerHTML = subs.map(s=>{
     const g = grades.find(x=>x.subjectId===s.id)||{components:[]};
     const pct = computeSubjectFinalPct(g.components);
@@ -147,41 +203,77 @@ function renderGradeCards(){
     const totalWeight = sumWeights(g.components);
     const weightWarn = g.components.length && totalWeight!==100;
     const collapseId = `gc-${s.id}`;
+    const trendId = `gt-${s.id}`;
+
+    // Passing/Failing status
+    let statusBadge = '';
+    const hasComponents = g.components.length > 0;
+    const hasAnyScores = hasComponents && g.components.some(c=>c.assessments&&c.assessments.some(a=>assessmentPct(a)!==null));
+
+    if(pct !== null){
+      if(pct >= PASSING_PCT){
+        statusBadge = `<span class="grade-pass-badge passing"><i class="bi bi-check-circle-fill"></i> Passing</span>`;
+      } else {
+        statusBadge = `<span class="grade-pass-badge failing"><i class="bi bi-exclamation-triangle-fill"></i> At Risk</span>`;
+      }
+    } else if(hasComponents && !hasAnyScores){
+      statusBadge = `<span class="grade-pass-badge no-data"><i class="bi bi-dash-circle"></i> No data</span>`;
+    }
+
+    // Trend data
+    const trendPoints = getTrendDatapoints(g.components);
+    const hasTrend = trendPoints.length >= 2;
+
     return `<div class="col-md-6 col-xl-4">
       <div class="grade-card hover-lift" style="border-left:3px solid ${s.color}">
-        <!-- Collapsed: always visible -->
+        <!-- Card top: compact three-column layout -->
         <div class="grade-card-top">
-          <div class="grade-card-info">
-            <div class="grade-card-code">${escapeHtml(s.code)}</div>
+          <div class="grade-card-left">
+            <div class="grade-card-code" title="${escapeHtml(s.code)}">${escapeHtml(s.code)}</div>
+            ${statusBadge ? `<div class="grade-card-status-row">${statusBadge}</div>` : ''}
+          </div>
+          <div class="grade-card-center">
             <div class="grade-card-pct">${pct===null?'--':pct.toFixed(1)+'%'}</div>
+            <div class="grade-card-gwa">${point===null?'—':'GWA '+point.toFixed(2)}</div>
           </div>
           <div class="grade-card-actions">
-            <span class="chip chip-sm">${point===null?'--':'GWA '+point.toFixed(2)}</span>
-            <button class="btn-icon btn-icon-sm" onclick="openGradeModal('${s.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
-            <button class="btn-icon btn-icon-sm chev-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}"><i class="bi bi-chevron-down"></i></button>
+            <button class="btn-icon btn-icon-xs" onclick="openGradeModal('${s.id}')" title="Edit grades"><i class="bi bi-pencil"></i></button>
+            <button class="btn-icon btn-icon-xs chev-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}" title="Toggle details"><i class="bi bi-chevron-down"></i></button>
           </div>
         </div>
-        <div class="progress grade-card-bar"><div class="progress-bar" style="width:${pct||0}%"></div></div>
+        <div class="progress grade-card-bar"><div class="progress-bar" style="width:${Math.min(pct||0,100)}%;background:${pct!==null&&pct<PASSING_PCT?'#fb7185':''}"></div></div>
         <!-- Expanded detail -->
         <div class="collapse" id="${collapseId}">
           <div class="grade-card-detail">
             ${s.desc?`<div class="text-faint mb-2" style="font-size:.76rem">${escapeHtml(s.desc)}</div>`:''}
             ${g.components.length ? `
-              <div class="d-flex flex-column gap-1">
+              <div class="d-flex flex-column gap-1 mb-2">
                 ${g.components.map(c=>{
                   const ws = componentWeightedScore(c);
                   const avg = componentAvgPct(c);
+                  const cPassing = avg!==null ? avg>=PASSING_PCT : null;
                   return `<div class="d-flex justify-content-between align-items-center" style="font-size:.75rem">
                     <span class="text-soft">${escapeHtml(c.name)} <span class="text-faint">(${c.weight}%)</span></span>
-                    <div class="d-flex gap-2">
-                      <span class="text-faint">${avg===null?'—':avg.toFixed(1)+'%'}</span>
+                    <div class="d-flex gap-2 align-items-center">
+                      <span style="color:${cPassing===null?'var(--text-faint)':cPassing?'#34d399':'#fb7185'}">${avg===null?'—':avg.toFixed(1)+'%'}</span>
                       <span class="mono fw-bold" style="min-width:36px;text-align:right">${ws===null?'—':ws.toFixed(2)}</span>
                     </div>
                   </div>`;
                 }).join('')}
               </div>
-              ${weightWarn?`<div class="text-faint mt-2" style="font-size:.68rem;color:rgb(var(--accent-2))"><i class="bi bi-exclamation-triangle me-1"></i>Weights total ${totalWeight}%, not 100%</div>`:''}
+              ${pct!==null&&pct<PASSING_PCT?`<div class="grade-warning-box mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Below passing threshold (${PASSING_PCT}%). Current: ${pct.toFixed(1)}%</div>`:''}
+              ${weightWarn?`<div class="text-faint mb-2" style="font-size:.68rem;color:rgb(var(--accent-2))"><i class="bi bi-exclamation-triangle me-1"></i>Weights total ${totalWeight}%, not 100%</div>`:''}
             ` : `<div class="text-faint" style="font-size:.76rem">No components yet — tap <i class="bi bi-pencil"></i> to add.</div>`}
+            ${hasTrend ? `
+              <div>
+                <button class="btn btn-ghost btn-sm w-100" style="font-size:.72rem" data-bs-toggle="collapse" data-bs-target="#${trendId}">
+                  <i class="bi bi-graph-up me-1"></i>Grade Trend (${trendPoints.length} assessments)
+                </button>
+                <div class="collapse mt-2" id="${trendId}">
+                  ${renderTrendChartHtml(trendPoints)}
+                </div>
+              </div>
+            ` : trendPoints.length===1 ? `<div class="text-faint" style="font-size:.72rem"><i class="bi bi-info-circle me-1"></i>Add more assessments to see trend</div>` : ''}
           </div>
         </div>
       </div>
@@ -189,13 +281,90 @@ function renderGradeCards(){
   }).join('');
 }
 
+/* ---- SVG Trend Chart ---- */
+function renderTrendChartHtml(points){
+  if(!points||points.length<2) return '';
+  const W = 280, H = 120, PL = 36, PR = 8, PT = 12, PB = 28;
+  const chartW = W - PL - PR;
+  const chartH = H - PT - PB;
+
+  const vals = points.map(p=>p.pct);
+  const minV = Math.max(0, Math.min(...vals) - 10);
+  const maxV = Math.min(100, Math.max(...vals) + 10);
+  const range = maxV - minV || 1;
+
+  const toX = i => PL + (i / (points.length-1)) * chartW;
+  const toY = v => PT + (1 - (v - minV) / range) * chartH;
+
+  // Polyline path
+  const pts = points.map((p,i) => `${toX(i).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ');
+
+  // Passing threshold line Y
+  const passY = toY(PASSING_PCT);
+  const showPassLine = PASSING_PCT >= minV && PASSING_PCT <= maxV;
+
+  // Y axis labels
+  const yLabels = [minV, (minV+maxV)/2, maxV].map(v=>({v:Math.round(v), y:toY(v)}));
+
+  // X labels — show max 5 to avoid clutter
+  const maxLabels = 5;
+  const step = Math.max(1, Math.ceil(points.length/maxLabels));
+  const xLabels = points.map((p,i)=>({i,label:p.label})).filter((_,i)=>i%step===0||i===points.length-1);
+
+  let svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="grade-trend-svg">
+    <defs>
+      <linearGradient id="trendGrad-${Date.now()%9999}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgb(var(--accent))" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="rgb(var(--accent))" stop-opacity="0"/>
+      </linearGradient>
+    </defs>`;
+
+  // Grid lines
+  yLabels.forEach(yl => {
+    svgContent += `<line x1="${PL}" y1="${yl.y.toFixed(1)}" x2="${W-PR}" y2="${yl.y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+    svgContent += `<text x="${PL-3}" y="${(yl.y+3).toFixed(1)}" text-anchor="end" font-size="8" fill="rgba(255,255,255,0.35)" font-family="monospace">${yl.v}</text>`;
+  });
+
+  // Passing threshold
+  if(showPassLine){
+    svgContent += `<line x1="${PL}" y1="${passY.toFixed(1)}" x2="${W-PR}" y2="${passY.toFixed(1)}" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
+    svgContent += `<text x="${W-PR-1}" y="${(passY-2).toFixed(1)}" text-anchor="end" font-size="7" fill="#fb7185" opacity="0.7">75%</text>`;
+  }
+
+  // Area fill
+  const areaId = `trendGrad-${Date.now()%9999}`;
+  const areaPath = `M${toX(0).toFixed(1)},${toY(points[0].pct).toFixed(1)} ` +
+    points.slice(1).map((p,i)=>`L${toX(i+1).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ') +
+    ` L${toX(points.length-1).toFixed(1)},${(PT+chartH).toFixed(1)} L${toX(0).toFixed(1)},${(PT+chartH).toFixed(1)} Z`;
+  svgContent += `<path d="${areaPath}" fill="rgba(124,108,246,0.12)"/>`;
+
+  // Line
+  svgContent += `<polyline points="${pts}" fill="none" stroke="rgb(var(--accent))" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // Data points
+  points.forEach((p,i)=>{
+    const cx = toX(i), cy = toY(p.pct);
+    const color = p.pct >= PASSING_PCT ? '#34d399' : '#fb7185';
+    svgContent += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" fill="${color}" stroke="var(--bg,#0a0d16)" stroke-width="1.5"/>`;
+    // Tooltip via title
+    svgContent += `<title>${p.label}: ${p.pct}%</title>`;
+  });
+
+  // X axis labels
+  xLabels.forEach(({i,label})=>{
+    const x = toX(i);
+    const truncLabel = label.length>6 ? label.slice(0,5)+'…' : label;
+    svgContent += `<text x="${x.toFixed(1)}" y="${(H-4)}" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,0.45)" font-family="sans-serif">${escapeHtml(truncLabel)}</text>`;
+  });
+
+  svgContent += `</svg>`;
+  return `<div class="grade-trend-wrap">${svgContent}</div>`;
+}
+
 /* ============================================================
    GRADE MODAL — fixed layout, live avg/weighted updates
-   Assessment grid: wide name col, narrow score/total
    ============================================================ */
 let gradeDraft=null, gradeDraftSubjectId=null;
-
-// Column layout: assessment name gets most space, score+total are narrow
 const ASSESS_GRID = '1fr 56px 56px 52px 28px';
 
 function openGradeModal(subjectId){
@@ -216,6 +385,8 @@ function renderGradeModalBody(){
   const totalWeight = sumWeights(gradeDraft.components);
   const weightWarn = totalWeight!==100 && totalWeight!==0;
 
+  const isPassing = finalPct !== null ? finalPct >= PASSING_PCT : null;
+
   body.innerHTML = `
     <p class="text-faint mb-3" style="font-size:.8rem">
       <strong>How it works:</strong> Create components (e.g., Quizzes 30%, Midterm 25%).
@@ -233,10 +404,17 @@ function renderGradeModalBody(){
     </div>`:''}
     <div class="text-center mt-4 pt-3" style="border-top:1px solid var(--border)">
       <div class="text-faint" style="font-size:.68rem;text-transform:uppercase;letter-spacing:.07em">Computed Final Grade</div>
-      <div class="stat-num" style="font-size:2rem" id="modalFinalPct">${finalPct===null?'--':finalPct.toFixed(2)+'%'}</div>
+      <div class="stat-num" style="font-size:2rem;color:${isPassing===null?'var(--text)':isPassing?'#34d399':'#fb7185'}" id="modalFinalPct">${finalPct===null?'--':finalPct.toFixed(2)+'%'}</div>
       <div class="text-faint" style="font-size:.8rem" id="modalFinalGwa">
         ${finalPct===null?'Add assessments to preview':`GWA ${percentToGWA(finalPct).toFixed(2)} · ${gwaLabel(percentToGWA(finalPct))}`}
       </div>
+      ${finalPct!==null ? `
+        <div class="mt-1" id="modalPassStatus">
+          ${isPassing
+            ? `<span class="grade-pass-badge passing"><i class="bi bi-check-circle-fill"></i> Passing (≥${PASSING_PCT}%)</span>`
+            : `<span class="grade-pass-badge failing"><i class="bi bi-exclamation-triangle-fill"></i> At Risk — ${(PASSING_PCT-finalPct).toFixed(1)}% below passing</span>`
+          }
+        </div>` : ''}
     </div>
     <button class="btn btn-accent w-100 mt-3" onclick="saveGradeComponents()">
       <i class="bi bi-check2 me-1"></i>Save Grading Breakdown
@@ -293,7 +471,7 @@ function compSummaryHtml(avg,ws){
 
 function assessmentRowHtml(ci,ai,a){
   const pct = assessmentPct(a);
-  const pctColor = pct===null?'var(--text-faint)':pct>=75?'rgb(52,211,153)':'rgb(251,113,133)';
+  const pctColor = pct===null?'var(--text-faint)':pct>=PASSING_PCT?'rgb(52,211,153)':'rgb(251,113,133)';
   return `<div id="assessRow-${ci}-${ai}" style="display:grid;grid-template-columns:${ASSESS_GRID};gap:5px;padding:3px 10px;align-items:center">
     <input class="form-control form-control-sm" placeholder="e.g., Quiz 1"
       value="${escapeHtml(a.name||'')}"
@@ -316,14 +494,12 @@ function assessmentRowHtml(ci,ai,a){
 function onAssessInput(ci,ai,field,value){
   const a = gradeDraft.components[ci].assessments[ai];
   a[field] = value==='' ? null : +value;
-  // Update just the % cell
   const pct = assessmentPct(a);
   const pctEl = document.getElementById(`assessPct-${ci}-${ai}`);
   if(pctEl){
     pctEl.textContent = pct===null?'—':pct.toFixed(1)+'%';
-    pctEl.style.color = pct===null?'var(--text-faint)':pct>=75?'rgb(52,211,153)':'rgb(251,113,133)';
+    pctEl.style.color = pct===null?'var(--text-faint)':pct>=PASSING_PCT?'rgb(52,211,153)':'rgb(251,113,133)';
   }
-  // Update component summary (avg + weighted)
   updateCompSummary(ci);
   refreshGradePreview();
 }
@@ -368,10 +544,24 @@ function removeComponent(ci){
 
 function refreshGradePreview(){
   const finalPct = computeSubjectFinalPct(gradeDraft.components);
+  const isPassing = finalPct !== null ? finalPct >= PASSING_PCT : null;
   const pctEl = document.getElementById('modalFinalPct');
   const gwaEl = document.getElementById('modalFinalGwa');
-  if(pctEl) pctEl.textContent = finalPct===null?'--':finalPct.toFixed(2)+'%';
+  const statusEl = document.getElementById('modalPassStatus');
+  if(pctEl){
+    pctEl.textContent = finalPct===null?'--':finalPct.toFixed(2)+'%';
+    pctEl.style.color = isPassing===null?'var(--text)':isPassing?'#34d399':'#fb7185';
+  }
   if(gwaEl) gwaEl.textContent = finalPct===null?'Add assessments to preview':`GWA ${percentToGWA(finalPct).toFixed(2)} · ${gwaLabel(percentToGWA(finalPct))}`;
+  if(statusEl){
+    if(finalPct===null){
+      statusEl.innerHTML='';
+    } else {
+      statusEl.innerHTML = isPassing
+        ? `<span class="grade-pass-badge passing"><i class="bi bi-check-circle-fill"></i> Passing (≥${PASSING_PCT}%)</span>`
+        : `<span class="grade-pass-badge failing"><i class="bi bi-exclamation-triangle-fill"></i> At Risk — ${(PASSING_PCT-finalPct).toFixed(1)}% below passing</span>`;
+    }
+  }
 }
 
 function saveGradeComponents(){
@@ -394,6 +584,7 @@ function saveGradeComponents(){
   gradeDraft=null; gradeDraftSubjectId=null;
   renderGradesOverview();
   renderGradeCards();
+  renderTargetGradeSection();
 }
 
 /* ---- Grade reference table ---- */
@@ -409,7 +600,186 @@ function renderGradeReferenceTable(){
 }
 
 /* ============================================================
-   GWA CALCULATOR — v2: clean result area, total units + courses
+   TARGET GRADE CALCULATOR
+   ============================================================ */
+function openTargetGradeInfo(){
+  new bootstrap.Modal(document.getElementById('targetGradeInfoModal')).show();
+}
+
+function renderTargetGradeSection(){
+  const wrap = document.getElementById('targetGradeWrap');
+  if(!wrap) return;
+  const semId = DB.getActiveSemesterId();
+  const subs = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
+
+  if(!subs.length){
+    wrap.innerHTML = `<div class="text-faint text-center py-3" style="font-size:.82rem">Add subjects to use the Target Grade calculator.</div>`;
+    return;
+  }
+
+  const subOptions = subs.map(s=>`<option value="${s.id}">${escapeHtml(s.code)}</option>`).join('');
+
+  wrap.innerHTML = `
+    <div class="tg-form-grid">
+      <div class="tg-form-field">
+        <label class="tg-label">Subject</label>
+        <select class="form-select form-select-sm" id="tgSubject" onchange="updateTargetGradeComponents()">
+          ${subOptions}
+        </select>
+      </div>
+      <div class="tg-form-field">
+        <label class="tg-label">Desired Final Grade <span class="tg-label-sub">(%)</span></label>
+        <input type="number" min="0" max="100" step="0.1" class="form-control form-control-sm" id="tgTarget" placeholder="e.g. 90" oninput="computeTargetGrade()">
+      </div>
+      <div class="tg-form-field">
+        <label class="tg-label">Remaining Component <span class="tg-label-sub">(to compute)</span></label>
+        <select class="form-select form-select-sm" id="tgComponent" onchange="computeTargetGrade()">
+          <option value="">Select component…</option>
+        </select>
+      </div>
+      <div class="tg-form-field tg-form-action">
+        <button class="btn btn-accent btn-sm w-100 mt-4 h-100" onclick="computeTargetGrade()">
+          <i class="bi bi-calculator me-1"></i>Calculate Required Score
+        </button>
+      </div>
+    </div>
+    <div id="tgResult" class="mt-2"></div>`;
+
+  updateTargetGradeComponents();
+}
+
+function updateTargetGradeComponents(){
+  const subId = document.getElementById('tgSubject')?.value;
+  if(!subId) return;
+  const grades = DB.getGrades().map(normalizeGradeRecord);
+  const g = grades.find(x=>x.subjectId===subId)||{components:[]};
+  const sel = document.getElementById('tgComponent');
+  if(!sel) return;
+  sel.innerHTML = `<option value="">Select component</option>` +
+    g.components.map(c=>`<option value="${c.id}">${escapeHtml(c.name)} (${c.weight}%)</option>`).join('');
+  document.getElementById('tgResult').innerHTML='';
+}
+
+function computeTargetGrade(){
+  const subId = document.getElementById('tgSubject')?.value;
+  const targetStr = document.getElementById('tgTarget')?.value;
+  const compId = document.getElementById('tgComponent')?.value;
+  const resultEl = document.getElementById('tgResult');
+  if(!resultEl) return;
+
+  if(!subId || !targetStr || !compId){
+    resultEl.innerHTML='';
+    return;
+  }
+
+  const target = parseFloat(targetStr);
+  if(isNaN(target) || target < 0 || target > 100){
+    resultEl.innerHTML=`<div class="tg-result-box tg-warn"><i class="bi bi-exclamation-triangle me-1"></i>Enter a valid target between 0 and 100.</div>`;
+    return;
+  }
+
+  const grades = DB.getGrades().map(normalizeGradeRecord);
+  const g = grades.find(x=>x.subjectId===subId)||{components:[]};
+  const targetComp = g.components.find(c=>c.id===compId);
+  if(!targetComp){
+    resultEl.innerHTML=`<div class="tg-result-box tg-warn">Component not found.</div>`;
+    return;
+  }
+
+  const remainingWeight = +targetComp.weight || 0;
+  if(!remainingWeight){
+    resultEl.innerHTML=`<div class="tg-result-box tg-warn">Selected component has 0% weight — cannot calculate.</div>`;
+    return;
+  }
+
+  /*
+   * ACCURATE TARGET GRADE FORMULA
+   * ─────────────────────────────
+   * Final Grade = Σ (component_avg_pct × component_weight / 100)
+   *
+   * We want:
+   *   Σ_others(avg_pct_i × w_i/100)  +  (X × remainingWeight/100) = target
+   *
+   * Solve for X (the required score in the remaining component):
+   *   X = (target - scoredWeightedSum) / (remainingWeight / 100)
+   *   X = (target - scoredWeightedSum) × (100 / remainingWeight)
+   *
+   * scoredWeightedSum = sum of (avg_pct × weight/100) for all OTHER components
+   *                     that have at least one scored assessment.
+   * Unscored components contribute 0 to the current sum (not assumed zero).
+   */
+  const otherComponents = g.components.filter(c => c.id !== compId);
+
+  // Sum of weighted contributions from scored other components
+  let scoredWeightedSum = 0;
+  let scoredOtherWeight = 0;
+  let unscoredOtherWeight = 0;
+
+  otherComponents.forEach(c => {
+    const avg = componentAvgPct(c);
+    const w = +c.weight || 0;
+    if(avg !== null){
+      scoredWeightedSum += (avg * w / 100);
+      scoredOtherWeight += w;
+    } else {
+      unscoredOtherWeight += w;
+    }
+  });
+
+  // Current effective grade from scored components (excluding target comp)
+  const currentEffectivePct = scoredWeightedSum; // already a percentage-scale value
+  // e.g. if quizzes (30%) avg 80% and projects (20%) avg 90%:
+  //   scoredWeightedSum = 80×0.30 + 90×0.20 = 24 + 18 = 42
+
+  // Required score on the remaining component
+  const requiredPct = (target - scoredWeightedSum) / (remainingWeight / 100);
+
+  // Human-readable current grade: sum all scored (including target comp if any)
+  const currentOverallPct = computeSubjectFinalPct(
+    g.components.filter(c => c.id !== compId && componentAvgPct(c) !== null)
+  );
+
+  let resultHtml = '';
+
+  if(scoredOtherWeight === 0 && otherComponents.length > 0){
+    // No data in any of the other components yet
+    resultHtml = `<div class="tg-info-box">
+      <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Current Grade</span><span class="tg-val text-faint">No data yet</span></div>
+      <div class="tg-info-row"><span class="text-faint">${escapeHtml(targetComp.name)} Weight</span><span class="tg-val">${remainingWeight}%</span></div>
+      <div class="tg-result-box tg-info mt-2"><i class="bi bi-info-circle me-1"></i>Enter scores for other components first to get an accurate required score.</div>
+    </div>`;
+  } else if(requiredPct > 100){
+    resultHtml = `<div class="tg-info-box">
+      <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Current Weighted Score</span><span class="tg-val">${scoredWeightedSum.toFixed(2)} pts</span></div>
+      <div class="tg-info-row"><span class="text-faint">${escapeHtml(targetComp.name)} Weight</span><span class="tg-val">${remainingWeight}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Required Score</span><span class="tg-val" style="color:#fb7185">${requiredPct.toFixed(1)}% <span class="text-faint">(impossible)</span></span></div>
+      ${unscoredOtherWeight > 0 ? `<div class="tg-result-box tg-warn mt-2"><i class="bi bi-info-circle me-1"></i>${unscoredOtherWeight}% in unscored components — adding scores may improve achievability.</div>` : ''}
+      <div class="tg-result-box tg-fail mt-2"><i class="bi bi-x-circle-fill me-1"></i>Target not achievable — requires ${requiredPct.toFixed(1)}% on ${escapeHtml(targetComp.name)}.</div>
+    </div>`;
+  } else if(requiredPct <= 0){
+    resultHtml = `<div class="tg-info-box">
+      <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Current Weighted Score</span><span class="tg-val" style="color:#34d399">${scoredWeightedSum.toFixed(2)} pts</span></div>
+      <div class="tg-result-box tg-pass mt-2"><i class="bi bi-trophy-fill me-1"></i>Target already achieved — even with 0% on ${escapeHtml(targetComp.name)} you will meet the target.</div>
+    </div>`;
+  } else {
+    const feasibility = requiredPct <= 100 ? 'achievable' : 'not achievable';
+    resultHtml = `<div class="tg-info-box">
+      <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Current Weighted Score</span><span class="tg-val">${scoredWeightedSum.toFixed(2)} pts <span class="text-faint">of ${(scoredOtherWeight+remainingWeight)}% available</span></span></div>
+      <div class="tg-info-row"><span class="text-faint">${escapeHtml(targetComp.name)} Weight</span><span class="tg-val">${remainingWeight}%</span></div>
+      <div class="tg-info-row"><span class="text-faint">Required Score</span><span class="tg-val" style="color:#34d399;font-size:1.1em;font-weight:800">${requiredPct.toFixed(1)}%</span></div>
+      ${unscoredOtherWeight > 0 ? `<div class="tg-info-row"><span class="text-faint">Unscored components</span><span class="tg-val text-faint">${unscoredOtherWeight}% weight not yet entered</span></div>` : ''}
+      <div class="tg-result-box tg-pass mt-2"><i class="bi bi-check-circle-fill me-1"></i>You need at least <strong>${requiredPct.toFixed(1)}%</strong> on ${escapeHtml(targetComp.name)} to reach ${target}%.</div>
+    </div>`;
+  }
+  resultEl.innerHTML = resultHtml;
+}
+
+/* ============================================================
+   GWA CALCULATOR — clearly labeled as manual utility
    ============================================================ */
 function renderGwaCalculator(){
   const wrap = document.getElementById('gwaCalcRows');
@@ -472,9 +842,6 @@ function updateGwaCalcRow(i,field,value){
   if(!rows[i]) return;
   rows[i][field] = (field==='units'||field==='grade') ? (value===''?'':+value) : value;
   DB.saveGwaCalcRows(rows);
-  // For text/number inputs: only refresh the result totals, don't re-render
-  // the rows (which destroys focus and dismisses the keyboard).
-  // For grade select (dropdown): safe to full re-render since it doesn't have focus text.
   if(field==='grade'){
     renderGwaCalculator();
   } else {
@@ -509,6 +876,7 @@ function refreshGwaTotals(rows){
   const totCoursesEl = document.getElementById('gwaTotalCourses');
   if(totCoursesEl) totCoursesEl.textContent = courseCount;
 }
+
 function addGwaCalcRow(){
   const rows = DB.getGwaCalcRows();
   rows.push({id:DB.uid(),label:'',units:'',grade:''});

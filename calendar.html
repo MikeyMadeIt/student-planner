@@ -17,75 +17,71 @@
   <main class="main-content">
     <div class="mobile-topbar"><div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div></div>
     <div class="topbar">
-      <div><h1 class="page-title">Calendar</h1><p class="page-sub" id="calSubtitle">Schedule, tasks, and university dates in one place</p></div>
+      <div><h1 class="page-title">Calendar</h1><p class="page-sub" id="calSubtitle">Classes, tasks, and events in one place</p></div>
     </div>
 
-    <!-- SCHEDULE CALENDAR -->
+    <!-- UNIFIED CALENDAR -->
     <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-calendar3"></i>Schedule Calendar</div>
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="btn-group">
-          <button class="btn btn-ghost btn-sm active" data-mode="month" onclick="setCalMode('month')">Month</button>
-          <button class="btn btn-ghost btn-sm" data-mode="week" onclick="setCalMode('week')">Week</button>
-          <button class="btn btn-ghost btn-sm" data-mode="day" onclick="setCalMode('day')">Day</button>
+
+      <!-- Header row: view toggles + add buttons -->
+      <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+        <div class="cal-view-bar" role="group">
+          <button class="cal-view-btn active" data-mode="month" onclick="setCalMode('month')">Month</button>
+          <button class="cal-view-btn" data-mode="week" onclick="setCalMode('week')">Week</button>
+          <button class="cal-view-btn" data-mode="day" onclick="setCalMode('day')">Day</button>
         </div>
-        <button class="btn btn-accent btn-sm" onclick="openScheduleModal()"><i class="bi bi-plus-lg me-1"></i>Add Schedule</button>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-ghost btn-sm" onclick="goToToday()"><i class="bi bi-arrow-return-left me-1"></i>Today</button>
+          <div class="dropdown">
+            <button class="btn btn-accent btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-plus-lg me-1"></i>Add</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" onclick="openCalEventModal();return false;"><i class="bi bi-calendar-event me-2"></i>One-off Event</a></li>
+              <li><a class="dropdown-item" href="#" onclick="openTaskModal();return false;"><i class="bi bi-check2-square me-2"></i>Task</a></li>
+              <li><a class="dropdown-item" href="#" onclick="openScheduleModal();return false;"><i class="bi bi-calendar2-week me-2"></i>Class Schedule</a></li>
+              <li><a class="dropdown-item" href="#" onclick="openUnivEventModal();return false;"><i class="bi bi-bank2 me-2"></i>University Event</a></li>
+            </ul>
+          </div>
+        </div>
       </div>
+
+      <!-- Filter toggles -->
+      <div class="cal-filter-bar mb-3">
+        <button class="cal-filter-btn f-class active" id="filter-classes" onclick="toggleFilter('classes')">
+          <span class="cal-filter-dot" style="background:#7C6CF6"></span> Classes
+        </button>
+        <button class="cal-filter-btn f-task active" id="filter-tasks" onclick="toggleFilter('tasks')">
+          <span class="cal-filter-dot" style="background:#FBBF24"></span> Tasks
+        </button>
+        <button class="cal-filter-btn f-event active" id="filter-events" onclick="toggleFilter('events')">
+          <span class="cal-filter-dot" style="background:#34D399"></span> Events
+        </button>
+        <button class="cal-filter-btn f-univ active" id="filter-univ" onclick="toggleFilter('univ')">
+          <span class="cal-filter-dot" style="background:#4F8CFF"></span> University
+        </button>
+      </div>
+
+      <!-- Nav row -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn-icon" onclick="navCal(-1)"><i class="bi bi-chevron-left"></i></button>
         <h4 class="mb-0" id="calTitle"></h4>
         <button class="btn-icon" onclick="navCal(1)"><i class="bi bi-chevron-right"></i></button>
       </div>
+
+      <!-- Calendar body -->
       <div id="calBody"></div>
     </div>
 
-    <!-- TASK CALENDAR -->
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="section-title"><i class="bi bi-check2-square"></i>Task Calendar</div>
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="btn-group">
-          <button class="btn btn-ghost btn-sm active" data-tcmode="month" onclick="setTaskCalMode('month')">Month</button>
-          <button class="btn btn-ghost btn-sm" data-tcmode="week" onclick="setTaskCalMode('week')">Week</button>
-          <button class="btn btn-ghost btn-sm" data-tcmode="day" onclick="setTaskCalMode('day')">Day</button>
-        </div>
-        <button class="btn btn-accent btn-sm" onclick="openTaskModal()"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <button class="btn-icon" onclick="navTaskCal(-1)"><i class="bi bi-chevron-left"></i></button>
-        <h4 class="mb-0" id="taskCalTitle"></h4>
-        <button class="btn-icon" onclick="navTaskCal(1)"><i class="bi bi-chevron-right"></i></button>
-      </div>
-      <div id="taskCalBody" class="mb-3"></div>
-
-      <div class="section-title" id="taskListTitle"><i class="bi bi-list-task"></i>Tasks This Month</div>
-      <div id="taskCalList"></div>
-    </div>
-
-    <!-- SEPARATE UNIVERSITY CALENDAR -->
+    <!-- EVENT LIST -->
     <div class="glass card-pad fade-in">
-      <div class="section-title"><i class="bi bi-bank2"></i>University Calendar</div>
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="btn-group">
-          <button class="btn btn-ghost btn-sm active" data-ucmode="month" onclick="setUnivCalMode('month')">Month</button>
-          <button class="btn btn-ghost btn-sm" data-ucmode="week" onclick="setUnivCalMode('week')">Week</button>
-          <button class="btn btn-ghost btn-sm" data-ucmode="day" onclick="setUnivCalMode('day')">Day</button>
-        </div>
-        <button class="btn btn-accent btn-sm" onclick="openUnivEventModal()"><i class="bi bi-plus-lg me-1"></i>Add Event</button>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <button class="btn-icon" onclick="navUnivCal(-1)"><i class="bi bi-chevron-left"></i></button>
-        <h4 class="mb-0" id="univCalTitle"></h4>
-        <button class="btn-icon" onclick="navUnivCal(1)"><i class="bi bi-chevron-right"></i></button>
-      </div>
-      <div id="univCalBody" class="mb-3"></div>
-
-      <div class="section-title" id="univListTitle"><i class="bi bi-calendar-event"></i>Events This Month</div>
-      <div id="univEventList"></div>
+      <div class="section-title" id="calEventListTitle"><i class="bi bi-list-ul"></i>All Events — This Month</div>
+      <div id="calEventList"></div>
     </div>
+
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
 
+<!-- Day Detail Modal -->
 <div class="modal fade" id="dayModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -108,6 +104,15 @@
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-body card-pad" id="calTaskModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- One-off Event Modal -->
+<div class="modal fade" id="calEventModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-body card-pad" id="calEventModalBody"></div>
     </div>
   </div>
 </div>
