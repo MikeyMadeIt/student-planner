@@ -16,18 +16,48 @@
   <nav class="sidebar" id="sidebar"></nav>
   <main class="main-content">
     <div class="mobile-topbar"><div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div></div>
-    <div class="topbar">
-      <div><h1 class="page-title">Notes</h1><p class="page-sub">Markdown-friendly notes with pins, favorites &amp; checklists</p></div>
-      <button class="btn btn-accent" onclick="openNoteModal()"><i class="bi bi-plus-lg me-1"></i>New Note</button>
+    <!-- NOTES PAGE HEADER -->
+    <div class="nt-header fade-in">
+      <div class="nt-header-text">
+        <h1 class="page-title">Notes</h1>
+        <p class="page-sub">Markdown notes with formatting, pins, favorites &amp; checklists</p>
+      </div>
+      <button class="btn btn-accent nt-add-btn" onclick="openNoteModal()"><i class="bi bi-plus-lg me-1"></i>Add Note</button>
     </div>
 
-    <div class="glass card-pad mb-3 fade-in">
-      <div class="row g-2">
-        <div class="col-md-5"><input class="form-control" id="noteSearch" placeholder="Search notes…"></div>
-        <div class="col-6 col-md-3"><select class="form-select" id="noteCatFilter"><option value="">All Categories</option><option>Homework</option><option>Project</option><option>Personal</option><option>Organization</option><option>Ideas</option></select></div>
-        <div class="col-6 col-md-2"><button class="btn-ghost btn w-100" id="favFilterBtn" onclick="toggleFavFilter()"><i class="bi bi-star"></i> Favorites</button></div>
+    <!-- NOTES CONTROLS -->
+    <div class="nt-controls glass card-pad mb-3 fade-in">
+      <div class="nt-controls-row">
+        <div class="nt-search-wrap">
+          <i class="bi bi-search nt-search-icon"></i>
+          <input class="form-control nt-search-input" id="noteSearch" placeholder="Search notes…">
+        </div>
+        <button class="nt-icon-btn" id="favFilterBtn" onclick="toggleFavFilter()" title="Favorites">
+          <i class="bi bi-star"></i>
+        </button>
+      </div>
+      <div class="nt-filters-row">
+        <select class="form-select nt-filter-sel" id="noteCatFilter">
+          <option value="">All Categories</option>
+          <option>Homework</option>
+          <option>Project</option>
+          <option>Personal</option>
+          <option>Organization</option>
+          <option>Ideas</option>
+        </select>
+        <select class="form-select nt-filter-sel" id="noteLinkFilterSel">
+          <option value="all">All Notes</option>
+          <option value="subject">By Subject</option>
+          <option value="task">By Task</option>
+          <option value="unlinked">Unlinked</option>
+        </select>
+        <select class="form-select nt-filter-sel" id="noteSubFilterSel" style="display:none"><option value="">All Subjects</option></select>
+        <select class="form-select nt-filter-sel" id="noteTaskFilterSel" style="display:none"><option value="">All Tasks</option></select>
       </div>
     </div>
+    <!-- Hidden wrappers kept for JS compatibility -->
+    <div id="noteSubFilterWrap" style="display:none"></div>
+    <div id="noteTaskFilterWrap" style="display:none"></div>
 
     <div id="notesGrid" class="row g-3 stagger"></div>
   </main>

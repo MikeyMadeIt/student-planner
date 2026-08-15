@@ -5137,3 +5137,908 @@ td { vertical-align: middle; }
   .att-log-table .att-tbl-actions{ width: 48px; }
   .att-tbl-date { font-size: .56rem; }
 }
+
+/* ============================================================
+   TASKS v2 — Recurring, Bulk Actions, Grouping, Score/Remarks
+   ============================================================ */
+
+/* Repeat badge on task card */
+.tk-repeat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: rgb(var(--accent));
+  background: rgba(var(--accent), .13);
+  border: 1px solid rgba(var(--accent), .28);
+  border-radius: 20px;
+  padding: 1px 7px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tk-repeat-badge i { font-size: .7rem; }
+
+/* Repeat hint in modal */
+.tk-repeat-hint {
+  font-size: .74rem;
+  color: var(--text-soft);
+  margin-top: 4px;
+  min-height: 1em;
+}
+
+/* ── Bulk selection (see updated styles at end of file) ── */
+
+/* Select all bar */
+.tk-select-all-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 4px 0 2px;
+}
+.tk-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: .78rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  user-select: none;
+  margin-bottom: 0;
+}
+.tk-select-all-check {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Group select-all button */
+.tk-group-select-all {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: .8rem;
+  padding: 2px 4px;
+  border-radius: 5px;
+  transition: .15s;
+  display: flex;
+  align-items: center;
+}
+.tk-group-select-all:hover { color: rgb(var(--accent)); background: rgba(var(--accent), .08); }
+
+/* Bulk action toolbar */
+.tk-bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--accent), .14);
+  border: 1px solid rgba(var(--accent), .3);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.tk-bulk-count {
+  font-size: .8rem;
+  font-weight: 700;
+  color: rgb(var(--accent));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.tk-bulk-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.tk-bulk-actions .btn { font-size: .76rem; height: 28px; padding: 0 9px; }
+
+/* ── Subject grouping ── */
+.tk-group-subject .tk-group-heading { gap: 7px; }
+.tk-group-heading-sub { font-size: .78rem; }
+.tk-sub-color-dot {
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.tk-group-sub-name {
+  font-weight: 700;
+  font-size: .78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Score & Remarks ── */
+.tk-score-section {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tk-score-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .8rem;
+}
+.tk-score-k {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  min-width: 56px;
+  padding-top: 1px;
+}
+.tk-score-v {
+  color: var(--text-soft);
+  word-break: break-word;
+  min-width: 0;
+  font-weight: 600;
+}
+.tk-remarks-v { font-weight: 400; font-style: italic; }
+
+/* ── Group sort panel extra col (Group By) ── */
+.tk-pop-section-label.mt-2 { margin-top: 10px !important; }
+
+/* Mobile tweaks for tasks */
+@media (max-width: 575.98px) {
+  .tk-bulk-toolbar { padding: 6px 10px; gap: 6px; }
+  .tk-bulk-actions { gap: 4px; }
+  .tk-bulk-actions .btn { font-size: .7rem; height: 26px; padding: 0 7px; }
+  .tk-bulk-count { font-size: .76rem; }
+  .tk-select-all-bar { padding: 2px 0; }
+  .tk-group-sub-name { font-size: .74rem; }
+}
+
+@media (max-width: 399.98px) {
+  .tk-bulk-toolbar { flex-direction: column; align-items: flex-start; }
+  .tk-bulk-actions { margin-left: 0; }
+}
+
+/* ============================================================
+   NOTES v2 — Editor toolbar, preview, checklist, badges
+   ============================================================ */
+
+/* ── Note card redesign ── */
+.note-card {
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: .25s var(--ease);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.note-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.2); }
+
+.note-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+.note-card-title {
+  font-weight: 700;
+  font-size: .88rem;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  min-width: 0;
+}
+.note-pin { color: #fbbf24; }
+.note-fav-btn { font-size: .9rem; flex-shrink: 0; cursor: pointer; padding: 2px; }
+
+.note-preview-text {
+  color: var(--text-soft);
+  font-size: .78rem;
+  line-height: 1.45;
+  max-height: 56px;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.note-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.note-link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .66rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 8px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: .01em;
+}
+.note-sub-badge {
+  background: rgba(var(--badge-color, var(--accent)), .13);
+  color: var(--badge-color, rgb(var(--accent)));
+  border: 1px solid rgba(var(--badge-color, var(--accent)), .3);
+}
+.note-task-badge {
+  background: rgba(251,191,36,.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.28);
+}
+.note-task-broken {
+  background: rgba(251,113,133,.1);
+  color: #fb7185;
+  border: 1px solid rgba(251,113,133,.25);
+}
+
+.note-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  gap: 6px;
+}
+
+/* ── Note Modal editor ── */
+.note-editor-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+.note-tab-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  padding: 4px 10px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: .15s;
+}
+.note-tab-btn:hover { color: var(--text); background: var(--surface-2); }
+.note-tab-btn.active {
+  color: rgb(var(--accent));
+  background: rgba(var(--accent), .1);
+}
+
+/* Markdown toolbar */
+.note-md-toolbar {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  padding: 5px 6px;
+  background: var(--surface-2);
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+.note-md-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .8rem;
+  color: var(--text-soft);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: .15s;
+  flex-shrink: 0;
+}
+.note-md-btn:hover {
+  background: rgba(var(--accent), .12);
+  color: rgb(var(--accent));
+}
+.note-md-btn i { font-size: .82rem; pointer-events: none; }
+
+/* Editor textarea */
+.note-editor-ta {
+  font-family: var(--font-mono, monospace);
+  font-size: .82rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 200px;
+}
+
+/* Preview pane */
+.note-preview-pane {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-height: 200px;
+  font-size: .84rem;
+  line-height: 1.65;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+/* ── Markdown rendered output ── */
+.note-preview-pane .md-h,
+#nPreview .md-h {
+  margin: .8em 0 .3em;
+  font-weight: 800;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.note-preview-pane h4.md-h, #nPreview h4.md-h { font-size: 1.05rem; }
+.note-preview-pane h5.md-h, #nPreview h5.md-h { font-size: .95rem; }
+.note-preview-pane h6.md-h, #nPreview h6.md-h { font-size: .88rem; }
+
+.md-p { margin: 0 0 .5em; min-height: 0; }
+.md-ul { margin: 0 0 .5em; padding-left: 1.4em; }
+.md-li { margin-bottom: 2px; }
+
+.md-inline-code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: .82em;
+  font-family: var(--font-mono, monospace);
+  color: rgb(var(--accent));
+}
+.md-code-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  margin: .5em 0;
+  font-size: .8rem;
+  line-height: 1.55;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Checklist items in preview */
+.md-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 3px 0;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+  transition: background .12s;
+}
+.md-checklist-item:hover { background: rgba(var(--accent), .07); }
+.md-cl-box {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .7rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+  transition: .12s;
+  color: transparent;
+}
+.md-cl-checked {
+  background: rgb(var(--accent));
+  border-color: rgb(var(--accent));
+  color: #fff;
+}
+.md-cl-text { font-size: .84rem; line-height: 1.4; word-break: break-word; }
+.md-cl-done { text-decoration: line-through; color: var(--text-faint); }
+
+/* Mobile note editor */
+@media (max-width: 575.98px) {
+  .note-md-toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .note-md-toolbar::-webkit-scrollbar { display: none; }
+  .note-editor-ta { min-height: 160px; }
+  .note-preview-pane { min-height: 160px; padding: 10px 12px; }
+  .note-link-badge { max-width: 120px; }
+}
+
+@media (max-width: 399.98px) {
+  .note-card { padding: 10px 11px; }
+  .note-card-title { font-size: .82rem; }
+  .note-md-btn { width: 26px; height: 26px; }
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .tk-card,
+  .note-card,
+  .tk-bulk-toolbar,
+  .md-checklist-item,
+  .note-md-btn,
+  .tk-bulk-check { transition: none !important; }
+}
+
+/* ============================================================
+   TASKS — Redesigned Select All, Complete button, Selected state
+   ============================================================ */
+
+/* ── Select All button in controls bar ── */
+.tk-select-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: auto !important;
+  padding: 0 10px !important;
+  font-size: .78rem !important;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 9px;
+  height: 36px;
+  flex-shrink: 0;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.tk-select-all-btn i {
+  font-size: .88rem;
+}
+.tk-select-all-btn span {
+  font-size: .78rem;
+}
+.tk-select-all-btn:hover {
+  color: rgb(var(--accent));
+  border-color: rgba(var(--accent), .35);
+  background: rgba(var(--accent), .08);
+}
+.tk-select-all-btn.tk-select-all-active {
+  color: rgb(var(--accent));
+  border-color: rgba(var(--accent), .45);
+  background: rgba(var(--accent), .12);
+  font-weight: 700;
+}
+
+/* ── Complete button inside task card ── */
+.tk-complete-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(var(--accent), .3);
+  background: rgba(var(--accent), .06);
+  color: rgb(var(--accent));
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .15s;
+  letter-spacing: .01em;
+}
+.tk-complete-btn i {
+  font-size: .78rem;
+  flex-shrink: 0;
+}
+.tk-complete-btn span {
+  font-size: .72rem;
+}
+.tk-complete-btn:hover {
+  background: rgba(var(--accent), .18);
+  border-color: rgba(var(--accent), .55);
+  transform: scale(1.03);
+}
+.tk-complete-btn-done {
+  border-color: rgba(52, 211, 153, .3);
+  background: rgba(52, 211, 153, .06);
+  color: #34d399;
+}
+.tk-complete-btn-done:hover {
+  background: rgba(52, 211, 153, .15);
+  border-color: rgba(52, 211, 153, .55);
+}
+
+/* ── Task selected state — distinct from completed ── */
+.tk-card.tk-selected {
+  border-color: rgba(var(--accent), .55) !important;
+  box-shadow: 0 0 0 2px rgba(var(--accent), .18), inset 0 0 0 1px rgba(var(--accent), .08) !important;
+  background: rgba(var(--accent), .04) !important;
+}
+.tk-card.tk-selected .tk-card-header {
+  background: rgba(var(--accent), .04);
+}
+
+/* Bulk check — larger touch target, visually distinct from complete */
+.tk-bulk-check {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: .15s;
+  flex-shrink: 0;
+  color: transparent;
+  font-size: .72rem;
+  padding: 0;
+  margin-right: 4px;
+}
+.tk-bulk-check:hover {
+  border-color: rgba(var(--accent), .5);
+  background: rgba(var(--accent), .08);
+}
+.tk-bulk-check.selected {
+  background: rgb(var(--accent));
+  border-color: rgb(var(--accent));
+  color: #fff;
+}
+
+/* Remove the old plain checkbox from task header */
+.tk-checkbox { display: none !important; }
+
+/* Bulk clear button */
+.tk-bulk-clear {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Mobile: hide complete button label text, show icon only */
+@media (max-width: 480px) {
+  .tk-complete-btn span { display: none; }
+  .tk-complete-btn { padding: 0 7px; gap: 0; }
+  .tk-select-all-btn span { display: none; }
+  .tk-select-all-btn { padding: 0 9px !important; width: 36px !important; justify-content: center; }
+}
+
+/* prefers-reduced-motion for new elements */
+@media (prefers-reduced-motion: reduce) {
+  .tk-complete-btn,
+  .tk-select-all-btn,
+  .tk-bulk-check { transition: none !important; }
+}
+
+/* ============================================================
+   NOTES — Redesigned header, controls, and card improvements
+   ============================================================ */
+
+/* ── Notes page header ── */
+.nt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.nt-header-text {
+  min-width: 0;
+  flex: 1;
+}
+.nt-add-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+/* ── Notes controls panel ── */
+.nt-controls {
+  margin-bottom: 16px;
+  padding: 10px 12px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nt-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nt-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.nt-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  font-size: .85rem;
+  pointer-events: none;
+}
+.nt-search-input {
+  padding-left: 32px !important;
+  height: 36px !important;
+  font-size: .85rem !important;
+}
+.nt-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.nt-icon-btn:hover {
+  color: rgb(var(--accent));
+  border-color: rgba(var(--accent), .35);
+  background: rgba(var(--accent), .08);
+}
+.nt-icon-btn.btn-accent,
+.nt-icon-btn[class*="btn-accent"] {
+  color: rgb(var(--accent));
+  border-color: rgba(var(--accent), .45);
+  background: rgba(var(--accent), .14);
+}
+.nt-filters-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.nt-filter-sel {
+  height: 34px !important;
+  font-size: .8rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* ── Note card header improvements ── */
+.note-card-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.note-card-title {
+  font-weight: 700;
+  font-size: .88rem;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  min-width: 0;
+}
+
+/* ── Favorite button redesign ── */
+.note-fav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: .88rem;
+  transition: color .15s, background .15s;
+  line-height: 1;
+}
+.note-fav-btn:hover {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, .1);
+}
+.note-fav-btn.note-fav-active {
+  color: #fbbf24;
+}
+.note-fav-btn.note-fav-active:hover {
+  color: #f59e0b;
+  background: rgba(251, 191, 36, .15);
+}
+.note-fav-btn i {
+  pointer-events: none;
+}
+
+/* Note card footer date */
+.note-footer-date {
+  font-size: .68rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* Mobile notes layout */
+@media (max-width: 575.98px) {
+  .nt-header { flex-direction: row; align-items: flex-start; flex-wrap: nowrap; }
+  .nt-add-btn { font-size: .82rem; padding: 6px 12px; }
+  .nt-filters-row { gap: 5px; }
+  .nt-filter-sel { min-width: 100px; font-size: .76rem !important; }
+}
+
+@media (max-width: 399.98px) {
+  .nt-header { flex-direction: column; }
+  .nt-add-btn { width: 100%; justify-content: center; }
+  .nt-filter-sel { min-width: 90px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-fav-btn,
+  .nt-icon-btn { transition: none !important; }
+}
+
+/* ============================================================
+   TASKS — Fixed bulk action bar v3
+   ============================================================ */
+
+/* Bulk toolbar: always single row, no wrap */
+.tk-bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--accent), .10);
+  border: 1px solid rgba(var(--accent), .28);
+  border-radius: 12px;
+  padding: 7px 12px;
+  margin-bottom: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.tk-bulk-count {
+  font-size: .78rem;
+  font-weight: 700;
+  color: rgb(var(--accent));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.tk-bulk-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  align-items: center;
+}
+
+/* New bulk action button style */
+.tk-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-size: .75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .14s, border-color .14s, color .14s;
+  line-height: 1;
+}
+.tk-bulk-btn i { font-size: .78rem; flex-shrink: 0; }
+.tk-bulk-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: rgba(var(--accent), .4);
+}
+
+/* Complete button — accent tint */
+.tk-bulk-complete {
+  border-color: rgba(var(--accent), .3);
+  background: rgba(var(--accent), .08);
+  color: rgb(var(--accent));
+}
+.tk-bulk-complete:hover {
+  background: rgba(var(--accent), .18);
+  border-color: rgba(var(--accent), .55);
+  color: rgb(var(--accent));
+}
+
+/* Reopen button — green tint */
+.tk-bulk-reopen {
+  border-color: rgba(52, 211, 153, .28);
+  background: rgba(52, 211, 153, .07);
+  color: #34d399;
+}
+.tk-bulk-reopen:hover {
+  background: rgba(52, 211, 153, .16);
+  border-color: rgba(52, 211, 153, .5);
+  color: #34d399;
+}
+
+/* Delete button — danger tint */
+.tk-bulk-delete {
+  border-color: rgba(251, 113, 133, .28);
+  background: rgba(251, 113, 133, .07);
+  color: #fb7185;
+}
+.tk-bulk-delete:hover {
+  background: rgba(251, 113, 133, .16);
+  border-color: rgba(251, 113, 133, .5);
+  color: #fb7185;
+}
+
+/* Clear button — icon only */
+.tk-bulk-clear {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-faint);
+}
+.tk-bulk-clear:hover {
+  background: var(--surface-2);
+  border-color: rgba(var(--accent), .3);
+  color: var(--text-soft);
+}
+
+/* Mobile: keep toolbar compact, one row */
+@media (max-width: 575.98px) {
+  .tk-bulk-toolbar { padding: 6px 9px; gap: 5px; }
+  .tk-bulk-btn { height: 26px; padding: 0 7px; font-size: .7rem; gap: 3px; }
+  .tk-bulk-btn i { font-size: .72rem; }
+  .tk-bulk-count { font-size: .72rem; }
+  .tk-bulk-clear { width: 26px; }
+}
+
+/* Very small screens: hide labels, show icons only */
+@media (max-width: 360px) {
+  .tk-bulk-complete span,
+  .tk-bulk-reopen span { display: none; }
+  .tk-bulk-complete,
+  .tk-bulk-reopen { padding: 0 8px; gap: 0; }
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .tk-bulk-btn { transition: none !important; }
+}

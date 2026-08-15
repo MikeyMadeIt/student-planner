@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <!-- Hidden state inputs — read by JS, not shown to user -->
+    <!-- Hidden state inputs -->
     <input type="hidden" id="tkSort" value="due">
     <input type="hidden" id="tkCatFilter" value="">
     <input type="hidden" id="tkSubFilter" value="">
@@ -61,17 +61,20 @@
         <i class="bi bi-search tk-search-icon"></i>
         <input class="form-control tk-search-input" id="tkSearch" placeholder="Search tasks…">
       </div>
+      <button class="tk-icon-btn tk-select-all-btn" id="selectAllBtn" title="Select all tasks">
+        <i class="bi bi-square"></i><span>Select</span>
+      </button>
       <button class="tk-icon-btn" id="filterBtn" title="Filter by status">
         <i class="bi bi-funnel"></i>
         <span class="tk-btn-dot" id="filterDot" style="display:none"></span>
       </button>
-      <button class="tk-icon-btn" id="sortBtn" title="Sort and filter">
+      <button class="tk-icon-btn" id="sortBtn" title="Sort, filter and group">
         <i class="bi bi-sliders2"></i>
         <span class="tk-btn-dot" id="sortDot" style="display:none"></span>
       </button>
     </div>
 
-    <!-- FILTER PANEL (status) - inline below controls -->
+    <!-- FILTER PANEL (status) -->
     <div class="tk-panel" id="filterPanel" style="display:none">
       <div class="tk-pop-section-label">Status</div>
       <div class="tk-panel-opts">
@@ -82,7 +85,7 @@
       </div>
     </div>
 
-    <!-- SORT PANEL - inline below controls -->
+    <!-- SORT PANEL -->
     <div class="tk-panel tk-panel-wide" id="sortPanel" style="display:none">
       <div class="tk-panel-cols">
         <div class="tk-panel-col">
@@ -94,6 +97,11 @@
             <button class="tk-panel-opt" data-sort="updated">Recently Updated</button>
             <button class="tk-panel-opt" data-sort="alpha">Alphabetical</button>
           </div>
+          <div class="tk-pop-section-label mt-2">Group By</div>
+          <div class="tk-panel-opts">
+            <button class="tk-panel-opt active" data-groupby="none">None</button>
+            <button class="tk-panel-opt" data-groupby="subject">Subject</button>
+          </div>
         </div>
         <div class="tk-panel-col">
           <div class="tk-pop-section-label">Category</div>
@@ -103,6 +111,7 @@
             <button class="tk-panel-opt" data-cat="Assignment">Assignment</button>
             <button class="tk-panel-opt" data-cat="Project">Project</button>
             <button class="tk-panel-opt" data-cat="Exam">Exam</button>
+            <button class="tk-panel-opt" data-cat="Quiz">Quiz</button>
             <button class="tk-panel-opt" data-cat="Homework">Homework</button>
             <button class="tk-panel-opt" data-cat="Personal">Personal</button>
             <button class="tk-panel-opt" data-cat="Organization">Organization</button>
@@ -117,6 +126,7 @@
         </div>
       </div>
     </div>
+
     <!-- TASK GROUPS -->
     <div id="tkGroups"></div>
 
