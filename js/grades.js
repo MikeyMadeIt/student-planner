@@ -637,12 +637,10 @@ function renderTargetGradeSection(){
           <option value="">Select component…</option>
         </select>
       </div>
-      <div class="tg-form-field tg-form-action">
-        <button class="btn btn-accent btn-sm w-100 mt-4 h-100" onclick="computeTargetGrade()">
-          <i class="bi bi-calculator me-1"></i>Calculate Required Score
-        </button>
-      </div>
     </div>
+    <button class="btn btn-accent w-100 tg-calc-btn" onclick="computeTargetGrade()">
+      <i class="bi bi-calculator me-1"></i>Calculate Target Grade
+    </button>
     <div id="tgResult" class="mt-2"></div>`;
 
   updateTargetGradeComponents();

@@ -4515,3 +4515,625 @@ td { vertical-align: middle; }
 .att-log-header { display: revert; }
 .att-log-header { display: none !important; }
 
+
+/* ============================================================
+   STUDENT PLANNER — PATCH v5
+   Changes:
+   1. Target Grade — Calculate button below inputs, full width
+   2. Online control — matches other form field heights
+   3. Attendance Log — redesigned horizontal rows with headers,
+      centered status, separated actions, pagination, notes-only
+   ============================================================ */
+
+/* ---- 1. Target Grade: button below inputs ---- */
+.tg-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+@media (min-width: 576px) {
+  .tg-form-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+/* Remove the old tg-form-action col that was beside inputs */
+.tg-form-action { display: none !important; }
+
+.tg-calc-btn {
+  margin-top: 2px;
+  padding: 9px 0;
+  font-size: .88rem;
+  font-weight: 700;
+  border-radius: var(--radius, 10px);
+}
+
+/* ---- 2. Online control — match height of sibling form fields ---- */
+/*
+   Bootstrap form-select-sm and form-control-sm render at
+   calc(1.5em + 0.5rem + 2px) ≈ 31px in default Bootstrap 5.
+   We use the exact same formula via min-height so it matches
+   regardless of custom font sizing on the host.
+*/
+.att-online-pill {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+}
+.att-online-pill-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  /* Exact same height formula as Bootstrap form-select-sm */
+  min-height: calc(1.5em + 0.5rem + 2px);
+  height: calc(1.5em + 0.5rem + 2px);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-soft);
+  transition: background .18s, border-color .18s, color .18s;
+  user-select: none;
+  white-space: nowrap;
+}
+/* Hover — subtle, clearly different from active */
+.att-online-pill:hover .att-online-pill-inner {
+  border-color: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.07);
+  color: var(--text);
+}
+/* Checked/selected — clearly distinct cyan highlight */
+.att-online-check:checked ~ .att-online-pill-inner {
+  background: rgba(6,182,212,.16);
+  border-color: rgba(6,182,212,.6);
+  color: #06b6d4;
+  font-weight: 700;
+}
+.att-online-check:checked ~ .att-online-pill-inner i {
+  color: #06b6d4;
+}
+
+/* ---- 3. Attendance Log redesign ---- */
+
+/* Container meta label */
+.att-log-count-label {
+  font-size: .68rem;
+  color: var(--text-faint);
+  text-align: right;
+  padding: 0 4px 6px;
+  letter-spacing: .02em;
+}
+
+/* Grid columns:
+   dot | date | course | status (centered) | actions
+   We give status its own column with justify-content:center
+   and use gap to separate actions from status */
+.att-log-row {
+  display: grid;
+  grid-template-columns: 14px 76px minmax(54px, 1fr) minmax(90px, auto) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: transparent;
+  font-size: .78rem;
+  transition: background .12s;
+  margin-bottom: 0;
+}
+.att-log-row:last-child { border-bottom: none; }
+.att-log-row:hover { background: rgba(255,255,255,.03); }
+
+/* Header row */
+.att-log-header-row {
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+  padding: 4px 6px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.att-log-header-row:hover { background: transparent; }
+
+/* Dot column */
+.att-log-col-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.att-log-dot-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Date column */
+.att-log-col-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .7rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+/* Course column */
+.att-log-col-subject {
+  font-weight: 700;
+  font-size: .8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status column — centered badge */
+.att-log-col-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Actions column — right-aligned, spaced from status */
+.att-log-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding-left: 6px;
+}
+
+/* Action buttons */
+.att-action-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: .74rem;
+  transition: all .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.att-notes-btn {
+  color: rgb(var(--accent));
+  background: rgba(var(--accent),.08);
+  border-color: rgba(var(--accent),.2);
+}
+.att-notes-btn:hover {
+  background: rgba(var(--accent),.18);
+  border-color: rgba(var(--accent),.4);
+}
+.att-delete-btn:hover {
+  color: #fb7185;
+  background: rgba(251,113,133,.12);
+  border-color: rgba(251,113,133,.3);
+}
+
+/* Show More button */
+.att-log-show-more {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+.att-log-show-more-btn {
+  font-size: .78rem;
+  gap: 4px;
+}
+.att-log-more-count {
+  color: var(--text-faint);
+  font-size: .72rem;
+}
+
+/* ---- Responsive: attendance log ---- */
+@media (max-width: 575.98px) {
+  .att-log-row {
+    grid-template-columns: 10px 68px minmax(44px, 1fr) auto auto;
+    gap: 7px;
+    padding: 6px 4px;
+    font-size: .72rem;
+  }
+  .att-log-col-date { font-size: .64rem; }
+  .att-log-col-subject { font-size: .72rem; }
+  .att-status-badge { font-size: .56rem; padding: 2px 5px; }
+  .att-online-chip { font-size: .52rem; padding: 1px 4px; margin-left: 2px; }
+  .att-action-btn { width: 26px; height: 26px; font-size: .68rem; }
+}
+@media (max-width: 399.98px) {
+  .att-log-row {
+    grid-template-columns: 8px 60px minmax(38px, 1fr) auto auto;
+    gap: 5px;
+    padding: 5px 3px;
+    font-size: .68rem;
+  }
+  .att-log-col-date { font-size: .6rem; }
+  .att-log-col-subject { font-size: .68rem; }
+  .att-status-badge { font-size: .52rem; padding: 2px 4px; }
+}
+@media (max-width: 359.98px) {
+  .att-log-row {
+    grid-template-columns: 6px 56px minmax(32px, 1fr) auto auto;
+    gap: 4px;
+    padding: 5px 2px;
+  }
+  .att-log-col-date { font-size: .56rem; }
+}
+
+/* ---- Kill stale conflicting rules (final override) ---- */
+.att-log-header { display: none !important; }
+.att-action-placeholder { display: none !important; }
+
+/* ============================================================
+   PATCH v5.1 — Three targeted fixes
+   1. Status header left-aligned (matches badge start)
+   2. Count label in card header row (inline style)
+   3. Online pill exact height match on mobile
+   ============================================================ */
+
+/* -- Fix 1: Status column — left-align header & badge, not centered -- */
+.att-log-col-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* -- Fix 2: Count label in header row — no top padding, inline style -- */
+.att-log-count-label {
+  font-size: .68rem;
+  color: var(--text-faint);
+  letter-spacing: .02em;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+/* -- Fix 3: Online pill — use same sizing as Bootstrap form-select-sm exactly --
+   Bootstrap 5 sets form-select-sm height via:
+     padding: 0.25rem 2.25rem 0.25rem 0.5rem
+     font-size: .875rem
+     line-height: 1.5
+   That gives a natural height of ~31px.
+   We replicate this precisely and also enforce it at every breakpoint. */
+.att-online-pill {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+.att-online-pill-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  /* Mirror Bootstrap form-select-sm padding + line-height exactly */
+  padding: 0.25rem 0.5rem;
+  min-height: calc(1.5em + 0.5rem + 2px);
+  line-height: 1.5;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+  color: var(--text-soft);
+  transition: background .18s, border-color .18s, color .18s;
+  user-select: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.att-online-pill:hover .att-online-pill-inner {
+  border-color: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.07);
+  color: var(--text);
+}
+.att-online-check:checked ~ .att-online-pill-inner {
+  background: rgba(6,182,212,.16);
+  border-color: rgba(6,182,212,.6);
+  color: #06b6d4;
+  font-weight: 700;
+}
+.att-online-check:checked ~ .att-online-pill-inner i {
+  color: #06b6d4;
+}
+
+/* Ensure the col wrapper stretches so pill fills it */
+.col-6.col-sm-3:has(> .att-online-pill),
+.col-6:has(> .att-online-pill) {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* Online col wrapper — ensures pill stretches to fill label+input height */
+.att-online-col {
+  display: flex;
+  flex-direction: column;
+}
+.att-online-col .att-online-pill {
+  flex: 1;
+  align-items: stretch;
+}
+.att-online-col .att-online-pill-inner {
+  flex: 1;
+  /* Force same height as sibling form-select-sm and form-control-sm */
+  height: calc(1.5em + 0.5rem + 2px);
+  min-height: calc(1.5em + 0.5rem + 2px);
+}
+
+/* ============================================================
+   PATCH v5.2 — DEFINITIVE FIXES (highest specificity, last wins)
+   ============================================================ */
+
+/* === STATUS COLUMN: left-align, not centered === */
+.att-log-row .att-log-col-status,
+.att-log-header-row .att-log-col-status {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+/* === ONLINE PILL: match Bootstrap form-select-sm height exactly ===
+   Replace all conflicting rules with a single !important block.
+   Bootstrap form-select-sm natural height = padding-top(0.25rem)
+   + line-height(1.5) * font-size(0.875rem) + padding-bottom(0.25rem)
+   + border(2px) = ~31px.
+   We hard-code this and also ensure the col wrapper stretches. */
+.att-online-col {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.att-online-col .att-online-pill {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  cursor: pointer;
+  margin: 0;
+}
+.att-online-col .att-online-pill-inner,
+.att-online-pill-inner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+  /* Exactly replicate Bootstrap form-select-sm box */
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  /* Fixed height matching Bootstrap sm controls */
+  height: 31px !important;
+  min-height: 31px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: rgba(255,255,255,.04) !important;
+  color: var(--text-soft) !important;
+  transition: background .18s, border-color .18s, color .18s !important;
+  user-select: none;
+  white-space: nowrap;
+  box-sizing: border-box !important;
+}
+.att-online-pill:hover .att-online-pill-inner {
+  border-color: rgba(255,255,255,.22) !important;
+  background: rgba(255,255,255,.07) !important;
+  color: var(--text) !important;
+}
+.att-online-check:checked ~ .att-online-pill-inner {
+  background: rgba(6,182,212,.16) !important;
+  border-color: rgba(6,182,212,.6) !important;
+  color: #06b6d4 !important;
+  font-weight: 700 !important;
+}
+.att-online-check:checked ~ .att-online-pill-inner i {
+  color: #06b6d4 !important;
+}
+
+/* ============================================================
+   PATCH v5.3 — FINAL HEIGHT FIX
+   The theme overrides form-control/select font-size to .9rem.
+   Bootstrap sm formula: padding(0.25rem top + 0.25rem bottom)
+   + line-height(1.5) × font-size(.9rem) + border(2px)
+   = 0.5rem + 1.35rem + 2px = 1.85rem + 2px ≈ 31.6px at 16px base
+   We match with the same font-size and explicit height.
+   ============================================================ */
+.att-online-pill-inner {
+  font-size: .9rem !important;
+  height: calc(1.5 * 0.9rem + 0.5rem + 2px) !important;
+  min-height: calc(1.5 * 0.9rem + 0.5rem + 2px) !important;
+}
+
+/* ============================================================
+   PATCH v5.4 — Online toggle as native form-select-sm label
+   Inherits exact height from .form-select / .form-select-sm
+   so it perfectly matches siblings at every screen size.
+   ============================================================ */
+
+/* Base toggle — inherits form-select-sm height automatically */
+.att-online-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  font-weight: 600 !important;
+  color: var(--text-soft) !important;
+  /* Remove the dropdown arrow Bootstrap adds to form-select */
+  background-image: none !important;
+  padding-right: 0.5rem !important;
+  text-align: center !important;
+  transition: background .18s, border-color .18s, color .18s !important;
+  /* Hide the actual checkbox */
+}
+.att-online-toggle-btn .att-online-check {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Hover — subtle */
+.att-online-toggle-btn:hover {
+  border-color: rgba(255,255,255,.25) !important;
+  background-color: rgba(255,255,255,.07) !important;
+  color: var(--text) !important;
+}
+
+/* Active/checked — use JS to add class since CSS :has() may not apply to label */
+.att-online-toggle-btn.is-online {
+  background-color: rgba(6,182,212,.16) !important;
+  border-color: rgba(6,182,212,.6) !important;
+  color: #06b6d4 !important;
+  font-weight: 700 !important;
+}
+.att-online-toggle-btn.is-online .att-online-icon {
+  color: #06b6d4;
+}
+
+/* Hide old pill styles to prevent conflicts */
+.att-online-pill,
+.att-online-pill-inner,
+.att-online-col { all: unset; }
+
+/* ============================================================
+   PATCH v6 — Attendance Log as HTML table (replaces all grid CSS)
+   Tables guarantee header/data column alignment with zero fighting.
+   ============================================================ */
+
+.att-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Column widths — fixed so header and data always align */
+.att-log-table .att-tbl-dot    { width: 25px; }
+.att-log-table .att-tbl-date   { width: 100px; }
+.att-log-table .att-tbl-course { width: 120px;}
+.att-log-table .att-tbl-status { width: 120px; }
+.att-log-table .att-tbl-actions{ width: 80px; }
+
+/* Header */
+.att-tbl-head th {
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+  padding: 4px 6px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.att-tbl-head .att-tbl-actions {
+  text-align: right;
+}
+
+/* Data rows */
+.att-tbl-row td {
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  vertical-align: middle;
+  font-size: .78rem;
+}
+.att-tbl-row:last-child td { border-bottom: none; }
+.att-tbl-row:hover td { background: rgba(255,255,255,.03); }
+
+/* Dot cell */
+.att-tbl-row .att-tbl-dot {
+  padding-left: 5px;
+  padding-right: 10px;
+}
+.att-log-dot-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Date */
+.att-tbl-date {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .7rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+/* Course */
+.att-tbl-course {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status — left-aligned, badge starts at left edge of cell */
+.att-tbl-status {
+  text-align: left;
+}
+
+/* Actions — right-aligned buttons */
+.att-tbl-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.att-tbl-actions .att-action-btn {
+  display: inline-flex;
+}
+
+/* Responsive — shrink cols on mobile */
+@media (max-width: 575.98px) {
+  .att-log-table .att-tbl-dot    { width: 15px; }
+  .att-log-table .att-tbl-date   { width: 80px; }
+  .att-log-table .att-tbl-course { width: 90px; }
+  .att-log-table .att-tbl-status { width: 100px; }
+  .att-log-table .att-tbl-actions{ width: 70px; }
+
+  .att-tbl-row td { padding: 7px 4px; font-size: .72rem; }
+  .att-tbl-date { font-size: .65rem; }
+  .att-tbl-course { font-size: .72rem; }
+  .att-status-badge { font-size: .56rem; padding: 2px 5px; }
+  .att-online-chip { font-size: .52rem; padding: 1px 4px; margin-left: 2px; }
+  .att-action-btn { width: 26px; height: 26px; font-size: .68rem; }
+}
+@media (max-width: 399.98px) {
+  .att-log-table .att-tbl-dot    { width: 10px; }
+  .att-log-table .att-tbl-date   { width: 40px; }
+  .att-log-table .att-tbl-status { width: 78px; }
+  .att-log-table .att-tbl-actions{ width: 54px; }
+
+  .att-tbl-row td { padding: 6px 3px; font-size: .68rem; }
+  .att-tbl-date { font-size: .6rem; }
+  .att-status-badge { font-size: .52rem; padding: 2px 4px; }
+  .att-action-btn { width: 24px; height: 24px; font-size: .64rem; }
+}
+@media (max-width: 359.98px) {
+  .att-log-table .att-tbl-status { width: 70px; }
+  .att-log-table .att-tbl-actions{ width: 48px; }
+  .att-tbl-date { font-size: .56rem; }
+}

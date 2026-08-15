@@ -52,6 +52,17 @@ function initAttendance(){
     ? subs.map(s => `<option value="${s.id}">${escapeAttHtml(s.code)}</option>`).join('')
     : '<option value="">No subjects</option>';
   document.getElementById('attDate').value = todayKey();
+
+  // Wire online toggle button
+  const onlineCheckbox = document.getElementById('attOnline');
+  const onlineBtn = document.querySelector('.att-online-toggle-btn');
+  if (onlineBtn && onlineCheckbox) {
+    onlineBtn.addEventListener('click', function() {
+      // checkbox state already toggled by label click
+      onlineBtn.classList.toggle('is-online', onlineCheckbox.checked);
+    });
+  }
+
   renderAttendanceAll();
 }
 
@@ -77,6 +88,11 @@ function logAttendance(){
     records.push({ id: DB.uid(), subjectId, date, status, online, notes, semesterId: semId });
   }
   DB.saveAttendance(records);
+  // Reset online toggle
+  const cb = document.getElementById('attOnline');
+  if (cb) cb.checked = false;
+  const btn = document.querySelector('.att-online-toggle-btn');
+  if (btn) btn.classList.remove('is-online');
   Toast.show('Attendance logged');
   renderAttendanceAll();
 }
@@ -329,8 +345,10 @@ function renderSubjectBreakdown(){
     </div>`).join('');
 }
 
-/* ---- Attendance Log — single horizontal row per record ---- */
-function renderLog(){
+/* ---- Attendance Log — table layout, paginated ---- */
+const ATT_LOG_PAGE_SIZE = 10;
+
+function renderLog(showAll){
   const semId = DB.getActiveSemesterId();
   const subs = DB.getSubjects();
   const records = [...DB.getAttendance().filter(r => r.semesterId === semId)]
@@ -339,43 +357,64 @@ function renderLog(){
 
   if(!records.length){
     wrap.innerHTML = `<div class="text-faint text-center py-5 att-log-empty"><i class="bi bi-calendar3"></i><div>No attendance logged yet</div></div>`;
+    // Clear count label
+    const cl = document.getElementById('attLogCountLabel');
+    if(cl) cl.textContent = '';
     return;
   }
 
-  // header row
-  const header = `<div class="att-log-row att-log-header-row">
-    <span class="att-log-col-dot"></span>
-    <span class="att-log-col-date">Date</span>
-    <span class="att-log-col-subject">Subject</span>
-    <span class="att-log-col-status">Status</span>
-    <span class="att-log-col-actions"></span>
-  </div>`;
+  const total = records.length;
+  const displayCount = showAll ? total : Math.min(ATT_LOG_PAGE_SIZE, total);
+  const displayRecords = records.slice(0, displayCount);
+  const hasMore = total > ATT_LOG_PAGE_SIZE && !showAll;
 
-  const rows = records.map(r => {
+  // Update count label in card header
+  const countLabelEl = document.getElementById('attLogCountLabel');
+  if(countLabelEl){
+    countLabelEl.textContent = total > ATT_LOG_PAGE_SIZE ? `Showing ${displayCount} of ${total} records` : '';
+  }
+
+  function buildRow(r) {
     const s = subs.find(x => x.id === r.subjectId);
     const dotColor = s ? s.color : '#888';
     const statusClass = r.status === 'No Classes' ? 'noclasses' : r.status.toLowerCase().replace(/\s+/g, '');
     const statusDisplay = r.status === 'No Classes' ? 'No Class' : r.status;
     const onlinePill = r.online ? `<span class="att-online-chip">Online</span>` : '';
     const hasNotes = r.notes && r.notes.trim().length > 0;
+    const dateFormatted = r.date ? r.date.replace(/^\d{4}-/, '').replace('-', '/') : r.date;
 
-    return `<div class="att-log-row">
-      <span class="att-log-col-dot"><span class="att-log-dot-circle" style="background:${dotColor}"></span></span>
-      <span class="att-log-col-date">${r.date}</span>
-      <span class="att-log-col-subject" title="${s ? escapeAttHtml(s.code) : 'Unknown'}">${s ? escapeAttHtml(s.code) : '—'}</span>
-      <span class="att-log-col-status">
-        <span class="att-status-badge ${statusClass}">${statusDisplay}${onlinePill}</span>
-      </span>
-      <span class="att-log-col-actions">
+    return `<tr class="att-tbl-row">
+      <td class="att-tbl-dot"><span class="att-log-dot-circle" style="background:${dotColor}"></span></td>
+      <td class="att-tbl-date">${dateFormatted}</td>
+      <td class="att-tbl-course" title="${s ? escapeAttHtml(s.code) : 'Unknown'}">${s ? escapeAttHtml(s.code) : '—'}</td>
+      <td class="att-tbl-status"><span class="att-status-badge ${statusClass}">${statusDisplay}${onlinePill}</span></td>
+      <td class="att-tbl-actions">
         ${hasNotes
           ? `<button class="att-action-btn att-notes-btn" onclick="showAttNote(event,'${escapeAttJs(r.notes)}','${r.date}','${s ? escapeAttJs(s.code) : 'Unknown'}')" title="View note"><i class="bi bi-chat-left-text-fill"></i></button>`
-          : `<span class="att-action-placeholder"></span>`}
+          : ''}
         <button class="att-action-btn att-delete-btn" onclick="deleteAttendance('${r.id}')" title="Delete"><i class="bi bi-trash3"></i></button>
-      </span>
-    </div>`;
-  }).join('');
+      </td>
+    </tr>`;
+  }
 
-  wrap.innerHTML = header + rows;
+  const showMoreHtml = hasMore
+    ? `<div class="att-log-show-more"><button class="btn btn-ghost btn-sm att-log-show-more-btn" onclick="renderLog(true)"><i class="bi bi-chevron-down me-1"></i>Show More <span class="att-log-more-count">(${total - displayCount} more)</span></button></div>`
+    : '';
+
+  wrap.innerHTML = `<table class="att-log-table">
+    <thead>
+      <tr class="att-tbl-head">
+        <th class="att-tbl-dot"></th>
+        <th class="att-tbl-date">Date</th>
+        <th class="att-tbl-course">Course</th>
+        <th class="att-tbl-status">Status</th>
+        <th class="att-tbl-actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${displayRecords.map(buildRow).join('')}
+    </tbody>
+  </table>` + showMoreHtml;
 }
 
 function escapeAttJs(s){
