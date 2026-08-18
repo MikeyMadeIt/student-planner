@@ -23,7 +23,7 @@
         <h1 class="page-title">Tasks</h1>
         <p class="page-sub">Stay on top of your academic and personal work.</p>
       </div>
-      <button class="btn btn-accent" onclick="openTaskModal()"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
+      <button class="btn btn-accent" onclick="openTaskModal()" aria-label="Add new task"><i class="bi bi-plus-lg me-1"></i>Add Task</button>
     </div>
 
     <!-- STATS ROW -->
@@ -31,7 +31,7 @@
       <div class="tk-stat-card glass">
         <div class="tk-stat-icon tk-stat-icon-total"><i class="bi bi-list-check"></i></div>
         <div class="tk-stat-num" id="statTotal">0</div>
-        <div class="tk-stat-lbl">Total Tasks</div>
+        <div class="tk-stat-lbl">Total</div>
       </div>
       <div class="tk-stat-card glass">
         <div class="tk-stat-icon tk-stat-icon-active"><i class="bi bi-hourglass-split"></i></div>
@@ -41,7 +41,7 @@
       <div class="tk-stat-card glass">
         <div class="tk-stat-icon tk-stat-icon-done"><i class="bi bi-check-circle"></i></div>
         <div class="tk-stat-num tk-stat-done" id="statDone">0</div>
-        <div class="tk-stat-lbl">Completed</div>
+        <div class="tk-stat-lbl">Done</div>
       </div>
       <div class="tk-stat-card glass">
         <div class="tk-stat-icon tk-stat-icon-overdue"><i class="bi bi-exclamation-triangle"></i></div>
@@ -50,80 +50,22 @@
       </div>
     </div>
 
-    <!-- Hidden state inputs -->
-    <input type="hidden" id="tkSort" value="due">
-    <input type="hidden" id="tkCatFilter" value="">
-    <input type="hidden" id="tkSubFilter" value="">
-
     <!-- CONTROLS -->
     <div class="tk-controls fade-in">
       <div class="tk-search-wrap">
-        <i class="bi bi-search tk-search-icon"></i>
-        <input class="form-control tk-search-input" id="tkSearch" placeholder="Search tasks…">
+        <i class="bi bi-search tk-search-icon" aria-hidden="true"></i>
+        <input class="form-control tk-search-input" id="tkSearch" placeholder="Search tasks…" autocomplete="off" aria-label="Search tasks">
       </div>
-      <button class="tk-icon-btn tk-select-all-btn" id="selectAllBtn" title="Select all tasks">
+      <button class="tk-icon-btn tk-select-all-btn" id="selectAllBtn" title="Select all tasks" aria-label="Select all tasks">
         <i class="bi bi-square"></i><span>Select</span>
       </button>
-      <button class="tk-icon-btn" id="filterBtn" title="Filter by status">
-        <i class="bi bi-funnel"></i>
-        <span class="tk-btn-dot" id="filterDot" style="display:none"></span>
-      </button>
-      <button class="tk-icon-btn" id="sortBtn" title="Sort, filter and group">
+      <button class="tk-icon-btn tk-filter-btn" id="filterSortBtn" title="Filter and sort tasks" aria-label="Filter and sort tasks" aria-haspopup="dialog">
         <i class="bi bi-sliders2"></i>
-        <span class="tk-btn-dot" id="sortDot" style="display:none"></span>
+        <span class="tk-filter-badge" id="filterBadge" style="display:none"></span>
       </button>
-    </div>
-
-    <!-- FILTER PANEL (status) -->
-    <div class="tk-panel" id="filterPanel" style="display:none">
-      <div class="tk-pop-section-label">Status</div>
-      <div class="tk-panel-opts">
-        <button class="tk-panel-opt active" id="fopt-all" data-filter="all">All</button>
-        <button class="tk-panel-opt" id="fopt-active" data-filter="active">Active</button>
-        <button class="tk-panel-opt" id="fopt-completed" data-filter="completed">Completed</button>
-        <button class="tk-panel-opt" id="fopt-overdue" data-filter="overdue">Overdue</button>
-      </div>
-    </div>
-
-    <!-- SORT PANEL -->
-    <div class="tk-panel tk-panel-wide" id="sortPanel" style="display:none">
-      <div class="tk-panel-cols">
-        <div class="tk-panel-col">
-          <div class="tk-pop-section-label">Sort By</div>
-          <div class="tk-panel-opts">
-            <button class="tk-panel-opt active" data-sort="due">Due Date</button>
-            <button class="tk-panel-opt" data-sort="priority">Priority</button>
-            <button class="tk-panel-opt" data-sort="created">Recently Created</button>
-            <button class="tk-panel-opt" data-sort="updated">Recently Updated</button>
-            <button class="tk-panel-opt" data-sort="alpha">Alphabetical</button>
-          </div>
-          <div class="tk-pop-section-label mt-2">Group By</div>
-          <div class="tk-panel-opts">
-            <button class="tk-panel-opt active" data-groupby="none">None</button>
-            <button class="tk-panel-opt" data-groupby="subject">Subject</button>
-          </div>
-        </div>
-        <div class="tk-panel-col">
-          <div class="tk-pop-section-label">Category</div>
-          <div class="tk-panel-opts">
-            <button class="tk-panel-opt active" data-cat="">All</button>
-            <button class="tk-panel-opt" data-cat="Academic">Academic</button>
-            <button class="tk-panel-opt" data-cat="Assignment">Assignment</button>
-            <button class="tk-panel-opt" data-cat="Project">Project</button>
-            <button class="tk-panel-opt" data-cat="Exam">Exam</button>
-            <button class="tk-panel-opt" data-cat="Quiz">Quiz</button>
-            <button class="tk-panel-opt" data-cat="Homework">Homework</button>
-            <button class="tk-panel-opt" data-cat="Personal">Personal</button>
-            <button class="tk-panel-opt" data-cat="Organization">Organization</button>
-            <button class="tk-panel-opt" data-cat="Other">Other</button>
-          </div>
-        </div>
-        <div class="tk-panel-col">
-          <div class="tk-pop-section-label">Subject</div>
-          <div class="tk-panel-opts" id="tkSubOptions">
-            <button class="tk-panel-opt active" data-sub="">All</button>
-          </div>
-        </div>
+      <div class="tk-view-toggle" role="group" aria-label="View mode">
+        <button class="tk-view-btn active" id="tkViewList" title="List view" aria-label="List view" aria-pressed="true"><i class="bi bi-list-ul"></i></button>
+        <button class="tk-view-btn" id="tkViewBoard" title="Board view" aria-label="Board view" aria-pressed="false"><i class="bi bi-kanban"></i></button>
       </div>
     </div>
 
