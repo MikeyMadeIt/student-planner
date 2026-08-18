@@ -11,7 +11,6 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="css/style.css" rel="stylesheet">
-
 </head>
 <body>
 <div class="app-shell">
@@ -55,17 +54,25 @@
       <div style="font-size:.67rem;color:var(--text-faint)" id="dashSemDates">— · — days to end</div>
     </div>
 
-    <!-- QUICK ACTIONS — 8 equal-width, Export always last -->
-    <div class="row g-2 mb-3 dash-card-anim" id="quickActionsRow">
-      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('task');return false;"><i class="bi bi-plus-square"></i><span>Add Task</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('note');return false;"><i class="bi bi-sticky"></i><span>Add Note</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('grade');return false;"><i class="bi bi-mortarboard"></i><span>Grade</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('subject');return false;"><i class="bi bi-journal-plus"></i><span>Subject</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="schedule.html"><i class="bi bi-calendar2-week"></i><span>Schedule</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="grades.html"><i class="bi bi-mortarboard"></i><span>Grades</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="attendance.html"><i class="bi bi-person-check"></i><span>Attendance</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="calendar.html"><i class="bi bi-calendar3"></i><span>Calendar</span></a></div>
-      <div class="col"><a class="qa-btn qa-btn-full" href="settings.html#data" onclick="window.exportData?window.exportData():location.href='settings.html#data';return false;"><i class="bi bi-download"></i><span>Export</span></a></div>
+    <!-- DUE TODAY BANNER -->
+    <div id="dueTodayBanner" class="due-today-banner mb-3 dash-card-anim" style="display:none"></div>
+
+    <!-- QUICK ACTIONS — Primary visible + More overflow -->
+    <div class="dash-card-anim mb-3">
+      <div class="qa-primary-row" id="quickActionsRow">
+        <a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('task');return false;"><i class="bi bi-plus-square"></i><span>Add Task</span></a>
+        <a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('note');return false;"><i class="bi bi-sticky"></i><span>Add Note</span></a>
+        <a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('grade');return false;"><i class="bi bi-mortarboard"></i><span>Add Grade</span></a>
+        <a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('subject');return false;"><i class="bi bi-journal-plus"></i><span>Subject</span></a>
+        <a class="qa-btn qa-btn-full" href="#" onclick="quickAddModal('attendance');return false;"><i class="bi bi-person-check"></i><span>Attendance</span></a>
+        <a class="qa-btn qa-btn-full" href="tasks.html"><i class="bi bi-list-check"></i><span>Tasks</span></a>
+        <!-- More button -->
+        <div class="qa-more-wrap">
+          <button class="qa-btn qa-btn-full" id="qaMoreBtn" onclick="openQASheet()" aria-label="More actions">
+            <i class="bi bi-three-dots"></i><span>More</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- STAT CARDS -->
@@ -100,6 +107,35 @@
       </div>
     </div>
 
+    <!-- TIP full width -->
+    <div class="mb-2 dash-card-anim">
+      <div class="widget-card tip-widget-card" id="dashTipWidget">
+        <div class="tip-icon-wrap"><i class="bi bi-lightbulb-fill tip-icon"></i></div>
+        <div class="tip-body">
+          <div class="tip-label">STUDENT TIP</div>
+          <div class="tip-text">Loading tip…</div>
+        </div>
+      </div>
+    </div>
+    <!-- WEATHER + STREAK side by side -->
+    <div class="row g-2 mb-3 dash-card-anim">
+      <div class="col-6">
+        <div class="widget-card weather-widget-card" id="dashWeatherWidget">
+          <div class="weather-loading-state"><i class="bi bi-cloud"></i><span>Loading…</span></div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="widget-card streak-widget-card" id="dashStreakWidget">
+          <div class="streak-icon-wrap"><i class="bi bi-lightning-charge-fill streak-icon"></i></div>
+          <span class="streak-num" id="streakNumVal">–</span>
+          <div class="streak-text-stack">
+            <div class="streak-label-row">DAY STREAK</div>
+            <div class="streak-sub-txt">Tasks completed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- GRADE PERFORMANCE + ATTENDANCE DONUT -->
     <div class="row g-3 mb-3">
       <div class="col-md-6 dash-card-anim">
@@ -114,19 +150,17 @@
       <div class="col-md-6 dash-card-anim">
         <div class="glass card-pad h-100">
           <div class="dash-section-title"><i class="bi bi-pie-chart-fill"></i>Attendance Overview</div>
-          <div class="d-flex align-items-center gap-16" style="gap:18px">
+          <div class="donut-legend-wrap">
             <div class="donut-wrap">
-              <svg width="110" height="110" viewBox="0 0 110 110">
-                <circle cx="55" cy="55" r="44" fill="none" stroke="var(--surface-2)" stroke-width="12"/>
-                <circle id="donutPresent" cx="55" cy="55" r="44" fill="none" stroke="#7c6cf6" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1)"/>
-                <circle id="donutLate" cx="55" cy="55" r="44" fill="none" stroke="#fbbf24" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .15s"/>
-                <circle id="donutExcused" cx="55" cy="55" r="44" fill="none" stroke="#34d399" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .25s"/>
-                <circle id="donutAbsent" cx="55" cy="55" r="44" fill="none" stroke="#fb7185" stroke-width="12" stroke-linecap="butt" stroke-dasharray="276.46" stroke-dashoffset="276.46" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .35s"/>
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="50" fill="none" stroke="var(--surface-2)" stroke-width="13"/>
+                <circle id="donutPresent" cx="65" cy="65" r="50" fill="none" stroke="#7c6cf6" stroke-width="13" stroke-linecap="butt" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1)"/>
+                <circle id="donutLate"    cx="65" cy="65" r="50" fill="none" stroke="#fbbf24" stroke-width="13" stroke-linecap="butt" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .15s"/>
+                <circle id="donutExcused" cx="65" cy="65" r="50" fill="none" stroke="#34d399" stroke-width="13" stroke-linecap="butt" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .25s"/>
+                <circle id="donutAbsent"  cx="65" cy="65" r="50" fill="none" stroke="#fb7185" stroke-width="13" stroke-linecap="butt" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1.2s cubic-bezier(.22,.9,.35,1) .35s"/>
+                <text id="donutPct" x="65" y="60" text-anchor="middle" dominant-baseline="auto" class="donut-svg-pct">–</text>
+                <text x="65" y="78" text-anchor="middle" dominant-baseline="auto" class="donut-svg-sub">ATTENDANCE</text>
               </svg>
-              <div class="donut-center">
-                <div class="donut-pct" id="donutPct">–</div>
-                <div class="donut-sub">Attend.</div>
-              </div>
             </div>
             <div class="att-legend" id="donutLegend">
               <div class="att-legend-row"><div class="att-dot" style="background:#7c6cf6"></div><span class="att-legend-label">Present</span><span class="att-legend-val" id="attPresent">–</span></div>
@@ -140,8 +174,12 @@
       </div>
     </div>
 
-    <!-- CONTEXTUAL SUMMARY -->
+    <!-- WHAT NEEDS YOUR ATTENTION -->
     <div class="glass card-pad mb-3 dash-card-anim ctx-summary-card">
+      <div class="ctx-summary-header">
+        <i class="bi bi-bell-fill ctx-summary-bell"></i>
+        <span class="ctx-summary-title">WHAT NEEDS YOUR ATTENTION</span>
+      </div>
       <div id="dashContextSummary" class="ctx-summary-content"></div>
     </div>
 
@@ -203,6 +241,23 @@
 <div class="modal fade" id="quickModal" tabindex="-1" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content card-pad" id="quickModalBody"></div>
+  </div>
+</div>
+
+<!-- More Actions Bottom Sheet -->
+<div class="qa-sheet-overlay" id="qaSheetOverlay" onclick="closeQASheet()"></div>
+<div class="qa-sheet" id="qaSheet">
+  <div class="qa-sheet-handle"></div>
+  <div class="qa-sheet-title">More Actions</div>
+  <div class="qa-sheet-grid">
+    <a class="qa-sheet-item" href="grades.html"><i class="bi bi-mortarboard-fill"></i><span>Grades</span></a>
+    <a class="qa-sheet-item" href="attendance.html"><i class="bi bi-person-check-fill"></i><span>Attendance</span></a>
+    <a class="qa-sheet-item" href="schedule.html"><i class="bi bi-calendar2-week-fill"></i><span>Schedule</span></a>
+    <a class="qa-sheet-item" href="calendar.html"><i class="bi bi-calendar3-fill"></i><span>Calendar</span></a>
+    <a class="qa-sheet-item" href="syllabus.html"><i class="bi bi-journal-bookmark-fill"></i><span>Syllabus</span></a>
+    <a class="qa-sheet-item" href="notes.html"><i class="bi bi-journal-text"></i><span>Notes</span></a>
+    <a class="qa-sheet-item" href="settings.html"><i class="bi bi-gear-fill"></i><span>Settings</span></a>
+    <a class="qa-sheet-item" href="settings.html#data"><i class="bi bi-download"></i><span>Export</span></a>
   </div>
 </div>
 

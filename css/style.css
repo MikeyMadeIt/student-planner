@@ -6321,49 +6321,82 @@ textarea:focus-visible {
 /* grade-bar-val-wrap, .grade-bar-pct, .grade-bar-gwa defined in style.css */
 
 /* Donut chart */
+.donut-wrap svg {
+  transform: rotate(-90deg);
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* SVG text elements need counter-rotation to be readable */
+.donut-wrap svg text {
+  transform-origin: 65px 65px;
+  transform: rotate(90deg);
+}
+.donut-svg-pct {
+  font-family: var(--font-mono), monospace;
+  font-weight: 800;
+  font-size: 18px;
+  fill: rgb(var(--accent));
+}
+.donut-svg-sub {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  fill: var(--text-faint);
+  text-transform: uppercase;
+}
+.donut-legend-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
+}
 .donut-wrap {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  min-width: 120px;
+  height: 120px;
   flex-shrink: 0;
+  align-self: center;
 }
-.donut-wrap svg { transform: rotate(-90deg); }
-.donut-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.donut-wrap svg {
+  transform: rotate(-90deg);
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.donut-pct {
-  font-family: var(--font-mono);
+/* SVG text elements need counter-rotation to be readable */
+.donut-wrap svg text {
+  transform-origin: 65px 65px;
+  transform: rotate(90deg);
+}
+.donut-svg-pct {
+  font-family: var(--font-mono), monospace;
   font-weight: 800;
-  font-size: 1.15rem;
-  line-height: 1;
-  background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-2)));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 18px;
+  fill: rgb(var(--accent));
 }
-.donut-sub {
-  font-size: .55rem;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: .05em;
+.donut-svg-sub {
+  font-size: 7.5px;
   font-weight: 700;
+  letter-spacing: .06em;
+  fill: var(--text-faint);
+  text-transform: uppercase;
 }
 .att-legend {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-evenly;
   flex: 1;
+  min-height: 120px;
 }
 .att-legend-row {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: .73rem;
+  flex: 1;
+  max-height: 32px;
 }
 .att-dot {
   width: 8px;
@@ -6371,8 +6404,8 @@ textarea:focus-visible {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.att-legend-label { color: var(--text-soft); flex: 1; }
-.att-legend-val { font-family: var(--font-mono); font-weight: 700; font-size: .7rem; }
+.att-legend-label { color: var(--text-soft); flex: 1; font-size: .72rem; }
+.att-legend-val { font-family: var(--font-mono); font-weight: 700; font-size: .68rem; text-align: right; white-space: nowrap; }
 
 /* Academic progress bars */
 .acad-row {
@@ -6493,22 +6526,19 @@ textarea:focus-visible {
 
 /* Quick actions full-width variant */
 .qa-btn-full {
-  width: 100%;
-  justify-content: center;
+  display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 6px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
   border-radius: 12px;
   text-align: center;
+  white-space: nowrap;
 }
-.qa-btn-full i { font-size: 1.05rem; }
-.qa-btn-full span { font-size: .65rem; font-weight: 700; letter-spacing: .02em; color: var(--text-soft); }
+.qa-btn-full i { font-size: 1.1rem; }
+.qa-btn-full span { font-size: .62rem; font-weight: 700; letter-spacing: .02em; color: var(--text-soft); display: block; }
 .qa-btn-full:hover span { color: var(--text); }
-@media (max-width: 575px) {
-  #quickActionsRow .col { min-width: 0; }
-  .qa-btn-full span { display: none; }
-  .qa-btn-full { padding: 10px 4px; }
-}
 
 /* view-all link */
 .view-all-link {
@@ -6611,3 +6641,475 @@ textarea:focus-visible {
 }
 .qa-btn i { color: rgb(var(--accent)); font-size: .88rem; }
 .qa-btn:hover { background: rgba(var(--accent),.12); border-color: rgba(var(--accent),.35); color: var(--text); transform: translateY(-2px); }
+
+/* ============================================================
+   DASHBOARD ENHANCEMENTS — v2
+   ============================================================ */
+
+/* ---- Due Today Banner ---- */
+.due-today-banner {
+  background: linear-gradient(135deg, rgba(251,113,133,.14), rgba(251,113,133,.06));
+  border: 1px solid rgba(251,113,133,.3);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+.due-today-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.due-today-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.due-today-icon {
+  font-size: 1.15rem;
+  color: #fb7185;
+  flex-shrink: 0;
+}
+.due-today-title {
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: #fb7185;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.due-today-msg {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.due-today-btn {
+  flex-shrink: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(251,113,133,.2);
+  border: 1px solid rgba(251,113,133,.35);
+  color: #fb7185;
+  text-decoration: none;
+  transition: background .18s, border-color .18s;
+  white-space: nowrap;
+}
+.due-today-btn:hover { background: rgba(251,113,133,.3); color: #fb7185; border-color: rgba(251,113,133,.5); }
+
+/* ---- Quick Actions — Restructured ---- */
+.qa-primary-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.qa-primary-row::-webkit-scrollbar { display: none; }
+.qa-primary-row .qa-btn-full {
+  flex: 0 0 auto;
+  min-width: 64px;
+}
+/* QA More dropdown */
+.qa-more-wrap { position: relative; flex-shrink: 0; }
+.qa-more-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--nav-bg);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  min-width: 160px;
+  z-index: 200;
+  box-shadow: 0 12px 32px rgba(0,0,0,.35);
+}
+.qa-more-dropdown.qa-more-open { display: block; animation: dashCardIn .22s var(--ease) both; }
+.qa-more-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  font-size: .78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.qa-more-item i { color: rgb(var(--accent)); font-size: .85rem; width: 16px; flex-shrink: 0; }
+.qa-more-item:hover { background: var(--surface-2); color: var(--text); }
+
+/* ---- Shared widget card base ---- */
+.widget-card {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  overflow: hidden;
+}
+
+/* ---- Streak Widget ---- */
+.streak-widget-card {
+  background: linear-gradient(135deg, rgba(251,191,36,.08), rgba(249,115,22,.05));
+  border-color: rgba(251,191,36,.2);
+  gap: 10px;
+}
+.streak-icon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(251,191,36,.3), rgba(249,115,22,.22));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.streak-icon { font-size: 1.15rem; color: #fbbf24; }
+.streak-num {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 2.2rem;
+  line-height: 1;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+.streak-text-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.streak-label-row {
+  font-size: .58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.streak-sub-txt {
+  font-size: .62rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Weather Widget ---- */
+.weather-widget-card {
+  background: linear-gradient(135deg, rgba(59,130,246,.09), rgba(56,189,248,.05));
+  border-color: rgba(59,130,246,.18);
+  gap: 10px;
+}
+.weather-icon-box {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(56,189,248,.2));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.weather-wi { font-size: 1.2rem; color: #60a5fa; }
+.weather-num {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.weather-unit { font-size: .85rem; font-weight: 700; color: var(--text-soft); }
+.weather-text-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.weather-cond {
+  font-size: .62rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.weather-city {
+  font-size: .58rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.weather-city i { margin-right: 2px; font-size: .52rem; }
+.weather-loading-state, .weather-unavail-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-faint);
+  font-size: .72rem;
+  width: 100%;
+}
+.weather-loading-state i, .weather-unavail-state i { font-size: 1.2rem; color: #60a5fa; }
+.weather-unavail-state { opacity: .65; }
+
+/* ---- Tip Widget — full width row ---- */
+.tip-widget-card {
+  background: linear-gradient(135deg, rgba(52,211,153,.07), rgba(34,211,238,.04));
+  border-color: rgba(52,211,153,.16);
+  gap: 12px;
+  height: 64px;
+  width: 100%;
+}
+.tip-icon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(52,211,153,.28), rgba(34,211,238,.18));
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tip-icon { font-size: 1.1rem; color: #34d399; }
+.tip-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.tip-label {
+  font-size: .58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.tip-text {
+  font-size: .72rem;
+  color: var(--text-soft);
+  line-height: 1.35;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- QA Bottom Sheet ---- */
+.qa-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1040;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity .25s;
+}
+.qa-sheet-overlay.qa-sheet-overlay-open {
+  display: block;
+  opacity: 1;
+}
+.qa-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 12px 20px 40px;
+  z-index: 1050;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.22,.9,.35,1);
+}
+.qa-sheet.qa-sheet-open {
+  transform: translateY(0);
+}
+.qa-sheet-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.qa-sheet-title {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.qa-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.qa-sheet-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  text-decoration: none;
+  font-size: .65rem;
+  font-weight: 700;
+  text-align: center;
+  transition: background .15s, color .15s, transform .15s;
+}
+.qa-sheet-item i {
+  font-size: 1.3rem;
+  color: rgb(var(--accent));
+}
+.qa-sheet-item:hover, .qa-sheet-item:active {
+  background: rgba(var(--accent),.12);
+  border-color: rgba(var(--accent),.3);
+  color: var(--text);
+  transform: scale(.97);
+}
+
+/* ---- Contextual Summary — Improved ---- */
+.ctx-summary-card {
+  padding: 12px 16px !important;
+}
+.ctx-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ctx-summary-bell {
+  font-size: .72rem;
+  color: rgb(var(--accent));
+}
+.ctx-summary-title {
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--text-faint);
+}
+.ctx-summary-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  font-size: .78rem;
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.ctx-neutral {
+  color: var(--text-faint);
+  font-size: .78rem;
+}
+
+/* ---- Upcoming tasks section labels ---- */
+.upcoming-section-label {
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+.upcoming-overdue-label { color: #fb7185; }
+.task-row-overdue {
+  border-color: rgba(251,113,133,.2) !important;
+  background: rgba(251,113,133,.04) !important;
+}
+.task-row-icon-overdue {
+  background: rgba(251,113,133,.14) !important;
+  color: #fb7185 !important;
+}
+
+/* ---- Mobile responsive refinements ---- */
+@media (max-width: 575px) {
+  .main-content { padding: 16px 14px 80px; }
+
+  /* Stat cards more compact on mobile */
+  .stat-card { padding: 10px 10px; }
+  .stat-card-val { font-size: 1.35rem; }
+  .stat-card-icon { font-size: .8rem; margin-bottom: 4px; }
+  .stat-card-lbl { font-size: .6rem; margin-top: 2px; }
+
+  /* Donut legend on narrow screens */
+  .att-legend-label { font-size: .66rem; }
+  .att-legend-val { font-size: .63rem; }
+
+  /* Due today compact */
+  .due-today-msg { font-size: .74rem; }
+
+  /* Widget cards on mobile */
+  .widget-card { height: 68px; padding: 0 11px; gap: 8px; }
+  .streak-icon-wrap, .weather-icon-box, .tip-icon-wrap { width: 32px; height: 32px; }
+  .streak-icon, .weather-wi { font-size: 1rem; }
+  .streak-num { font-size: 1.8rem; }
+  .streak-label-row { font-size: .54rem; }
+  .streak-sub-txt { font-size: .58rem; }
+  .weather-num { font-size: 1.8rem; }
+  .weather-cond { font-size: .58rem; }
+  .weather-city { font-size: .54rem; }
+  .tip-text { font-size: .64rem; }
+
+  /* Sem overview tighter */
+  .sem-overview { padding: 12px 14px; }
+  .sem-label { font-size: .92rem; }
+
+  /* Grade bar labels shorter */
+  .grade-bar-label { min-width: 64px; max-width: 64px; font-size: .67rem; }
+
+  /* schedule/task rows */
+  .sched-time { min-width: 60px; font-size: .6rem; }
+  .sched-code { font-size: .78rem; }
+
+  /* ctx-summary on mobile */
+  .ctx-summary-content { font-size: .74rem; gap: 5px 10px; }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+  /* Tablet tweaks */
+  .qa-primary-row .qa-btn-full { min-width: 70px; }
+}
+
+@media (min-width: 768px) {
+  /* Desktop: wider grade label */
+  .grade-bar-label { min-width: 96px; max-width: 96px; }
+  /* Desktop widget cards slightly taller */
+  .widget-card { height: 78px; }
+}
+
+/* ---- Prefers reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .dash-card-anim { animation: none !important; }
+  .sem-progress-fill { transition: none !important; }
+  .grade-bar-fill { transition: none !important; }
+  .acad-bar-fill { transition: none !important; }
+}
+
