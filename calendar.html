@@ -20,75 +20,113 @@
       <div><h1 class="page-title">Calendar</h1><p class="page-sub" id="calSubtitle">Classes, tasks, and events in one place</p></div>
     </div>
 
-    <!-- UNIFIED CALENDAR -->
-    <div class="glass card-pad mb-3 fade-in">
+    <!-- CALENDAR LAYOUT: two-column on desktop, stacked on mobile -->
+    <div class="cal-layout">
 
-      <!-- Header row: view toggles + add buttons -->
-      <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <div class="cal-view-bar" role="group">
-          <button class="cal-view-btn active" data-mode="month" onclick="setCalMode('month')">Month</button>
-          <button class="cal-view-btn" data-mode="week" onclick="setCalMode('week')">Week</button>
-          <button class="cal-view-btn" data-mode="day" onclick="setCalMode('day')">Day</button>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-          <button class="btn btn-ghost btn-sm" onclick="goToToday()"><i class="bi bi-arrow-return-left me-1"></i>Today</button>
-          <div class="dropdown">
-            <button class="btn btn-accent btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-plus-lg me-1"></i>Add</button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="#" onclick="openCalEventModal();return false;"><i class="bi bi-calendar-event me-2"></i>One-off Event</a></li>
-              <li><a class="dropdown-item" href="#" onclick="openTaskModal();return false;"><i class="bi bi-check2-square me-2"></i>Task</a></li>
-              <li><a class="dropdown-item" href="#" onclick="openScheduleModal();return false;"><i class="bi bi-calendar2-week me-2"></i>Class Schedule</a></li>
-              <li><a class="dropdown-item" href="#" onclick="openUnivEventModal();return false;"><i class="bi bi-bank2 me-2"></i>University Event</a></li>
-            </ul>
+      <!-- LEFT / MAIN COLUMN -->
+      <div class="cal-main-col">
+        <div class="glass card-pad mb-3 fade-in">
+
+          <!-- Toolbar Row 1: [prev] [date] [next + add] -->
+          <div class="cal-toolbar-row1">
+            <button class="btn-icon" onclick="navCal(-1)" aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+            <h4 class="mb-0 cal-title-text" id="calTitle"></h4>
+            <div class="cal-nav-right">
+              <button class="btn-icon" onclick="navCal(1)" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+              <div class="dropdown">
+                <button class="btn btn-accent btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-label="Add event"><i class="bi bi-plus-lg me-1"></i>Add</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" onclick="openCalEventModal();return false;"><i class="bi bi-calendar-event me-2"></i>One-off Event</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="openTaskModal();return false;"><i class="bi bi-check2-square me-2"></i>Task</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="openScheduleModal();return false;"><i class="bi bi-calendar2-week me-2"></i>Class Schedule</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="openUnivEventModal();return false;"><i class="bi bi-bank2 me-2"></i>University Event</a></li>
+                </ul>
+              </div>
+            </div>
           </div>
+
+          <!-- Toolbar Row 2: view toggle + today/search/export + filter — all in one row -->
+          <div class="cal-toolbar-row2">
+            <div class="cal-view-bar" role="group" aria-label="Calendar view">
+              <button class="cal-view-btn active" data-mode="month" onclick="setCalMode('month')" aria-pressed="true">Month</button>
+              <button class="cal-view-btn" data-mode="week" onclick="setCalMode('week')" aria-pressed="false">Week</button>
+              <button class="cal-view-btn" data-mode="day" onclick="setCalMode('day')" aria-pressed="false">Day</button>
+            </div>
+            <div class="cal-toolbar-actions">
+              <button class="btn btn-ghost btn-sm" onclick="goToToday()" aria-label="Go to today"><i class="bi bi-arrow-return-left"></i></button>
+              <div class="dropdown">
+                <button class="btn btn-ghost btn-sm" data-bs-toggle="dropdown" aria-label="Jump to date" id="jumpDateBtn"><i class="bi bi-search"></i></button>
+                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width:220px">
+                  <label class="form-label mb-1" style="font-size:.75rem;font-weight:700">Jump to Date</label>
+                  <div class="d-flex gap-2">
+                    <input type="date" class="form-control form-control-sm" id="jumpDateInput" aria-label="Select date to jump to">
+                    <button class="btn btn-accent btn-sm" onclick="doJumpDate()">Go</button>
+                  </div>
+                </div>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-ghost btn-sm" data-bs-toggle="dropdown" aria-label="Export calendar"><i class="bi bi-box-arrow-up"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><h6 class="dropdown-header">Export Calendar</h6></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportICS();return false;"><i class="bi bi-file-earmark-text me-2"></i>Download .ics</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="exportGoogleCalendar();return false;"><i class="bi bi-google me-2"></i>Google Calendar</a></li>
+                </ul>
+              </div>
+              <div class="dropdown">
+                <button class="cal-filter-toggle-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Filter events" id="filterToggleBtn">
+                  <i class="bi bi-funnel"></i>
+                  <span class="cal-filter-active-count" id="filterActiveCount" aria-live="polite"></span>
+                </button>
+                <div class="dropdown-menu cal-filter-dropdown dropdown-menu-end p-2" aria-label="Event filters">
+                  <div class="cal-filter-header mb-2">Show on Calendar</div>
+                  <div class="cal-filter-checks">
+                    <label class="cal-filter-check-item" id="filter-classes" onclick="toggleFilter('classes');return false;">
+                      <span class="cal-filter-dot" style="background:#7C6CF6"></span>
+                      <span>Classes</span>
+                      <i class="bi bi-check2 cal-filter-check-icon ms-auto"></i>
+                    </label>
+                    <label class="cal-filter-check-item" id="filter-tasks" onclick="toggleFilter('tasks');return false;">
+                      <span class="cal-filter-dot" style="background:#FBBF24"></span>
+                      <span>Tasks</span>
+                      <i class="bi bi-check2 cal-filter-check-icon ms-auto"></i>
+                    </label>
+                    <label class="cal-filter-check-item" id="filter-events" onclick="toggleFilter('events');return false;">
+                      <span class="cal-filter-dot" style="background:#34D399"></span>
+                      <span>Events</span>
+                      <i class="bi bi-check2 cal-filter-check-icon ms-auto"></i>
+                    </label>
+                    <label class="cal-filter-check-item" id="filter-univ" onclick="toggleFilter('univ');return false;">
+                      <span class="cal-filter-dot" style="background:#4F8CFF"></span>
+                      <span>University</span>
+                      <i class="bi bi-check2 cal-filter-check-icon ms-auto"></i>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar body -->
+          <div id="calBody"></div>
         </div>
       </div>
 
-      <!-- Filter toggles -->
-      <div class="cal-filter-bar mb-3">
-        <button class="cal-filter-btn f-class active" id="filter-classes" onclick="toggleFilter('classes')">
-          <span class="cal-filter-dot" style="background:#7C6CF6"></span> Classes
-        </button>
-        <button class="cal-filter-btn f-task active" id="filter-tasks" onclick="toggleFilter('tasks')">
-          <span class="cal-filter-dot" style="background:#FBBF24"></span> Tasks
-        </button>
-        <button class="cal-filter-btn f-event active" id="filter-events" onclick="toggleFilter('events')">
-          <span class="cal-filter-dot" style="background:#34D399"></span> Events
-        </button>
-        <button class="cal-filter-btn f-univ active" id="filter-univ" onclick="toggleFilter('univ')">
-          <span class="cal-filter-dot" style="background:#4F8CFF"></span> University
-        </button>
+      <!-- RIGHT / AGENDA COLUMN (desktop side panel, mobile below) -->
+      <div class="cal-agenda-col">
+        <div class="glass card-pad fade-in cal-agenda-panel">
+          <div class="cal-agenda-header" id="calAgendaHeader">
+            <i class="bi bi-calendar3"></i>
+            <span id="calAgendaTitle">Agenda</span>
+          </div>
+          <div id="calAgendaBody"></div>
+        </div>
       </div>
 
-      <!-- Nav row -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <button class="btn-icon" onclick="navCal(-1)"><i class="bi bi-chevron-left"></i></button>
-        <h4 class="mb-0" id="calTitle"></h4>
-        <button class="btn-icon" onclick="navCal(1)"><i class="bi bi-chevron-right"></i></button>
-      </div>
-
-      <!-- Calendar body -->
-      <div id="calBody"></div>
-    </div>
-
-    <!-- EVENT LIST -->
-    <div class="glass card-pad fade-in">
-      <div class="section-title" id="calEventListTitle"><i class="bi bi-list-ul"></i>All Events — This Month</div>
-      <div id="calEventList"></div>
-    </div>
+    </div><!-- end cal-layout -->
 
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
-
-<!-- Day Detail Modal -->
-<div class="modal fade" id="dayModal" tabindex="-1" aria-modal="true" role="dialog">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-body card-pad" id="dayModalBody"></div>
-    </div>
-  </div>
-</div>
 
 <!-- Add/Edit Schedule Modal -->
 <div class="modal fade" id="calSubjectModal" tabindex="-1" aria-modal="true" role="dialog">
@@ -122,6 +160,15 @@
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-body card-pad" id="univEventModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Day Detail Modal (mobile fallback) -->
+<div class="modal fade" id="dayModal" tabindex="-1" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-body card-pad" id="dayModalBody"></div>
     </div>
   </div>
 </div>
