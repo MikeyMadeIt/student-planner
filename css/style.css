@@ -3791,68 +3791,7 @@ td { vertical-align: middle; }
   background: rgba(6,182,212,.07);
 }
 
-/* ---- Absence Limit — compact summary rows ---- */
-.att-limit-summary-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: transparent;
-  margin-bottom: 6px;
-  transition: border-color .18s, background .18s;
-}
-.att-limit-summary-row:last-child { margin-bottom: 0; }
-.att-limit-summary-row.att-absence-reached {
-  border-color: rgba(251,113,133,.4);
-  background: rgba(251,113,133,.04);
-}
-.att-limit-summary-row.att-absence-near {
-  border-color: rgba(251,191,36,.35);
-  background: rgba(251,191,36,.04);
-}
-
-.att-limit-summary-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-width: 90px;
-}
-.att-limit-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.att-limit-code {
-  font-weight: 700;
-  font-size: .82rem;
-  white-space: nowrap;
-}
-.att-limit-summary-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-.att-limit-bar-wrap {
-  flex: 1;
-  min-width: 40px;
-}
-.att-limit-bar {
-  height: 6px !important;
-  border-radius: 4px;
-}
-.att-limit-count {
-  font-family: var(--font-mono);
-  font-weight: 800;
-  font-size: .8rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+/* ---- Absence Limit — old rules cleared; new rules in patch section below ---- */
 
 /* ---- Absence Limit Modal ---- */
 .al-modal-intro {
@@ -8199,3 +8138,592 @@ textarea:focus-visible {
   .tk-board-card .tk-bulk-check { transition: none !important; }
 }
 
+
+/* ============================================================
+   ATTENDANCE v4 — Heatmap, Mode Toggle, Mark All Present,
+   Consecutive Absence Alerts, Export, Skeleton States
+   ============================================================ */
+
+/* ---- Skeleton / No-data state ---- */
+.att-skel-val {
+  color: var(--text-faint) !important;
+  opacity: .55;
+  animation: att-skel-pulse 1.8s ease-in-out infinite;
+}
+@keyframes att-skel-pulse {
+  0%, 100% { opacity: .55; }
+  50% { opacity: .25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-skel-val { animation: none !important; }
+}
+
+/* ---- Overall Rate header with export buttons ---- */
+.att-overall-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.att-overall-header .section-title {
+  margin-bottom: 0;
+}
+/* On very narrow screens, stack buttons below title */
+@media (max-width: 399.98px) {
+  .att-overall-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .att-overall-header .att-export-group {
+    align-self: flex-end;
+  }
+}
+
+/* ---- Export group ---- */
+.att-export-group {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.att-export-label {
+  font-size: .76rem;
+}
+
+/* ---- Mark All Present button ---- */
+.att-mark-all-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.att-mark-all-label {
+  font-size: .76rem;
+}
+@media (max-width: 399.98px) {
+  .att-mark-all-label { display: none; }
+}
+
+/* ---- Mode Toggle Switch ---- */
+.att-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Match .form-control/.form-select height set by theme (36px) */
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text-soft);
+  font-size: .84rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background .18s, border-color .18s, color .18s;
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
+/* Only highlight on hover when the toggle is already ON */
+.att-mode-toggle.is-online:hover {
+  border-color: rgba(6,182,212,.75);
+  background: rgba(6,182,212,.22);
+}
+.att-mode-toggle.is-online {
+  background: rgba(6,182,212,.15);
+  border-color: rgba(6,182,212,.55);
+  color: #06b6d4;
+}
+.att-mode-track {
+  width: 28px;
+  height: 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.15);
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.att-mode-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-soft);
+  transition: transform .2s, background .2s;
+}
+.att-mode-toggle.is-online .att-mode-track {
+  background: rgba(6,182,212,.45);
+}
+.att-mode-toggle.is-online .att-mode-thumb {
+  transform: translateX(12px);
+  background: #06b6d4;
+}
+.att-mode-label {
+  font-size: .8rem;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: left;
+}
+.att-hidden-check {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-mode-toggle, .att-mode-track, .att-mode-thumb { transition: none !important; }
+}
+
+/* ---- Consecutive Absence Alerts ---- */
+.att-consec-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.att-consec-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.28);
+  animation: att-consec-in .25s ease;
+}
+@keyframes att-consec-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-consec-alert { animation: none !important; }
+}
+.att-consec-icon {
+  color: #fbbf24;
+  font-size: .9rem;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.att-consec-body { flex: 1; min-width: 0; }
+.att-consec-title {
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #fbbf24;
+  margin-bottom: 2px;
+}
+.att-consec-msg {
+  font-size: .8rem;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.att-consec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ---- Heatmap ---- */
+.att-heatmap-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.att-heatmap-filter {
+  max-width: 150px;
+  font-size: .75rem;
+}
+@media (max-width: 399.98px) {
+  .att-heatmap-filter { max-width: 120px; font-size: .7rem; }
+}
+
+/* Heatmap grid — mathematically consistent layout */
+:root {
+  --hm-cell: 14px;
+  --hm-gap: 3px;
+}
+.att-heatmap-grid-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: max-content;
+}
+/* Day labels column: one label per row, sizes must match cell exactly */
+.att-heatmap-day-labels {
+  display: grid;
+  grid-template-rows: repeat(7, var(--hm-cell));
+  gap: var(--hm-gap);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.att-heatmap-day-lbl {
+  width: var(--hm-cell);
+  height: var(--hm-cell);
+  font-size: .54rem;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+/* Weeks area: one column per week */
+.att-heatmap-weeks {
+  display: flex;
+  gap: var(--hm-gap);
+  align-items: flex-start;
+}
+/* Each week column: 7 cells stacked vertically */
+.att-heatmap-col {
+  display: grid;
+  grid-template-rows: repeat(7, var(--hm-cell));
+  gap: var(--hm-gap);
+}
+
+/* Heatmap cells */
+.att-hm-cell {
+  width: var(--hm-cell);
+  height: var(--hm-cell);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform .1s, opacity .1s;
+  outline: none;
+}
+.att-hm-cell:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 1px;
+}
+.att-hm-cell:hover,
+.att-hm-cell:focus {
+  transform: scale(1.3);
+  z-index: 10;
+  position: relative;
+}
+.att-hm-empty {
+  background: transparent;
+  cursor: default;
+}
+.att-hm-empty:hover { transform: none; }
+.att-hm-none     { background: rgba(255,255,255,.07); }
+.att-hm-present  { background: rgba(52,211,153,.65); }
+.att-hm-late     { background: rgba(251,191,36,.65); }
+.att-hm-excused  { background: rgba(96,165,250,.65); }
+.att-hm-absent   { background: rgba(251,113,133,.65); }
+.att-hm-noclasses { background: rgba(139,92,246,.35); }
+
+@media (max-width: 575.98px) {
+  :root { --hm-cell: 12px; --hm-gap: 2px; }
+}
+@media (max-width: 375.98px) {
+  :root { --hm-cell: 10px; --hm-gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .att-hm-cell { transition: none !important; }
+  .att-hm-cell:hover, .att-hm-cell:focus { transform: none !important; }
+}
+
+/* Heatmap empty state */
+.att-heatmap-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-faint);
+  font-size: .82rem;
+}
+.att-heatmap-empty i {
+  font-size: 1.8rem;
+  opacity: .2;
+  display: block;
+  margin-bottom: 8px;
+}
+.att-heatmap-empty-sub {
+  font-size: .74rem;
+  margin-top: 4px;
+  opacity: .7;
+}
+
+/* Heatmap Legend */
+.att-heatmap-legend {
+  margin-top: 10px;
+}
+.att-hm-legend-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.att-hm-legend-label {
+  font-size: .62rem;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.att-hm-legend-cells {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.att-hm-legend-cell {
+  cursor: default;
+  width: 12px !important;
+  height: 12px !important;
+}
+.att-hm-legend-cell:hover { transform: none !important; }
+.att-hm-legend-items {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: 4px;
+}
+.att-hm-li {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .64rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.att-hm-li-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Heatmap Tooltip */
+.att-hm-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(15,20,40,.97);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .75rem;
+  pointer-events: none;
+  max-width: 220px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  opacity: 0;
+  transition: opacity .12s;
+}
+.att-hm-tt-date {
+  font-weight: 700;
+  font-size: .72rem;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.att-hm-tt-subject {
+  color: var(--text-soft);
+  font-size: .7rem;
+  margin-bottom: 2px;
+}
+.att-hm-tt-status {
+  font-weight: 700;
+  font-size: .72rem;
+  margin-bottom: 2px;
+}
+.att-hm-tt-present    { color: #34d399; }
+.att-hm-tt-late       { color: #fbbf24; }
+.att-hm-tt-excused    { color: #60a5fa; }
+.att-hm-tt-absent     { color: #fb7185; }
+.att-hm-tt-noclasses  { color: #a78bfa; }
+.att-hm-tt-mode {
+  color: var(--text-faint);
+  font-size: .68rem;
+  margin-bottom: 2px;
+}
+.att-hm-tt-notes {
+  color: var(--text-faint);
+  font-size: .67rem;
+  margin-top: 3px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-top: 3px;
+}
+
+/* ---- Absence Limit Summary — single row ---- */
+.att-limit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  margin-bottom: 8px;
+  transition: border-color .2s;
+  min-width: 0;
+}
+.att-limit-row:last-child { margin-bottom: 0; }
+.att-limit-row.att-absence-reached {
+  border-color: rgba(251,113,133,.35);
+  background: rgba(251,113,133,.04);
+}
+.att-limit-row.att-absence-near {
+  border-color: rgba(251,191,36,.3);
+  background: rgba(251,191,36,.04);
+}
+.att-limit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-limit-code {
+  font-weight: 700;
+  font-size: .8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The bar track — takes up all remaining space */
+.att-limit-bar-track {
+  flex: 1;
+  min-width: 30px;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.12);
+  overflow: hidden;
+}
+.att-limit-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.att-limit-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .74rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.att-limit-remain {
+  font-size: .65rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+/* ---- Per-subject breakdown — absence bar & consec warning ---- */
+.att-breakdown-desc {
+  font-size: .68rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.att-rate-label {
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.att-bd-limit-row {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.att-bd-limit-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: nowrap;
+}
+.att-bd-limit-label {
+  font-size: .64rem;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.att-bd-limit-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: .72rem;
+}
+.att-bd-limit-remain {
+  font-size: .62rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.att-bd-limit-bar {
+  height: 4px;
+  border-radius: 3px;
+}
+.att-bd-consec-warn {
+  margin-top: 6px;
+  font-size: .7rem;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+/* ---- Rate bar color via JS ---- */
+.att-rate-bar {
+  transition: width .5s ease, background .3s ease;
+}
+
+/* ---- Mark All Present Modal ---- */
+.att-map-section {
+  margin-bottom: 10px;
+}
+.att-map-section:last-child { margin-bottom: 0; }
+.att-map-section-title {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+.att-map-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .82rem;
+  padding: 3px 0;
+}
+.att-map-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.att-map-warn .att-map-section-title {
+  color: #fbbf24;
+}
+
+/* ---- Online chip (legacy, keep compatible) ---- */
+.att-online-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(6,182,212,.15);
+  color: #06b6d4;
+  border: 1px solid rgba(6,182,212,.3);
+  border-radius: 6px;
+  font-size: .58rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  margin-left: 4px;
+  letter-spacing: .02em;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* ---- Override old online toggle styles to prevent conflicts ---- */
+.att-online-toggle-btn,
+.att-online-pill,
+.att-online-pill-inner,
+.att-online-col,
+.att-online-check { display: none !important; }
+
+/* ============================================================
+   END ATTENDANCE v4
+   ============================================================ */
