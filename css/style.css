@@ -9422,3 +9422,255 @@ textarea:focus-visible {
     scrollbar-width: thin;
   }
 }
+
+/* ============================================================
+   GRADES PAGE — Enhanced v4 additions
+   ============================================================ */
+
+/* ── Feature 4: GWA Overview Card — full-width 3 stat blocks ── */
+.gwa-overview-card {
+  position: relative;
+}
+.gwa-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gwa-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Compact row: Current GWA (left) | Highest + Lowest stacked (right) */
+.gwa-compact-grid {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+}
+.gwa-compact-main {
+  flex: 1.5;
+  min-width: 0;
+  padding: 6px 20px 6px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* vertical divider between left and right */
+.gwa-compact-divider {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+  align-self: stretch;
+  margin: 2px 0;
+}
+/* right column: highest on top, lowest below */
+.gwa-compact-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.gwa-compact-side {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0 6px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* horizontal divider between highest and lowest */
+.gwa-compact-hdivider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0 0 20px;
+}
+.gwa-compact-label {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.gwa-compact-label i { color: rgb(var(--accent)); opacity: .75; }
+.gwa-compact-num {
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-family: var(--font-mono, monospace);
+}
+.gwa-hi-num { color: #34d399; }
+.gwa-lo-num { color: #fb7185; }
+.gwa-compact-sub {
+  font-size: .69rem;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gwa-compact-statussub {
+  font-size: .67rem;
+  margin-top: 1px;
+}
+@media (max-width: 480px) {
+  .gwa-compact-main { padding-right: 14px; }
+  .gwa-compact-side { padding-left: 14px; }
+  .gwa-compact-hdivider { margin-left: 14px; }
+  .gwa-compact-num { font-size: 1.4rem; }
+}
+
+/* ── Share & action buttons in GWA header ── */
+.gwa-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  transition: color .18s;
+}
+.gwa-action-btn:hover {
+  color: rgb(var(--accent));
+}
+/* share btn is icon-only like info btn — no extra overrides needed */
+.gwa-share-btn { padding: 0; }
+.gwa-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: rgba(30, 33, 55, .95);
+  border: 1px solid rgba(var(--accent), .3);
+  color: #fff;
+  padding: 9px 22px;
+  border-radius: 24px;
+  font-size: .82rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .22s, transform .22s;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.gwa-toast.gwa-toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.gwa-toast.gwa-toast-error {
+  border-color: rgba(251,113,133,.4);
+  background: rgba(40,15,20,.95);
+}
+
+/* ── Feature 2: GWA Target Planner ── */
+.gwa-target-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.gwa-target-field {
+  display: flex;
+  flex-direction: column;
+}
+.gwa-target-result-box {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gwa-target-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  font-size: .82rem;
+  gap: 8px;
+}
+.gwa-target-info-row:last-of-type { border-bottom: none; }
+.gwa-target-val {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: .88rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+@media (max-width: 575px) {
+  .gwa-target-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Feature 1: Sparkline per subject card ── */
+.grade-sparkline-wrap {
+  padding: 4px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.grade-sparkline-label {
+  font-size: .67rem;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.grade-sparkline-label span {
+  font-family: var(--font-mono, monospace);
+  font-size: .65rem;
+}
+.grade-sparkline-svg {
+  width: 100%;
+  height: 48px;
+  display: block;
+  overflow: visible;
+}
+
+/* ── Feature 3: Inline Grade Equivalent Badge ── */
+.grade-equiv-badge {
+  display: inline-block;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+  vertical-align: middle;
+  white-space: nowrap;
+  letter-spacing: .02em;
+  line-height: 1.6;
+}
+.grade-equiv-badge-green {
+  background: rgba(52,211,153,.15);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,.25);
+}
+.grade-equiv-badge-blue {
+  background: rgba(79,140,255,.15);
+  color: #4f8cff;
+  border: 1px solid rgba(79,140,255,.25);
+}
+.grade-equiv-badge-amber {
+  background: rgba(251,191,36,.13);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.25);
+}
+.grade-equiv-badge-red {
+  background: rgba(251,113,133,.13);
+  color: #fb7185;
+  border: 1px solid rgba(251,113,133,.25);
+}
+[data-theme="light"] .grade-equiv-badge-green { background: rgba(16,185,129,.12); color: #059669; }
+[data-theme="light"] .grade-equiv-badge-blue  { background: rgba(59,130,246,.12); color: #2563eb; }
+[data-theme="light"] .grade-equiv-badge-amber { background: rgba(217,119,6,.1);   color: #b45309; }
+[data-theme="light"] .grade-equiv-badge-red   { background: rgba(220,38,38,.1);   color: #dc2626; }

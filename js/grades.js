@@ -1,11 +1,11 @@
 /* ============================================================
-   GRADES.JS — Enhanced v3
+   GRADES.JS — Enhanced v4
    Features:
-   1. Grade Trend Chart (SVG line chart per subject)
-   2. Passing/Failing Alert on subject cards
-   3. Current GWA + Manual GWA Calculator (clearly separated)
-   4. Target Grade Calculator
-   5. Mobile-first responsive layout
+   1. Grade Trend Sparkline per subject (SVG, colored by direction)
+   2. GWA Target Planner (semester-level)
+   3. Inline Grade Equivalent Badge on numeric grades
+   4. GWA Card full-width with 3 stat blocks
+   5. Copy GWA Card as Image (Canvas API)
    ============================================================ */
 
 const GRADE_TABLE = [
@@ -21,7 +21,7 @@ const GRADE_TABLE = [
   { point:5.00, min:0,  max:74,  label:'Failed' },
 ];
 
-const PASSING_PCT = 75; // Existing passing threshold
+const PASSING_PCT = 75;
 
 function percentToGWA(pct){
   if(pct===null||pct===undefined||isNaN(pct)) return null;
@@ -33,7 +33,19 @@ function gwaLabel(point){
   const row = GRADE_TABLE.slice().sort((a,b)=>Math.abs(a.point-point)-Math.abs(b.point-point))[0];
   return row ? row.label : '—';
 }
-// escapeHtml provided by app.js (escHtml)
+
+/* ---- Grade equivalent badge ---- */
+function gradeEquivBadgeHtml(point){
+  if(point===null||point===undefined) return '';
+  const row = GRADE_TABLE.slice().sort((a,b)=>Math.abs(a.point-point)-Math.abs(b.point-point))[0];
+  if(!row) return '';
+  let cls = 'grade-equiv-badge-blue';
+  if(row.point <= 1.75) cls = 'grade-equiv-badge-green';
+  else if(row.point <= 2.75) cls = 'grade-equiv-badge-blue';
+  else if(row.point === 3.00) cls = 'grade-equiv-badge-amber';
+  else cls = 'grade-equiv-badge-red';
+  return `<span class="grade-equiv-badge ${cls}">${escapeHtml(row.label)}</span>`;
+}
 
 /* ---- Data normalization ---- */
 function normalizeGradeRecord(g){
@@ -101,22 +113,34 @@ function computeSubjectFinalPct(components){
 }
 function sumWeights(components){ return (components||[]).reduce((s,c)=>s+(+c.weight||0),0); }
 
-/* ---- Trend data extraction ---- */
-function getTrendDatapoints(components){
-  // Flatten all assessments with their component context, maintaining chronological order
+/* ---- Sparkline trend data (grading period based) ---- */
+function getSparklineDatapoints(components){
+  // Use named grading period ordering if names match common patterns
+  const periodOrder = ['prelim','midterm','semi','pre-final','final','prefinal'];
+  function periodRank(name){
+    const n = (name||'').toLowerCase();
+    for(let i=0;i<periodOrder.length;i++) if(n.includes(periodOrder[i])) return i;
+    return 999;
+  }
+  // Sort components by grading period name, then collect one point per component
+  const sorted = [...components].sort((a,b)=>periodRank(a.name)-periodRank(b.name));
   const points = [];
-  components.forEach(c => {
-    (c.assessments||[]).forEach(a => {
-      const pct = assessmentPct(a);
-      if(pct !== null) {
-        points.push({
-          label: a.name || c.name,
-          pct: Math.round(pct * 10) / 10
-        });
-      }
-    });
+  sorted.forEach(c=>{
+    const avg = componentAvgPct(c);
+    if(avg!==null) points.push({ label: c.name, pct: Math.round(avg*10)/10 });
   });
   return points;
+}
+
+/* ---- Trend direction ---- */
+function trendDirection(points){
+  if(!points||points.length<2) return 'flat';
+  const first = points[0].pct;
+  const last = points[points.length-1].pct;
+  const diff = last - first;
+  if(diff > 2) return 'up';
+  if(diff < -2) return 'down';
+  return 'flat';
 }
 
 /* ---- Init ---- */
@@ -126,10 +150,9 @@ function initGrades(){
   renderGradeCards();
   renderGradeReferenceTable();
   renderGwaCalculator();
-  renderTargetGradeSection();
 }
 
-/* ---- Overview (Current GWA) ---- */
+/* ---- Overview (Current GWA) — full-width 3 stat blocks ---- */
 function renderGradesOverview(){
   const semId = DB.getActiveSemesterId();
   const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
@@ -150,6 +173,14 @@ function renderGradesOverview(){
   if(scoredRows.length){
     const tu = scoredRows.reduce((s,r)=>s+(+r.subject.units||0),0);
     if(tu>0) gwa = scoredRows.reduce((s,r)=>s+r.point*(+r.subject.units||0),0)/tu;
+  }
+
+  // Highest and lowest subject GWA points (lower point = better in PH system)
+  let highestRow=null, lowestRow=null;
+  if(scoredRows.length){
+    // Highest grade = lowest point number (1.00 is best)
+    highestRow = scoredRows.reduce((best,r)=> r.point < best.point ? r : best, scoredRows[0]);
+    lowestRow  = scoredRows.reduce((worst,r)=> r.point > worst.point ? r : worst, scoredRows[0]);
   }
 
   const gwaEl = document.getElementById('gGwa');
@@ -178,10 +209,126 @@ function renderGradesOverview(){
       gwaStatusSubEl.textContent = `Based on ${scoredSubjects} subject${scoredSubjects!==1?'s':''}`;
     }
   }
+
+  // Highest block
+  const hiNumEl = document.getElementById('gHighest');
+  const hiSubEl = document.getElementById('gHighestSub');
+  if(hiNumEl) hiNumEl.textContent = highestRow ? highestRow.point.toFixed(2) : '--';
+  if(hiSubEl) hiSubEl.textContent = highestRow ? `${highestRow.subject.code} · ${highestRow.pct.toFixed(1)}%` : '—';
+
+  // Lowest block
+  const loNumEl = document.getElementById('gLowest');
+  const loSubEl = document.getElementById('gLowestSub');
+  if(loNumEl) loNumEl.textContent = lowestRow ? lowestRow.point.toFixed(2) : '--';
+  if(loSubEl) loSubEl.textContent = lowestRow ? `${lowestRow.subject.code} · ${lowestRow.pct.toFixed(1)}%` : '—';
+
+  // Sync GWA into target planner current display
+  const gwaTargetCurrentEl = document.getElementById('gwaTargetCurrent');
+  if(gwaTargetCurrentEl) gwaTargetCurrentEl.value = gwa===null ? '—' : gwa.toFixed(2);
 }
 
 /* ============================================================
-   SUBJECT CARDS — with passing/failing alert + trend toggle
+   GWA TARGET PLANNER (semester-level)
+   ============================================================ */
+function renderGwaTargetPlanner(){
+  // Sync current GWA display — done in renderGradesOverview which runs first
+  computeGwaTarget();
+}
+
+function computeGwaTarget(){
+  const targetInput = document.getElementById('gwaTargetInput');
+  const resultEl = document.getElementById('gwaTargetResult');
+  if(!resultEl) return;
+
+  const targetStr = targetInput ? targetInput.value.trim() : '';
+  if(!targetStr){ resultEl.innerHTML=''; return; }
+
+  const targetGwa = parseFloat(targetStr);
+  if(isNaN(targetGwa) || targetGwa < 1 || targetGwa > 5){
+    resultEl.innerHTML=`<div class="tg-result-box tg-warn"><i class="bi bi-exclamation-triangle me-1"></i>Enter a valid GWA between 1.00 and 5.00.</div>`;
+    return;
+  }
+
+  const semId = DB.getActiveSemesterId();
+  const subjects = DB.getSubjects().filter(s=>s.semesterId===semId && !s.archived);
+  const grades = DB.getGrades().map(normalizeGradeRecord);
+
+  if(!subjects.length){
+    resultEl.innerHTML=`<div class="tg-result-box tg-info"><i class="bi bi-info-circle me-1"></i>Add subjects to use the GWA Target Planner.</div>`;
+    return;
+  }
+
+  const rows = subjects.map(s=>{
+    const g = grades.find(x=>x.subjectId===s.id)||{components:[]};
+    const pct = computeSubjectFinalPct(g.components);
+    const point = pct!==null ? percentToGWA(pct) : null;
+    const units = +s.units || 0;
+    return {subject:s, pct, point, units, graded: point!==null};
+  });
+
+  const gradedRows = rows.filter(r=>r.graded);
+  const ungradedRows = rows.filter(r=>!r.graded);
+
+  // Current weighted sum from graded subjects
+  const gradedWeightedSum = gradedRows.reduce((s,r)=>s+r.point*r.units, 0);
+  const gradedUnits = gradedRows.reduce((s,r)=>s+r.units, 0);
+  const ungradedUnits = ungradedRows.reduce((s,r)=>s+r.units, 0);
+  const totalUnits = gradedUnits + ungradedUnits;
+
+  // Current GWA
+  const currentGwa = gradedUnits > 0 ? gradedWeightedSum / gradedUnits : null;
+
+  // Already achieved?
+  if(currentGwa !== null && currentGwa <= targetGwa){
+    resultEl.innerHTML=`
+      <div class="gwa-target-result-box">
+        <div class="gwa-target-info-row"><span class="text-faint">Target GWA</span><span class="gwa-target-val">${targetGwa.toFixed(2)}</span></div>
+        <div class="gwa-target-info-row"><span class="text-faint">Current GWA</span><span class="gwa-target-val" style="color:#34d399">${currentGwa.toFixed(2)}</span></div>
+        <div class="tg-result-box tg-pass mt-2"><i class="bi bi-trophy-fill me-1"></i>Target already achieved! Your current GWA of ${currentGwa.toFixed(2)} meets or beats your target of ${targetGwa.toFixed(2)}.</div>
+      </div>`;
+    return;
+  }
+
+  if(!ungradedRows.length){
+    // All graded but target not met
+    resultEl.innerHTML=`
+      <div class="gwa-target-result-box">
+        <div class="gwa-target-info-row"><span class="text-faint">Target GWA</span><span class="gwa-target-val">${targetGwa.toFixed(2)}</span></div>
+        <div class="gwa-target-info-row"><span class="text-faint">Current GWA</span><span class="gwa-target-val" style="color:#fb7185">${currentGwa!==null?currentGwa.toFixed(2):'—'}</span></div>
+        <div class="tg-result-box tg-fail mt-2"><i class="bi bi-x-circle-fill me-1"></i>All subjects are graded and your GWA of ${currentGwa!==null?currentGwa.toFixed(2):'—'} did not reach the target of ${targetGwa.toFixed(2)}.</div>
+      </div>`;
+    return;
+  }
+
+  /*
+   * Solve for required average GWA point across ungraded subjects:
+   * (gradedWeightedSum + X * ungradedUnits) / totalUnits = targetGwa
+   * X = (targetGwa * totalUnits - gradedWeightedSum) / ungradedUnits
+   */
+  const requiredPointAvg = (targetGwa * totalUnits - gradedWeightedSum) / ungradedUnits;
+
+  let html = `<div class="gwa-target-result-box">`;
+  html += `<div class="gwa-target-info-row"><span class="text-faint">Target GWA</span><span class="gwa-target-val">${targetGwa.toFixed(2)}</span></div>`;
+  html += `<div class="gwa-target-info-row"><span class="text-faint">Current GWA</span><span class="gwa-target-val">${currentGwa!==null?currentGwa.toFixed(2):'No grades yet'}</span></div>`;
+  html += `<div class="gwa-target-info-row"><span class="text-faint">Graded subjects</span><span class="gwa-target-val">${gradedRows.length} of ${rows.length}</span></div>`;
+  html += `<div class="gwa-target-info-row"><span class="text-faint">Ungraded units</span><span class="gwa-target-val">${ungradedUnits}</span></div>`;
+
+  if(requiredPointAvg < 1.0){
+    html += `<div class="tg-result-box tg-pass mt-2"><i class="bi bi-trophy-fill me-1"></i>Your current grades are strong enough — even a 1.00 GWA on remaining subjects ensures you hit the target.</div>`;
+  } else if(requiredPointAvg > 5.0){
+    html += `<div class="gwa-target-info-row"><span class="text-faint">Required avg GWA on ungraded</span><span class="gwa-target-val" style="color:#fb7185">${requiredPointAvg.toFixed(2)} (impossible)</span></div>`;
+    html += `<div class="tg-result-box tg-fail mt-2"><i class="bi bi-x-circle-fill me-1"></i>Target not achievable — you would need an average GWA of ${requiredPointAvg.toFixed(2)} across remaining subjects, which exceeds the 5.00 scale.</div>`;
+  } else {
+    const reqLabel = gwaLabel(requiredPointAvg);
+    html += `<div class="gwa-target-info-row"><span class="text-faint">Required avg GWA on ungraded</span><span class="gwa-target-val" style="color:#34d399;font-weight:800">${requiredPointAvg.toFixed(2)} <span class="text-faint" style="font-weight:400;font-size:.8em">(${reqLabel})</span></span></div>`;
+    html += `<div class="tg-result-box tg-pass mt-2"><i class="bi bi-check-circle-fill me-1"></i>You need an average GWA of <strong>${requiredPointAvg.toFixed(2)}</strong> (${reqLabel}) across your ${ungradedRows.length} remaining subject${ungradedRows.length!==1?'s':''} to reach a GWA of ${targetGwa.toFixed(2)}.</div>`;
+  }
+  html += `</div>`;
+  resultEl.innerHTML = html;
+}
+
+/* ============================================================
+   SUBJECT CARDS — sparkline + inline grade badge
    ============================================================ */
 function renderGradeCards(){
   const wrap = document.getElementById('gradesWrap');
@@ -203,7 +350,6 @@ function renderGradeCards(){
     const totalWeight = sumWeights(g.components);
     const weightWarn = g.components.length && totalWeight!==100;
     const collapseId = `gc-${s.id}`;
-    const trendId = `gt-${s.id}`;
 
     // Passing/Failing status
     let statusBadge = '';
@@ -220,9 +366,12 @@ function renderGradeCards(){
       statusBadge = `<span class="grade-pass-badge no-data"><i class="bi bi-dash-circle"></i> No data</span>`;
     }
 
-    // Trend data
-    const trendPoints = getTrendDatapoints(g.components);
-    const hasTrend = trendPoints.length >= 2;
+    // Grade equiv badge
+    const equivBadge = gradeEquivBadgeHtml(point);
+
+    // Sparkline — per grading period
+    const sparkPoints = getSparklineDatapoints(g.components);
+    const hasSparkline = sparkPoints.length >= 2;
 
     return `<div class="col-md-6 col-xl-4">
       <div class="grade-card hover-lift" style="border-left:3px solid ${s.color}">
@@ -234,13 +383,14 @@ function renderGradeCards(){
           </div>
           <div class="grade-card-center">
             <div class="grade-card-pct">${pct===null?'--':pct.toFixed(1)+'%'}</div>
-            <div class="grade-card-gwa">${point===null?'—':'GWA '+point.toFixed(2)}</div>
+            <div class="grade-card-gwa">${point===null?'—':'GWA '+point.toFixed(2)}${equivBadge}</div>
           </div>
           <div class="grade-card-actions">
             <button class="btn-icon btn-icon-xs" onclick="openGradeModal('${s.id}')" title="Edit grades"><i class="bi bi-pencil"></i></button>
             <button class="btn-icon btn-icon-xs chev-toggle" data-bs-toggle="collapse" data-bs-target="#${collapseId}" title="Toggle details"><i class="bi bi-chevron-down"></i></button>
           </div>
         </div>
+        ${hasSparkline ? renderSparklineHtml(sparkPoints) : ''}
         <div class="progress grade-card-bar"><div class="progress-bar" style="width:${Math.min(pct||0,100)}%;background:${pct!==null&&pct<PASSING_PCT?'#fb7185':''}"></div></div>
         <!-- Expanded detail -->
         <div class="collapse" id="${collapseId}">
@@ -264,16 +414,6 @@ function renderGradeCards(){
               ${pct!==null&&pct<PASSING_PCT?`<div class="grade-warning-box mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>Below passing threshold (${PASSING_PCT}%). Current: ${pct.toFixed(1)}%</div>`:''}
               ${weightWarn?`<div class="text-faint mb-2" style="font-size:.68rem;color:rgb(var(--accent-2))"><i class="bi bi-exclamation-triangle me-1"></i>Weights total ${totalWeight}%, not 100%</div>`:''}
             ` : `<div class="text-faint" style="font-size:.76rem">No components yet — tap <i class="bi bi-pencil"></i> to add.</div>`}
-            ${hasTrend ? `
-              <div>
-                <button class="btn btn-ghost btn-sm w-100" style="font-size:.72rem" data-bs-toggle="collapse" data-bs-target="#${trendId}">
-                  <i class="bi bi-graph-up me-1"></i>Grade Trend (${trendPoints.length} assessments)
-                </button>
-                <div class="collapse mt-2" id="${trendId}">
-                  ${renderTrendChartHtml(trendPoints)}
-                </div>
-              </div>
-            ` : trendPoints.length===1 ? `<div class="text-faint" style="font-size:.72rem"><i class="bi bi-info-circle me-1"></i>Add more assessments to see trend</div>` : ''}
           </div>
         </div>
       </div>
@@ -281,84 +421,48 @@ function renderGradeCards(){
   }).join('');
 }
 
-/* ---- SVG Trend Chart ---- */
-function renderTrendChartHtml(points){
+/* ---- SVG Sparkline (inline, below grade display) ---- */
+function renderSparklineHtml(points){
   if(!points||points.length<2) return '';
-  const W = 280, H = 120, PL = 36, PR = 8, PT = 12, PB = 28;
+  const W = 280, H = 48, PL = 4, PR = 4, PT = 6, PB = 6;
   const chartW = W - PL - PR;
   const chartH = H - PT - PB;
 
   const vals = points.map(p=>p.pct);
-  const minV = Math.max(0, Math.min(...vals) - 10);
-  const maxV = Math.min(100, Math.max(...vals) + 10);
+  const minV = Math.max(0, Math.min(...vals) - 5);
+  const maxV = Math.min(100, Math.max(...vals) + 5);
   const range = maxV - minV || 1;
 
   const toX = i => PL + (i / (points.length-1)) * chartW;
   const toY = v => PT + (1 - (v - minV) / range) * chartH;
 
-  // Polyline path
-  const pts = points.map((p,i) => `${toX(i).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ');
+  const dir = trendDirection(points);
+  const lineColor = dir==='up' ? '#34d399' : dir==='down' ? '#fb7185' : '#94a3b8';
+  const dotColorFn = (pct) => pct >= PASSING_PCT ? '#34d399' : '#fb7185';
 
-  // Passing threshold line Y
-  const passY = toY(PASSING_PCT);
-  const showPassLine = PASSING_PCT >= minV && PASSING_PCT <= maxV;
+  const polyPts = points.map((p,i)=>`${toX(i).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ');
 
-  // Y axis labels
-  const yLabels = [minV, (minV+maxV)/2, maxV].map(v=>({v:Math.round(v), y:toY(v)}));
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="grade-sparkline-svg" role="img" aria-label="Grade trend sparkline">`;
 
-  // X labels — show max 5 to avoid clutter
-  const maxLabels = 5;
-  const step = Math.max(1, Math.ceil(points.length/maxLabels));
-  const xLabels = points.map((p,i)=>({i,label:p.label})).filter((_,i)=>i%step===0||i===points.length-1);
+  // Trend line
+  svg += `<polyline points="${polyPts}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
 
-  let svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="grade-trend-svg">
-    <defs>
-      <linearGradient id="trendGrad-${Date.now()%9999}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgb(var(--accent))" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="rgb(var(--accent))" stop-opacity="0"/>
-      </linearGradient>
-    </defs>`;
-
-  // Grid lines
-  yLabels.forEach(yl => {
-    svgContent += `<line x1="${PL}" y1="${yl.y.toFixed(1)}" x2="${W-PR}" y2="${yl.y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
-    svgContent += `<text x="${PL-3}" y="${(yl.y+3).toFixed(1)}" text-anchor="end" font-size="8" fill="rgba(255,255,255,0.35)" font-family="monospace">${yl.v}</text>`;
-  });
-
-  // Passing threshold
-  if(showPassLine){
-    svgContent += `<line x1="${PL}" y1="${passY.toFixed(1)}" x2="${W-PR}" y2="${passY.toFixed(1)}" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
-    svgContent += `<text x="${W-PR-1}" y="${(passY-2).toFixed(1)}" text-anchor="end" font-size="7" fill="#fb7185" opacity="0.7">75%</text>`;
-  }
-
-  // Area fill
-  const areaId = `trendGrad-${Date.now()%9999}`;
-  const areaPath = `M${toX(0).toFixed(1)},${toY(points[0].pct).toFixed(1)} ` +
-    points.slice(1).map((p,i)=>`L${toX(i+1).toFixed(1)},${toY(p.pct).toFixed(1)}`).join(' ') +
-    ` L${toX(points.length-1).toFixed(1)},${(PT+chartH).toFixed(1)} L${toX(0).toFixed(1)},${(PT+chartH).toFixed(1)} Z`;
-  svgContent += `<path d="${areaPath}" fill="rgba(124,108,246,0.12)"/>`;
-
-  // Line
-  svgContent += `<polyline points="${pts}" fill="none" stroke="rgb(var(--accent))" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-
-  // Data points
+  // Dots
   points.forEach((p,i)=>{
     const cx = toX(i), cy = toY(p.pct);
-    const color = p.pct >= PASSING_PCT ? '#34d399' : '#fb7185';
-    svgContent += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3.5" fill="${color}" stroke="var(--bg,#0a0d16)" stroke-width="1.5"/>`;
-    // Tooltip via title
-    svgContent += `<title>${p.label}: ${p.pct}%</title>`;
+    svg += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${dotColorFn(p.pct)}" stroke="var(--bg,#0a0d16)" stroke-width="1">`;
+    svg += `<title>${escapeHtml(p.label)}: ${p.pct}%</title>`;
+    svg += `</circle>`;
   });
 
-  // X axis labels
-  xLabels.forEach(({i,label})=>{
-    const x = toX(i);
-    const truncLabel = label.length>6 ? label.slice(0,5)+'…' : label;
-    svgContent += `<text x="${x.toFixed(1)}" y="${(H-4)}" text-anchor="middle" font-size="7.5" fill="rgba(255,255,255,0.45)" font-family="sans-serif">${escapeHtml(truncLabel)}</text>`;
-  });
+  svg += `</svg>`;
 
-  svgContent += `</svg>`;
-  return `<div class="grade-trend-wrap">${svgContent}</div>`;
+  const dirIcon = dir==='up' ? '<i class="bi bi-graph-up-arrow" style="color:#34d399"></i>' : dir==='down' ? '<i class="bi bi-graph-down-arrow" style="color:#fb7185"></i>' : '<i class="bi bi-dash-lg" style="color:#94a3b8"></i>';
+
+  return `<div class="grade-sparkline-wrap">
+    <div class="grade-sparkline-label">${dirIcon} <span>${points[0].pct}% → ${points[points.length-1].pct}%</span></div>
+    ${svg}
+  </div>`;
 }
 
 /* ============================================================
@@ -584,7 +688,6 @@ function saveGradeComponents(){
   gradeDraft=null; gradeDraftSubjectId=null;
   renderGradesOverview();
   renderGradeCards();
-  renderTargetGradeSection();
 }
 
 /* ---- Grade reference table ---- */
@@ -690,25 +793,8 @@ function computeTargetGrade(){
     return;
   }
 
-  /*
-   * ACCURATE TARGET GRADE FORMULA
-   * ─────────────────────────────
-   * Final Grade = Σ (component_avg_pct × component_weight / 100)
-   *
-   * We want:
-   *   Σ_others(avg_pct_i × w_i/100)  +  (X × remainingWeight/100) = target
-   *
-   * Solve for X (the required score in the remaining component):
-   *   X = (target - scoredWeightedSum) / (remainingWeight / 100)
-   *   X = (target - scoredWeightedSum) × (100 / remainingWeight)
-   *
-   * scoredWeightedSum = sum of (avg_pct × weight/100) for all OTHER components
-   *                     that have at least one scored assessment.
-   * Unscored components contribute 0 to the current sum (not assumed zero).
-   */
   const otherComponents = g.components.filter(c => c.id !== compId);
 
-  // Sum of weighted contributions from scored other components
   let scoredWeightedSum = 0;
   let scoredOtherWeight = 0;
   let unscoredOtherWeight = 0;
@@ -724,23 +810,11 @@ function computeTargetGrade(){
     }
   });
 
-  // Current effective grade from scored components (excluding target comp)
-  const currentEffectivePct = scoredWeightedSum; // already a percentage-scale value
-  // e.g. if quizzes (30%) avg 80% and projects (20%) avg 90%:
-  //   scoredWeightedSum = 80×0.30 + 90×0.20 = 24 + 18 = 42
-
-  // Required score on the remaining component
   const requiredPct = (target - scoredWeightedSum) / (remainingWeight / 100);
-
-  // Human-readable current grade: sum all scored (including target comp if any)
-  const currentOverallPct = computeSubjectFinalPct(
-    g.components.filter(c => c.id !== compId && componentAvgPct(c) !== null)
-  );
 
   let resultHtml = '';
 
   if(scoredOtherWeight === 0 && otherComponents.length > 0){
-    // No data in any of the other components yet
     resultHtml = `<div class="tg-info-box">
       <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
       <div class="tg-info-row"><span class="text-faint">Current Grade</span><span class="tg-val text-faint">No data yet</span></div>
@@ -763,7 +837,6 @@ function computeTargetGrade(){
       <div class="tg-result-box tg-pass mt-2"><i class="bi bi-trophy-fill me-1"></i>Target already achieved — even with 0% on ${escapeHtml(targetComp.name)} you will meet the target.</div>
     </div>`;
   } else {
-    const feasibility = requiredPct <= 100 ? 'achievable' : 'not achievable';
     resultHtml = `<div class="tg-info-box">
       <div class="tg-info-row"><span class="text-faint">Target Grade</span><span class="tg-val">${target}%</span></div>
       <div class="tg-info-row"><span class="text-faint">Current Weighted Score</span><span class="tg-val">${scoredWeightedSum.toFixed(2)} pts <span class="text-faint">of ${(scoredOtherWeight+remainingWeight)}% available</span></span></div>
@@ -890,4 +963,118 @@ function removeGwaCalcRow(i){
 function clearAllGwaRows(){
   DB.saveGwaCalcRows([{id:DB.uid(),label:'',units:'',grade:''}]);
   renderGwaCalculator();
+}
+
+/* ============================================================
+   COPY GWA CARD AS IMAGE (Canvas API, no external libs)
+   ============================================================ */
+function copyGwaCardAsImage(){
+  const settings = DB.getSettings();
+  const name = (settings && settings.name) ? settings.name : 'Student';
+  const sem = DB.getActiveSemester();
+  const semLabel = sem ? `${sem.name} · ${sem.schoolYear}` : 'Current Semester';
+
+  const gwaEl = document.getElementById('gGwa');
+  const gwaSubEl = document.getElementById('gGwaSub');
+  const gwa = gwaEl ? gwaEl.textContent : '--';
+  const gwaSub = gwaSubEl ? gwaSubEl.textContent : '';
+
+  const W = 560, H = 220;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * 2;
+  canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0f1220');
+  bg.addColorStop(1, '#1a1030');
+  ctx.fillStyle = bg;
+  ctx.roundRect(0, 0, W, H, 18);
+  ctx.fill();
+
+  // Accent stripe top
+  const stripe = ctx.createLinearGradient(0, 0, W, 0);
+  stripe.addColorStop(0, 'rgba(124,108,246,0.9)');
+  stripe.addColorStop(1, 'rgba(79,140,255,0.9)');
+  ctx.fillStyle = stripe;
+  ctx.fillRect(0, 0, W, 4);
+
+  // App label
+  ctx.font = '700 11px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(124,108,246,0.8)';
+  ctx.letterSpacing = '0.08em';
+  ctx.fillText('STUDENT PLANNER', 28, 30);
+
+  // Student name
+  ctx.font = '600 18px system-ui, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.letterSpacing = '0';
+  ctx.fillText(name, 28, 56);
+
+  // Semester
+  ctx.font = '400 12px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(semLabel, 28, 76);
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(28, 92);
+  ctx.lineTo(W - 28, 92);
+  ctx.stroke();
+
+  // GWA label
+  ctx.font = '700 10px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.letterSpacing = '0.1em';
+  ctx.fillText('CURRENT GWA', 28, 118);
+
+  // GWA value
+  ctx.font = '800 56px monospace';
+  const gwaGrad = ctx.createLinearGradient(0, 0, 200, 0);
+  gwaGrad.addColorStop(0, 'rgba(124,108,246,1)');
+  gwaGrad.addColorStop(1, 'rgba(79,140,255,1)');
+  ctx.fillStyle = gwaGrad;
+  ctx.letterSpacing = '0';
+  ctx.fillText(gwa, 26, 176);
+
+  // GWA sub label
+  ctx.font = '400 13px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.letterSpacing = '0';
+  ctx.fillText(gwaSub, 28, 200);
+
+  // Date
+  const dateStr = new Date().toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'});
+  ctx.font = '400 11px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  const dateW = ctx.measureText(dateStr).width;
+  ctx.fillText(dateStr, W - 28 - dateW, H - 18);
+
+  // Download as PNG
+  canvas.toBlob(blob => {
+    if(!blob){ showGwaToast('Failed to generate image', true); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gwa-${name.replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showGwaToast('Image downloaded!');
+  }, 'image/png');
+}
+
+function showGwaToast(msg, isError){
+  const el = document.getElementById('gwaToast');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'gwa-toast' + (isError ? ' gwa-toast-error' : ' gwa-toast-visible');
+  void el.offsetWidth;
+  el.classList.add('gwa-toast-visible');
+  setTimeout(()=>{ el.classList.remove('gwa-toast-visible','gwa-toast-error'); }, 2600);
 }

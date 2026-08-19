@@ -20,15 +20,45 @@
       <div><h1 class="page-title">Grade Tracker</h1><p class="page-sub">Customizable per-subject grading, weighted GWA, and grade tools</p></div>
     </div>
 
-    <!-- Current GWA Overview -->
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">
-        <div class="glass card-pad fade-in">
-          <div class="section-title"><i class="bi bi-mortarboard-fill"></i>Current GWA</div>
-          <div class="stat-num" id="gGwa">--</div>
-          <div class="text-faint" style="font-size:.78rem" id="gGwaSub">1.00–5.00 scale</div>
-          <div class="mt-2" id="gGwaStatus"></div>
-          <div class="text-faint mt-1" style="font-size:.72rem" id="gGwaStatusSub"></div>
+    <!-- Current GWA Overview — full-width with 3 stat blocks -->
+    <div class="mb-3">
+      <div class="glass card-pad fade-in gwa-overview-card">
+        <div class="gwa-overview-header">
+          <div class="section-title mb-0"><i class="bi bi-mortarboard-fill"></i>GWA Overview</div>
+          <div class="gwa-header-actions">
+            <button class="btn-icon btn-icon-sm gwa-action-btn" onclick="openGradeInterpModal()" title="Grade Interpretation Reference">
+              <i class="bi bi-info-circle"></i>
+            </button>
+            <button class="btn-icon btn-icon-sm gwa-action-btn gwa-share-btn" id="gwaShareBtn" onclick="copyGwaCardAsImage()" title="Share as image">
+              <i class="bi bi-share"></i>
+            </button>
+          </div>
+        </div>
+        <div class="gwa-compact-grid">
+          <!-- Left: Current GWA -->
+          <div class="gwa-compact-main">
+            <div class="gwa-compact-label"><i class="bi bi-award"></i>Current GWA</div>
+            <div class="gwa-compact-num" id="gGwa">--</div>
+            <div class="text-faint gwa-compact-sub" id="gGwaSub">1.00–5.00 scale</div>
+            <div class="mt-1" id="gGwaStatus"></div>
+            <div class="text-faint gwa-compact-statussub" id="gGwaStatusSub"></div>
+          </div>
+          <!-- Vertical divider -->
+          <div class="gwa-compact-divider"></div>
+          <!-- Right: Highest + Lowest stacked -->
+          <div class="gwa-compact-right">
+            <div class="gwa-compact-side">
+              <div class="gwa-compact-label"><i class="bi bi-arrow-up-circle"></i>Highest</div>
+              <div class="gwa-compact-num gwa-hi-num" id="gHighest">--</div>
+              <div class="text-faint gwa-compact-sub" id="gHighestSub">—</div>
+            </div>
+            <div class="gwa-compact-hdivider"></div>
+            <div class="gwa-compact-side">
+              <div class="gwa-compact-label"><i class="bi bi-arrow-down-circle"></i>Lowest</div>
+              <div class="gwa-compact-num gwa-lo-num" id="gLowest">--</div>
+              <div class="text-faint gwa-compact-sub" id="gLowestSub">—</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -40,26 +70,6 @@
         <span class="text-faint" style="font-size:.76rem">Tap <i class="bi bi-pencil"></i> to set grading breakdown</span>
       </div>
       <div id="gradesWrap" class="row g-2 stagger"></div>
-    </div>
-
-    <!-- Target Grade Calculator (collapsible) -->
-    <div class="glass mb-3 fade-in" style="overflow:hidden">
-      <div class="tg-section-header">
-        <div class="section-title mb-0"><i class="bi bi-bullseye"></i>Target Grade</div>
-        <div class="tg-header-actions">
-          <button class="btn-icon btn-icon-xs" onclick="openTargetGradeInfo()" title="How does this work?">
-            <i class="bi bi-info-circle"></i>
-          </button>
-          <button class="btn-icon btn-icon-xs chev-toggle" data-bs-toggle="collapse" data-bs-target="#targetGradeCollapse" title="Toggle">
-            <i class="bi bi-chevron-down"></i>
-          </button>
-        </div>
-      </div>
-      <div class="collapse show" id="targetGradeCollapse">
-        <div class="p-3">
-          <div id="targetGradeWrap"></div>
-        </div>
-      </div>
     </div>
 
     <!-- GWA Calculator (Manual) -->
@@ -112,72 +122,25 @@
 
     </div>
 
-    <!-- Grade interpretation reference -->
-    <div class="glass card-pad fade-in">
-      <div class="section-title"><i class="bi bi-list-columns-reverse"></i>Grade Interpretation Reference</div>
-      <div class="ref-table-head">
-        <div class="ref-col-grade">Grade</div>
-        <div class="ref-col-range"><span class="ref-label-full">Percentage Range</span><span class="ref-label-short">Range</span></div>
-        <div class="ref-col-meaning">Meaning</div>
-      </div>
-      <div id="gradeReferenceTable"></div>
-    </div>
-
   </main>
 </div>
 <nav class="mobile-nav" id="mobileNav"></nav>
 
-<!-- Target Grade Info Modal -->
-<div class="modal fade" id="targetGradeInfoModal" tabindex="-1" aria-modal="true" role="dialog">
+<!-- Grade Interpretation Modal -->
+<div class="modal fade" id="gradeInterpModal" tabindex="-1" aria-modal="true" role="dialog">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>How Target Grade Works</h5>
+        <h5 class="modal-title"><i class="bi bi-list-columns-reverse me-2"></i>Grade Interpretation Reference</h5>
         <button class="btn-close" aria-label="Close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body tg-info-modal-body">
-        <div class="tg-info-section">
-          <div class="tg-info-section-title">What does it do?</div>
-          <p>Target Grade tells you <strong>what score you need on a remaining assessment</strong> to reach your desired final grade in a subject.</p>
+      <div class="modal-body" style="padding:16px 20px 20px">
+        <div class="ref-table-head">
+          <div class="ref-col-grade">Grade</div>
+          <div class="ref-col-range"><span class="ref-label-full">Percentage Range</span><span class="ref-label-short">Range</span></div>
+          <div class="ref-col-meaning">Meaning</div>
         </div>
-        <div class="tg-info-section">
-          <div class="tg-info-section-title">Understanding Assessment Weights</div>
-          <p>Each grading component (Quizzes, Midterm, Final Exam, etc.) has a <strong>weight</strong> — how much of your final grade it counts for.</p>
-          <div class="tg-info-example">
-            <div class="tg-info-ex-row"><span>Quizzes</span><span class="tg-info-ex-val">20% weight</span></div>
-            <div class="tg-info-ex-row"><span>Midterm Exam</span><span class="tg-info-ex-val">30% weight</span></div>
-            <div class="tg-info-ex-row"><span>Final Exam</span><span class="tg-info-ex-val">50% weight</span></div>
-          </div>
-          <p class="mt-2">If you score <strong>90% on Quizzes</strong> (worth 20%), quizzes contribute <strong>90 × 20% = 18 points</strong> to your final grade.</p>
-        </div>
-        <div class="tg-info-section">
-          <div class="tg-info-section-title">What you enter vs. what the system uses</div>
-          <div class="tg-info-clarify">
-            <div class="tg-info-clarify-row ok">
-              <i class="bi bi-check-circle-fill"></i>
-              <div><strong>Desired Final Grade</strong> — the overall subject grade you want to achieve (e.g., 90%)</div>
-            </div>
-            <div class="tg-info-clarify-row ok">
-              <i class="bi bi-check-circle-fill"></i>
-              <div><strong>Required Score</strong> — the score you need <em>on that specific assessment</em> (e.g., get 85% on the Final Exam)</div>
-            </div>
-            <div class="tg-info-clarify-row warn">
-              <i class="bi bi-x-circle-fill"></i>
-              <div><strong>Weight is not editable here</strong> — the component weights come from your grading setup and are not changed by this calculator</div>
-            </div>
-          </div>
-        </div>
-        <div class="tg-info-section">
-          <div class="tg-info-section-title">Simple example</div>
-          <div class="tg-info-example">
-            <div class="tg-info-ex-row"><span>Quiz score so far</span><span class="tg-info-ex-val">80% × 20% = 16 pts</span></div>
-            <div class="tg-info-ex-row"><span>Projects score so far</span><span class="tg-info-ex-val">88% × 30% = 26.4 pts</span></div>
-            <div class="tg-info-ex-row"><span>Current total</span><span class="tg-info-ex-val">42.4 pts</span></div>
-            <div class="tg-info-ex-row"><span>Desired final grade</span><span class="tg-info-ex-val">90%</span></div>
-            <div class="tg-info-ex-row tg-info-ex-result"><span>Final Exam (50% weight) — need:</span><span class="tg-info-ex-val">(90 − 42.4) ÷ 50% = <strong>95.2%</strong></span></div>
-          </div>
-          <p class="mt-2">So you need to score <strong>95.2% on the Final Exam</strong> to reach a final grade of 90%.</p>
-        </div>
+        <div id="gradeReferenceTable"></div>
       </div>
     </div>
   </div>
@@ -193,6 +156,9 @@
   </div>
 </div>
 
+<!-- Toast for clipboard copy -->
+<div id="gwaToast" class="gwa-toast" aria-live="polite"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
@@ -201,6 +167,7 @@
   renderShell('grades');
   applyTheme();
   initGrades();
+  function openGradeInterpModal(){ new bootstrap.Modal(document.getElementById('gradeInterpModal')).show(); }
 </script>
 </body>
 </html>
