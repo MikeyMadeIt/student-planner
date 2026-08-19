@@ -16,70 +16,84 @@
   <nav class="sidebar" id="sidebar"></nav>
   <main class="main-content">
     <div class="mobile-topbar">
-      <div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div>
+      <div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard" aria-hidden="true"></i></span> Planner</div>
     </div>
 
     <!-- Page header -->
-    <div class="topbar">
-      <div>
+    <div class="topbar sch-topbar">
+      <div class="sch-topbar-left">
         <h1 class="page-title">Schedule</h1>
-        <p class="page-sub">See what's happening today and throughout the week.</p>
+        <p class="page-sub">Manage your classes, timetable, and weekly academic schedule.</p>
       </div>
-      <div class="d-flex gap-2 align-items-center flex-wrap">
-        <button class="btn btn-ghost btn-sm sched-toggle-btn active" data-view="day" onclick="setSchedView('day')" title="Day view"><i class="bi bi-calendar-day"></i></button>
-        <button class="btn btn-ghost btn-sm sched-toggle-btn" data-view="timetable" onclick="setSchedView('timetable')" title="Week timetable"><i class="bi bi-calendar2-week"></i></button>
-        <button class="btn btn-ghost btn-sm sched-toggle-btn" data-view="list" onclick="setSchedView('list')" title="Subject list"><i class="bi bi-list-ul"></i></button>
-        <button class="btn btn-accent btn-sm" onclick="openSubjectModal()"><i class="bi bi-plus-lg me-1"></i>Add Subject</button>
+      <!-- Controls row: view switcher left, add button right -->
+      <div class="sch-topbar-controls">
+        <div class="sch-view-control" role="group" aria-label="Schedule view">
+          <button class="sch-toggle-btn" data-view="day" onclick="setSchedView('day')" aria-pressed="false" title="Day view" aria-label="Day view">
+            <i class="bi bi-calendar-day" aria-hidden="true"></i><span class="sch-toggle-label">Day</span>
+          </button>
+          <button class="sch-toggle-btn" data-view="timetable" onclick="setSchedView('timetable')" aria-pressed="false" title="Week view" aria-label="Week timetable">
+            <i class="bi bi-calendar2-week" aria-hidden="true"></i><span class="sch-toggle-label">Week</span>
+          </button>
+          <button class="sch-toggle-btn" data-view="list" onclick="setSchedView('list')" aria-pressed="false" title="Subject list" aria-label="Subject list">
+            <i class="bi bi-list-ul" aria-hidden="true"></i><span class="sch-toggle-label">Subjects</span>
+          </button>
+        </div>
+        <button class="btn btn-accent btn-sm sch-add-btn" onclick="openSubjectModal()" aria-label="Add new subject">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i><span class="sch-add-label">Add Subject</span>
+        </button>
       </div>
     </div>
 
     <!-- Week navigation -->
     <div class="glass card-pad mb-3 fade-in sch-nav-card">
       <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-        <button class="btn-icon sch-nav-btn" onclick="shiftWeek(-1)" title="Previous week"><i class="bi bi-chevron-left"></i></button>
-        <div class="sch-week-label" id="schWeekLabel"></div>
-        <button class="btn-icon sch-nav-btn" onclick="shiftWeek(1)" title="Next week"><i class="bi bi-chevron-right"></i></button>
-        <button class="btn btn-ghost btn-sm sch-today-btn" onclick="goToday()">Today</button>
+        <button class="btn-icon sch-nav-btn sch-chevron-btn" onclick="shiftWeek(-1)" title="Previous week" aria-label="Previous week"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+        <div class="sch-week-label" id="schWeekLabel" aria-live="polite"></div>
+        <button class="btn btn-ghost btn-sm sch-today-btn" onclick="goToday()" aria-label="Go to today">Today</button>
+        <button class="btn-icon sch-nav-btn sch-chevron-btn" onclick="shiftWeek(1)" title="Next week" aria-label="Next week"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
       </div>
       <!-- Day selector strip -->
-      <div class="sch-day-strip" id="schDayStrip"></div>
+      <div class="sch-day-strip" id="schDayStrip" role="tablist" aria-label="Select day"></div>
     </div>
 
     <!-- Next class / current class card -->
-    <div id="schNextCard" class="mb-3 fade-in"></div>
+    <div id="schNextCard" class="mb-3 fade-in" aria-live="polite"></div>
 
     <!-- Day view -->
-    <div id="schDayView">
-      <!-- Daily summary + timeline rendered here -->
-    </div>
+    <div id="schDayView" role="region" aria-label="Day schedule"></div>
 
     <!-- Timetable view -->
-    <div id="schTimetableView" class="d-none">
+    <div id="schTimetableView" class="d-none" role="region" aria-label="Weekly timetable">
       <div class="glass card-pad mb-3 fade-in">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="section-title mb-0"><i class="bi bi-calendar2-week"></i>Weekly Timetable</div>
-          <div class="d-flex gap-2">
-            <button class="btn-icon sch-nav-btn" onclick="ttZoom(-1)" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
-            <button class="btn-icon sch-nav-btn" onclick="ttZoom(1)" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
+        <div class="d-flex justify-content-between align-items-center mb-3 sch-tt-header-row">
+          <div class="section-title mb-0"><i class="bi bi-calendar2-week" aria-hidden="true"></i>Weekly Timetable</div>
+          <div class="sch-tt-controls">
+            <div class="sch-zoom-controls" aria-label="Timetable zoom">
+              <button class="sch-zoom-btn" onclick="ttZoom(-1)" title="Zoom out" aria-label="Zoom out timetable"><i class="bi bi-dash-lg" aria-hidden="true"></i></button>
+              <span class="sch-zoom-badge" id="ttZoomBadge" aria-live="polite" aria-label="Zoom level">100%</span>
+              <button class="sch-zoom-btn" onclick="ttZoom(1)" title="Zoom in" aria-label="Zoom in timetable"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
+              <div class="sch-zoom-divider" aria-hidden="true"></div>
+              <button class="sch-zoom-btn" onclick="exportTimetableImage()" title="Export as image" aria-label="Export timetable as image"><i class="bi bi-image" aria-hidden="true"></i></button>
+            </div>
           </div>
         </div>
         <div class="scroll-x grabbable">
-          <div id="ttGrid" style="min-width:680px"></div>
+          <div id="ttGrid" style="min-width:560px"></div>
         </div>
       </div>
     </div>
 
     <!-- Subject list view -->
-    <div id="schListView" class="d-none">
+    <div id="schListView" class="d-none" role="region" aria-label="Subject list">
       <div class="glass card-pad mb-3 fade-in">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <div class="section-title mb-0"><i class="bi bi-journal-bookmark"></i>All Subjects</div>
+          <div class="section-title mb-0"><i class="bi bi-journal-bookmark" aria-hidden="true"></i>All Subjects</div>
           <div class="d-flex gap-2">
-            <input class="form-control" id="schSearchInput" placeholder="Search…" style="height:30px;font-size:.8rem;width:160px" oninput="renderListView()">
-            <button class="btn btn-ghost btn-sm" id="schArchiveBtn" onclick="toggleArchivedView()"><i class="bi bi-archive me-1"></i>Archived</button>
+            <input class="form-control" id="schSearchInput" placeholder="Search…" style="height:32px;font-size:.8rem;width:150px" oninput="renderListView()" aria-label="Search subjects">
+            <button class="btn btn-ghost btn-sm" id="schArchiveBtn" onclick="toggleArchivedView()" aria-label="Toggle archived subjects" aria-pressed="false"><i class="bi bi-archive me-1" aria-hidden="true"></i>Archived</button>
           </div>
         </div>
-        <div id="schSubjectList" class="row g-3 stagger"></div>
+        <div id="schSubjectList" class="row g-3 stagger" role="list"></div>
       </div>
     </div>
 
@@ -88,10 +102,10 @@
 
   </main>
 </div>
-<nav class="mobile-nav" id="mobileNav"></nav>
+<nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation"></nav>
 
 <!-- Subject Modal -->
-<div class="modal fade" id="subjectModal" tabindex="-1" aria-modal="true" role="dialog">
+<div class="modal fade" id="subjectModal" tabindex="-1" aria-modal="true" role="dialog" aria-labelledby="subjectModalTitle">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title" id="subjectModalTitle">Add Subject</h5><button class="btn-close btn-close-white" aria-label="Close" data-bs-dismiss="modal"></button></div>
