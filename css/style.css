@@ -11286,3 +11286,226 @@ textarea:focus-visible {
 .nt-cat-chip { display: none !important; }   /* replaced by .nt-card-cat-pill in header */
 .nt-card-meta { display: none !important; }  /* replaced by bottom meta */
 .nt-card-links { display: none !important; } /* replaced by bottom meta */
+
+/* ============================================================
+   WALLPAPER GENERATOR PAGE
+   ============================================================ */
+
+/* ── Mode Selector Bar ── */
+.wp-mode-bar{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.wp-mode-label{
+  font-weight:700;
+  font-size:.88rem;
+  color:var(--text-soft);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.wp-mode-tabs{
+  display:flex;
+  gap:6px;
+  background:var(--surface-2);
+  border-radius:var(--radius-sm);
+  padding:4px;
+}
+.wp-mode-tab{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 16px;
+  border-radius:8px;
+  border:none;
+  background:transparent;
+  color:var(--text-soft);
+  font-weight:600;
+  font-size:.83rem;
+  cursor:pointer;
+  transition:.2s var(--ease);
+  white-space:nowrap;
+}
+.wp-mode-tab:hover{
+  background:rgba(var(--accent),.1);
+  color:var(--text);
+}
+.wp-mode-tab.active{
+  background:linear-gradient(135deg,rgba(var(--accent),.9),rgba(var(--accent-2),.85));
+  color:#fff;
+  box-shadow:0 4px 12px rgba(var(--accent),.35);
+}
+
+/* ── Theme Swatches ── */
+.wp-swatch{
+  width:100%;
+  aspect-ratio:1;
+  border-radius:10px;
+  border:2px solid transparent;
+  cursor:pointer;
+  transition:.2s var(--ease);
+  outline:none;
+  display:block;
+  min-height:40px;
+}
+.wp-swatch:hover{
+  transform:scale(1.06);
+  box-shadow:0 6px 16px rgba(0,0,0,.3);
+}
+.wp-swatch.selected{
+  border-color:rgb(var(--accent));
+  box-shadow:0 0 0 3px rgba(var(--accent),.35);
+}
+.wp-swatch-label{
+  text-align:center;
+  font-size:.6rem;
+  margin-top:3px;
+  text-transform:capitalize;
+  color:var(--text-faint);
+  font-weight:600;
+}
+
+/* ── Day Chips ── */
+.wp-day-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.wp-day-chip{
+  padding:5px 12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface-2);
+  color:var(--text-soft);
+  font-size:.78rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s var(--ease);
+}
+.wp-day-chip:hover{
+  border-color:rgba(var(--accent),.4);
+  color:var(--text);
+}
+.wp-day-chip.active{
+  background:rgba(var(--accent),.18);
+  border-color:rgba(var(--accent),.5);
+  color:rgb(var(--accent));
+}
+
+/* ── Subject Checklist ── */
+.wp-subject-checklist{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.wp-subject-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:.18s;
+}
+.wp-subject-row:hover{
+  background:var(--surface-2);
+  border-color:var(--border);
+}
+.wp-subject-check{
+  flex-shrink:0;
+  accent-color:rgb(var(--accent));
+}
+.wp-subject-swatch{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.wp-subject-name{
+  font-weight:700;
+  font-size:.82rem;
+  color:var(--text);
+  flex-shrink:0;
+}
+.wp-subject-desc{
+  font-size:.74rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:120px;
+}
+
+/* ── Info Toggles ── */
+.wp-toggles-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px 8px;
+}
+.wp-toggles-grid .form-check{
+  margin:0;
+  font-size:.82rem;
+}
+
+/* ── Preview Shell ── */
+.wp-preview-shell{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  overflow:auto;
+  max-height:74vh;
+  border-radius:16px;
+}
+.wp-preview-shell canvas{
+  max-width:100%;
+  max-height:74vh;
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.45);
+  display:block;
+}
+
+/* ── Mobile responsive ── */
+@media (max-width:575.98px){
+  .wp-mode-bar{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .wp-mode-tabs{
+    width:100%;
+  }
+  .wp-mode-tab{
+    flex:1;
+    justify-content:center;
+    padding:7px 8px;
+    font-size:.8rem;
+  }
+  .wp-toggles-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .wp-subject-desc{
+    display:none;
+  }
+  .wp-preview-shell{
+    max-height:55vh;
+  }
+  .wp-preview-shell canvas{
+    max-height:55vh;
+  }
+}
+
+@media (max-width:390px){
+  .wp-mode-tab{
+    font-size:.76rem;
+    gap:4px;
+    padding:6px 6px;
+  }
+}
+
+@media (max-width:320px){
+  .wp-day-chip{
+    padding:4px 8px;
+    font-size:.72rem;
+  }
+}

@@ -17,44 +17,76 @@
   <main class="main-content">
     <div class="mobile-topbar"><div class="brand mb-0 p-0"><span class="dot"><i class="bi bi-mortarboard"></i></span> Planner</div></div>
     <div class="topbar">
-      <div><h1 class="page-title">Wallpaper Generator</h1><p class="page-sub">A permanent schedule wallpaper — set once, use all semester</p></div>
+      <div><h1 class="page-title">Wallpaper Generator</h1><p class="page-sub">Design a lock-screen wallpaper with your schedule</p></div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="wp-mode-bar glass card-pad fade-in mb-3">
+      <span class="wp-mode-label">Wallpaper Style</span>
+      <div class="wp-mode-tabs" role="tablist" aria-label="Wallpaper style">
+        <button class="wp-mode-tab active" id="modeTabList" role="tab" aria-selected="true"
+                onclick="setWpMode('list')">
+          <i class="bi bi-list-ul" aria-hidden="true"></i> Subject List
+        </button>
+        <button class="wp-mode-tab" id="modeTabTimetable" role="tab" aria-selected="false"
+                onclick="setWpMode('timetable')">
+          <i class="bi bi-grid" aria-hidden="true"></i> Timetable
+        </button>
+      </div>
     </div>
 
     <div class="row g-3">
+      <!-- Left Controls -->
       <div class="col-lg-4">
+
+        <!-- Theme -->
         <div class="glass card-pad fade-in mb-3">
-          <div class="section-title"><i class="bi bi-palette-fill"></i>Theme</div>
-          <div class="row row-cols-4 g-2" id="themePicker"></div>
+          <div class="section-title"><i class="bi bi-palette-fill" aria-hidden="true"></i>Background</div>
+          <div class="row row-cols-4 g-2" id="themePicker" role="radiogroup" aria-label="Wallpaper background theme"></div>
         </div>
+
+        <!-- Size -->
         <div class="glass card-pad fade-in mb-3">
-          <div class="section-title"><i class="bi bi-aspect-ratio"></i>Size</div>
-          <select class="form-select mb-2" id="wpSize">
+          <div class="section-title"><i class="bi bi-aspect-ratio" aria-hidden="true"></i>Size</div>
+          <select class="form-select mb-2" id="wpSize" aria-label="Wallpaper size" onchange="onSizeChange()">
             <option value="1080x2400">1080 × 2400 (Standard)</option>
             <option value="1440x3200">1440 × 3200 (QHD)</option>
             <option value="custom">Custom…</option>
           </select>
           <div class="row g-2 d-none" id="customSizeRow">
-            <div class="col-6"><input type="number" class="form-control" id="wpW" placeholder="Width" value="1080"></div>
-            <div class="col-6"><input type="number" class="form-control" id="wpH" placeholder="Height" value="2400"></div>
+            <div class="col-6"><input type="number" class="form-control" id="wpW" placeholder="Width" value="1080" aria-label="Custom width" onchange="generateWallpaper()"></div>
+            <div class="col-6"><input type="number" class="form-control" id="wpH" placeholder="Height" value="2400" aria-label="Custom height" onchange="generateWallpaper()"></div>
           </div>
         </div>
+
+        <!-- Show/Hide Options -->
         <div class="glass card-pad fade-in mb-3">
-          <div class="section-title"><i class="bi bi-toggles"></i>Include</div>
-          <div id="wpToggles" style="font-size:.85rem"></div>
+          <div class="section-title"><i class="bi bi-toggles" aria-hidden="true"></i>Show</div>
+          <div id="wpToggles" class="wp-toggles-grid"></div>
         </div>
+
+        <!-- Actions -->
         <div class="glass card-pad fade-in">
-          <button class="btn btn-accent w-100 mb-2" onclick="generateWallpaper()"><i class="bi bi-magic me-1"></i>Generate Preview</button>
+          <button class="btn btn-accent w-100 mb-2" onclick="generateWallpaper()" aria-label="Generate wallpaper preview">
+            <i class="bi bi-magic me-1" aria-hidden="true"></i>Generate Preview
+          </button>
           <div class="d-flex gap-2">
-            <button class="btn btn-ghost flex-grow-1" onclick="downloadWallpaper('png')"><i class="bi bi-download me-1"></i>PNG</button>
-            <button class="btn btn-ghost flex-grow-1" onclick="downloadWallpaper('jpeg')"><i class="bi bi-download me-1"></i>JPG</button>
+            <button class="btn btn-ghost flex-grow-1" onclick="downloadWallpaper('png')" aria-label="Download wallpaper as PNG">
+              <i class="bi bi-download me-1" aria-hidden="true"></i>PNG
+            </button>
+            <button class="btn btn-ghost flex-grow-1" onclick="downloadWallpaper('jpeg')" aria-label="Download wallpaper as JPG">
+              <i class="bi bi-download me-1" aria-hidden="true"></i>JPG
+            </button>
           </div>
         </div>
       </div>
+
+      <!-- Right Preview -->
       <div class="col-lg-8">
-        <div class="glass card-pad fade-in text-center">
-          <div class="section-title justify-content-center"><i class="bi bi-phone"></i>Preview</div>
-          <div style="max-height:72vh;overflow:auto;display:inline-block;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.4)">
-            <canvas id="wpCanvas" style="max-width:100%;max-height:72vh;border-radius:20px;display:block"></canvas>
+        <div class="glass card-pad fade-in">
+          <div class="section-title justify-content-center"><i class="bi bi-phone" aria-hidden="true"></i>Preview</div>
+          <div class="wp-preview-shell">
+            <canvas id="wpCanvas" role="img" aria-label="Wallpaper preview"></canvas>
           </div>
         </div>
       </div>
